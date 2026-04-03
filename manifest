@@ -1,0 +1,15 @@
+appname               = fnlogpush
+version               = 0.6.8
+display_name          = 日志哨兵
+desc                  = 自动监控飞牛日志和备份状态，实时推送至多渠道(企微/钉钉/飞书/Bark等)
+platform              = all
+source                = thirdparty
+desktop_uidir         = ui
+desktop_applaunchname = fnlogpush.Application
+maintainer            = 一零一二
+maintainer_url        = https://gitee.com/wyf1015
+distributor           = 一零一二
+distributor_url       = https://gitee.com/wyf1015
+service_port          = 19800
+checkport             = false
+install_dep_apps      = python312

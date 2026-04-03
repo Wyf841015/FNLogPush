@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FNOS日志监控推送系统</title>
+    <!-- Bootstrap 5 CSS (本地) -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Font Awesome (本地) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <!-- Socket.IO Client -->
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <!-- 模块化 JS -->
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components.js') }}"></script>
+</head>
+<body>
+    <!-- 移动端遮罩层 -->
+    <div id="modal-backdrop" class="modal-backdrop-custom" style="display: none;"></div>
+
+    <!-- 修改密码模态框 -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" style="display: none;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key me-2"></i>修改密码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="hideChangePasswordModal()"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="changePasswordAlert" style="margin-bottom: 15px;"></div>
+                    <div class="mb-3">
+                        <label class="form-label">旧密码</label>
+                        <input type="password" class="form-control" id="oldPassword" placeholder="请输入旧密码" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPassword" placeholder="至少6个字符" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="confirmNewPassword" placeholder="请再次输入新密码" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideChangePasswordModal()">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="changePassword()">确认修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 标题 + KPI Dashboard Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card header-card">
+                    <div class="card-body header-card-body">
+                        <!-- 第一行：标题区域 -->
+                        <div class="header-title-row">
+                            <!-- 左：Logo + 系统标题 -->
+                            <div class="header-brand">
+                                <div class="header-logo-wrap">
+                                    <i class="fas fa-server header-logo-icon"></i>
+                                    <span class="header-logo-pulse"></span>
+                                </div>
+                                <div class="header-title-group">
+                                    <h4 class="header-title mb-0">FNOS 日志哨兵系统</h4>
+                                    <p class="header-subtitle mb-0">
+                                        <span class="header-status-badge" id="header-status-badge">
+                                            <i class="fas fa-circle header-status-dot" id="header-status-dot" aria-hidden="true"></i>
+                                            <span id="header-status-text">实时监控中</span>
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- 右：时间戳 + 自动刷新开关 -->
+                            <div class="header-meta">
+                                <div class="header-update-time">
+                                    <i class="fas fa-sync-alt header-sync-icon" id="header-sync-icon" aria-hidden="true"></i>
+                                    <span id="header-last-check">--</span>
+                                </div>
+                                <div class="header-auto-refresh ms-3">
+                                    <div class="form-check form-check-inline form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" id="auto-refresh-toggle" checked
+                                               onchange="toggleAutoRefresh(this.checked)" role="switch"
+                                               aria-label="自动刷新数据">
+                                        <label class="form-check-label text-nowrap" for="auto-refresh-toggle" style="font-size: 0.75rem;">
+                                            自动刷新
+                                        </label>
+                                    </div>
+                                </div>
+                                <!-- 赞助按钮 -->
+                                <div class="ms-3">
+                                    <button class="btn btn-sm btn-sponsor btn-outline-warning" onclick="showSponsorModal()" title="赞助作者">
+                                        <i class="fas fa-heart"></i> 赞助
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 分隔线 -->
+                        <div class="header-divider"></div>
+
+                        <!-- 第二行：KPI 卡片网格 -->
+                        <div class="kpi-grid" id="kpi-grid">
+                            <!-- 监控状态 -->
+                            <div class="kpi-card kpi-card-monitor">
+                                <div class="kpi-icon-badge kpi-icon-monitor">
+                                    <i class="fas fa-broadcast-tower"></i>
+                                </div>
+                                <div class="kpi-body">
+                                    <div class="kpi-label">监控状态</div>
+                                    <div class="kpi-value" id="kpi-monitor-status">--</div>
+                                    <div class="kpi-sub" id="kpi-monitor-sub">检查间隔 -- 秒</div>
+                                </div>
+                            </div>
+                            <!-- 累计推送 -->
+                            <div class="kpi-card kpi-card-push kpi-card-clickable"
+                                 onclick="switchConfigPanel(null,'history')"
+                                 title="点击查看推送历史" role="button" tabindex="0"
+                                 onkeydown="if(event.key==='Enter'||event.key===' ')switchConfigPanel(null,'history')">
+                                <div class="kpi-icon-badge kpi-icon-push">
+                                    <i class="fas fa-paper-plane"></i>
+                                </div>
+                                <div class="kpi-body">
+                                    <div class="kpi-label">累计推送</div>
+                                    <div class="kpi-value" id="kpi-push-count">--</div>
+                                    <div class="kpi-sub">条推送记录 <i class="fas fa-arrow-right ms-1" style="font-size:0.65rem;opacity:0.7;"></i></div>
+                                </div>
+                            </div>
+                            <!-- 聚合压制 -->
+                            <div class="kpi-card kpi-card-suppress">
+                                <div class="kpi-icon-badge kpi-icon-suppress">
+                                    <i class="fas fa-filter"></i>
+                                </div>
+                                <div class="kpi-body">
+                                    <div class="kpi-label">聚合压制</div>
+                                    <div class="kpi-value" id="kpi-suppress-count">--</div>
+                                    <div class="kpi-sub" id="kpi-suppress-sub">接收 -- / 推送 --</div>
+                                    <div class="kpi-sub" id="kpi-suppress-hint" style="font-size:0.65rem; opacity:0.7; display:none;">压制数偏高，请关注告警频率</div>
+                                </div>
+                            </div>
+                            <!-- 最后推送 -->
+                            <div class="kpi-card kpi-card-time kpi-card-clickable"
+                                 onclick="switchConfigPanel(null,'history')"
+                                 title="点击查看推送历史" role="button" tabindex="0"
+                                 onkeydown="if(event.key==='Enter'||event.key===' ')switchConfigPanel(null,'history')">
+                                <div class="kpi-icon-badge kpi-icon-time">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="kpi-body">
+                                    <div class="kpi-label">最后推送</div>
+                                    <div class="kpi-value" id="kpi-last-push">--</div>
+                                    <div class="kpi-sub" id="kpi-last-push-sub">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 浮动按钮式导航菜单（桌面端默认展开） -->
+        <div class="fab-menu active" id="fabMenu">
+            <!-- 展开/收起主按钮 -->
+            <button class="fab-btn fab-main" onclick="toggleFabMenu()" title="收起菜单">
+                <i class="fas fa-bars"></i>
+            </button>
+            <!-- 隐藏的菜单按钮列表 -->
+            <div class="fab-items" id="fabItems">
+                <button class="fab-btn fab-btn-home active" data-target="status" data-label="系统状态" onclick="switchFabPanel(this, 'status')" title="系统状态">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button class="fab-btn fab-btn-db" data-target="dbstatus" data-label="数据库" onclick="switchFabPanel(this, 'dbstatus')" title="数据库状态">
+                    <i class="fas fa-database"></i>
+                </button>
+                <button class="fab-btn fab-btn-monitor" data-target="basic" data-label="日志" onclick="switchFabPanel(this, 'basic')" title="日志监控">
+                    <i class="fas fa-sliders"></i>
+                </button>
+                <button class="fab-btn fab-btn-backup" data-target="backup" data-label="备份" onclick="switchFabPanel(this, 'backup')" title="备份监控">
+                    <i class="fas fa-hdd"></i>
+                </button>
+                <button class="fab-btn fab-btn-push" data-target="push" data-label="推送" onclick="switchFabPanel(this, 'push')" title="推送配置">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+                <button class="fab-btn fab-btn-theme" data-target="theme" data-label="主题" onclick="switchFabPanel(this, 'theme')" title="主题设置">
+                    <i class="fas fa-palette"></i>
+                </button>
+                <button class="fab-btn fab-btn-history" data-target="history" data-label="历史" onclick="switchFabPanel(this, 'history')" title="推送历史">
+                    <i class="fas fa-history"></i>
+                </button>
+               <button class="fab-btn fab-btn-health" data-target="health" onclick="switchFabPanel(this, 'health')" title="系统健康">
+                    <i class="fas fa-heartbeat"></i>
+                </button>
+                <button class="fab-btn fab-btn-user" data-label="用户" onclick="showUserMenu()" title="用户管理">
+                    <i class="fas fa-user"></i>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- 用户菜单弹窗 -->
+        <div class="user-menu-popup" id="userMenuPopup">
+            <div class="user-menu-header">
+                <i class="fas fa-user-circle"></i>
+                <span id="popup-username">用户</span>
+            </div>
+            <div class="user-menu-items">
+                <a href="#" onclick="showChangePasswordModal(); hideUserMenu();">
+                    <i class="fas fa-key"></i>修改密码
+                </a>
+                <a href="#" onclick="switchFabPanel(document.querySelector('.fab-btn[data-target=theme]'),'theme'); hideUserMenu();">
+                    <i class="fas fa-palette"></i>主题设置
+                </a>
+                <a href="#" onclick="logout();">
+                    <i class="fas fa-sign-out-alt"></i>退出登录
+                </a>
+            </div>
+        </div>
+
+        <!-- 右侧内容区域 -->
+        <div class="config-content" id="configContent">
+                <!-- 系统状态面板 -->
+                <div class="config-panel active" id="panel-status">
+                    <div class="card status-card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-tachometer-alt me-2"></i>系统状态</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="status-panel">
+                                <div class="status-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="status-label">监控状态:</span>
+                                        <span id="monitor-status" class="badge badge-online" role="status" aria-label="监控状态：加载中">加载中...</span>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="status-label">最后日志ID:</span>
+                                        <span class="d-flex align-items-center gap-2">
+                                            <span id="last-id" class="badge bg-info status-value">0</span>
+                                            <span id="last-id-relative" class="text-muted type-stat"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="status-label">最后备份时间:</span>
+                                        <span class="d-flex align-items-center gap-2">
+                                            <span id="last-backup-time" class="status-value">-</span>
+                                            <span id="last-backup-relative" class="text-muted type-stat"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="status-label">推送历史:</span>
+                                        <a href="#" id="history-count" class="status-value text-decoration-none"
+                                           onclick="switchConfigPanel(null,'history');return false;"
+                                           title="点击查看推送历史">0 条 <i class="fas fa-arrow-right ms-1 text-xs"></i></a>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="status-label">检查间隔:</span>
+                                        <span id="check-interval" class="status-value">- 秒</span>
+                                    </div>
+                                </div>
+                                <!-- 告警聚合统计 -->
+                                <div class="status-item" id="agg-status-row" style="display:none;">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
+                                        <span class="status-label"><i class="fas fa-filter me-1" aria-hidden="true"></i>告警聚合:</span>
+                                        <span class="d-flex align-items-center gap-2 flex-wrap type-stat">
+                                            <span class="badge bg-primary" title="接收总次数" aria-label="接收总次数"><i class="fas fa-arrow-down me-1" aria-hidden="true"></i><span id="status-agg-total">0</span></span>
+                                            <span class="badge bg-success" title="实际推送次数" aria-label="实际推送次数"><i class="fas fa-paper-plane me-1" aria-hidden="true"></i><span id="status-agg-passed">0</span></span>
+                                            <span class="badge bg-warning text-dark" title="被压制次数" aria-label="被压制次数"><i class="fas fa-compress-alt me-1" aria-hidden="true"></i><span id="status-agg-suppressed">0</span></span>
+                                            <span class="badge bg-danger" title="静默次数" aria-label="静默次数"><i class="fas fa-bell-slash me-1" aria-hidden="true"></i><span id="status-agg-silenced">0</span></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="status-label">日志数据库状态:</span>
+                                        <span id="db-status-indicator" class="badge badge-online" role="status" aria-label="日志数据库：加载中">加载中...</span>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="status-label">备份数据库状态:</span>
+                                        <span id="backup-db-status-indicator" class="badge badge-online" role="status" aria-label="备份数据库：加载中">加载中...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr style="border-color: rgba(0,0,0,0.1);">
+                            <div class="action-buttons">
+                                <button class="btn btn-action-start" onclick="controlMonitor('start')" aria-label="启动监控">
+                                    <i class="fas fa-play me-2"></i>启动监控
+                                </button>
+                                <button class="btn btn-action-restart" onclick="controlMonitor('restart')" aria-label="重启监控">
+                                    <i class="fas fa-redo me-2"></i>重启监控
+                                </button>
+                                <button class="btn btn-action-stop" onclick="controlMonitor('stop')" aria-label="停止监控">
+                                    <i class="fas fa-stop me-2"></i>停止监控
+                                </button>
+                                <button class="btn btn-action-reset" onclick="resetMonitor()" aria-label="重置监控">
+                                    <i class="fas fa-undo me-2"></i>重置监控
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据库状态面板 -->
+                <div class="config-panel" id="panel-dbstatus">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-database me-2"></i>数据库状态</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2 mb-3">
+                                <button class="btn btn-secondary" onclick="checkDatabaseFull()">
+                                    <i class="fas fa-database me-2"></i>检查数据库
+                                </button>
+                            </div>
+                            <div id="db-status-panel">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>点击上方按钮查看数据库状态
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 日志监控面板 -->
+                <div class="config-panel" id="panel-basic">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-sliders me-2"></i>日志监控</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><i class="fas fa-hdd me-2"></i>数据库路径</label>
+                                    <input type="text" class="form-control" id="database-path" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><i class="fas fa-clock me-2"></i>检查间隔(秒)</label>
+                                    <input type="number" class="form-control" id="check-interval-input" min="1" required>
+                                </div>
+                            </div>
+
+                            <!-- 推送筛选 -->
+                            <div class="mt-4">
+                                <h6 class="mb-3"><i class="fas fa-filter me-2"></i>推送筛选</h6>
+                                <div class="mb-3">
+                                    <label class="form-label"><i class="fas fa-filter me-2"></i>日志级别筛选</label>
+                                    <div id="log-levels" class="d-flex flex-wrap gap-2"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label"><i class="fas fa-paper-plane me-2"></i>推送事件 (勾选则推送)</label>
+                                    <div id="event-types" class="event-types-container"></div>
+                                    <small class="text-muted"><i class="fas fa-info-circle me-1"></i>勾选的事件将会被推送，取消勾选则不会推送</small>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="button" class="btn btn-primary" onclick="saveBasicConfig()">
+                                    <i class="fas fa-save me-2"></i>保存设置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 推送配置面板 -->
+                <div class="config-panel" id="panel-push">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-paper-plane me-2"></i>推送配置</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Webhook 配置 -->
+                            <div class="card mb-3 config-sub-card" id="webhook-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-link me-2"></i>Webhook 推送配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-webhook-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="push-webhook-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-globe me-1"></i>Webhook URL</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="webhook-url" placeholder="http://your-server:port/wxsend?title=飞牛NAS提醒&content={content}">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('webhook-url', this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">使用 {content} 作为消息内容的占位符</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 企业微信配置 -->
+                            <div class="card mb-3 config-sub-card" id="wecom-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fab fa-weixin me-2"></i>企业微信推送配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-wecom-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="push-wecom-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-key me-1"></i>Webhook URL</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="wecom-webhook-url" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('wecom-webhook-url', this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">企业微信群机器人 Webhook URL</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 钉钉推送配置 -->
+                            <div class="card mb-3 config-sub-card" id="dingtalk-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-ding me-2 text-primary"></i>钉钉推送配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-dingtalk-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="push-dingtalk-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-link me-1"></i>Webhook URL</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="dingtalk-webhook-url" placeholder="https://oapi.dingtalk.com/robot/send?access_token=XXX">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('dingtalk-webhook-url', this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">钉钉群机器人 Webhook URL</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-shield-alt me-1"></i>安全密钥 (Secret)</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="dingtalk-secret" placeholder="可选，用于签名验证">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('dingtalk-secret', this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">若钉钉机器人启用了加签，请填写安全密钥</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 飞书推送配置 -->
+                            <div class="card mb-3 config-sub-card" id="feishu-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-paper-plane me-2 text-success"></i>飞书推送配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-feishu-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="push-feishu-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-link me-1"></i>Webhook URL</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="feishu-webhook-url" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/XXX">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('feishu-webhook-url', this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">飞书群机器人 Webhook URL</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bark推送配置 -->
+                            <div class="card mb-3 config-sub-card" id="bark-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fab fa-apple me-2 text-info"></i>Bark (iOS) 配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-bark-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="push-bark-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-key me-1"></i>设备密钥 (Device Key)</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="bark-device-key" placeholder="xxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('bark-device-key', this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Bark App 中的 Device Key</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-server me-1"></i>服务器地址</label>
+                                        <input type="text" class="form-control" id="bark-server" placeholder="https://api.day.app" value="https://api.day.app">
+                                        <small class="text-muted">可选，默认为官方服务器</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PushPlus推送配置 -->
+                            <div class="card mb-3 config-sub-card" id="pushplus-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-plus-circle me-2 text-warning"></i>PushPlus 配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-pushplus-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="push-pushplus-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-key me-1"></i>Token</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="pushplus-token" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('pushplus-token', this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">PushPlus 用户 Token，从官网获取</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-users me-1"></i>群组 (Topic)</label>
+                                        <input type="text" class="form-control" id="pushplus-topic" placeholder="可选，表示发送到指定群组">
+                                        <small class="text-muted">可选，填写则推送到指定群组，留空推送给个人</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 免打扰设置 -->
+                            <div class="card mb-3 config-sub-card">
+                                <div class="card-header py-2">
+                                    <h6 class="mb-0"><i class="fas fa-moon me-2"></i>免打扰模式</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-auto">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="dnd-enabled" style="width: 50px; height: 26px;">
+                                                <label class="form-check-label" for="dnd-enabled"><strong>启用免打扰</strong></label>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <small class="text-muted">启用后,在指定时间段内的日志将先缓存,待退出免打扰时段后统一推送</small>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="dnd-time-settings">
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label"><i class="fas fa-bed me-1"></i>开始时间</label>
+                                            <input type="time" class="form-control" id="dnd-start-time">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label"><i class="fas fa-sun me-1"></i>结束时间</label>
+                                            <input type="time" class="form-control" id="dnd-end-time">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-info"><i class="fas fa-info-circle me-1"></i>提示:结束时间可以小于开始时间(如23:00-08:00表示跨天)</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 告警聚合与降噪 -->
+                            <div class="card mb-3 config-sub-card" id="alert-aggregation-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-filter me-2"></i>告警聚合与降噪</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="alert-agg-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="alert-agg-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-2">
+                                            <label class="form-label">
+                                                <i class="fas fa-hourglass-half me-1" aria-hidden="true"></i>聚合窗口(秒)
+                                                <button type="button" class="help-tooltip ms-1"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-trigger="hover focus"
+                                                    data-bs-placement="top"
+                                                    title="同一告警在窗口内只推送首条，到期后补发摘要"
+                                                    aria-label="帮助：同一告警在窗口内只推送首条，到期后补发摘要">?</button>
+                                            </label>
+                                            <input type="number" class="form-control" id="alert-agg-window" min="10" max="3600" step="10" placeholder="300">
+                                            <small class="text-muted">窗口期内相同告警仅推首条</small>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <label class="form-label">
+                                                <i class="fas fa-bell-slash me-1" aria-hidden="true"></i>高频阈值(次)
+                                                <button type="button" class="help-tooltip ms-1"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-trigger="hover focus"
+                                                    data-bs-placement="top"
+                                                    title="窗口内触发次数超过阈值后进入静默，停止推送"
+                                                    aria-label="帮助：窗口内触发次数超过阈值后进入静默，停止推送">?</button>
+                                            </label>
+                                            <input type="number" class="form-control" id="alert-agg-threshold" min="1" max="100" step="1" placeholder="5">
+                                            <small class="text-muted">超过后进入高频静默</small>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <label class="form-label">
+                                                <i class="fas fa-volume-mute me-1" aria-hidden="true"></i>静默时长(秒)
+                                                <button type="button" class="help-tooltip ms-1"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-trigger="hover focus"
+                                                    data-bs-placement="top"
+                                                    title="高频触发后静默的持续时间，期间不推送任何告警"
+                                                    aria-label="帮助：高频触发后静默的持续时间，期间不推送任何告警">?</button>
+                                            </label>
+                                            <input type="number" class="form-control" id="alert-agg-silence" min="60" max="86400" step="60" placeholder="600">
+                                            <small class="text-muted">静默期间停止所有推送</small>
+                                        </div>
+                                    </div>
+                                    <!-- 实时统计展示 -->
+                                    <div class="mt-3 agg-stats-bar" id="alert-agg-stats-bar" style="display:none;">
+                                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                                            <span class="text-muted type-stat"><i class="fas fa-chart-bar me-1" aria-hidden="true"></i>实时统计：</span>
+                                            <span class="type-stat"><i class="fas fa-arrow-down me-1 text-primary" aria-hidden="true"></i>接收 <strong id="agg-stat-total" class="text-primary">-</strong> 次</span>
+                                            <span class="type-stat"><i class="fas fa-paper-plane me-1 text-success" aria-hidden="true"></i>推送 <strong id="agg-stat-passed" class="text-success">-</strong> 次</span>
+                                            <span class="type-stat"><i class="fas fa-compress-alt me-1 text-warning" aria-hidden="true"></i>压制 <strong id="agg-stat-suppressed" class="text-warning">-</strong> 次</span>
+                                            <span class="type-stat"><i class="fas fa-bell-slash me-1 text-danger" aria-hidden="true"></i>静默 <strong id="agg-stat-silenced" class="text-danger">-</strong> 次</span>
+                                            <span class="type-stat"><i class="fas fa-layer-group me-1 text-info" aria-hidden="true"></i>活跃组 <strong id="agg-stat-groups" class="text-info">-</strong> 个</span>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto btn-refresh-sm" onclick="loadAggStats()">
+                                                <i class="fas fa-sync-alt me-1"></i>刷新
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-info">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            窗口到期后会补发一条含「共触发 N 次」标注的聚合摘要；超过高频阈值后静默整个窗口期。
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button class="btn btn-warning" onclick="testWebhook()">
+                                    <i class="fas fa-paper-plane me-2"></i>测试推送
+                                </button>
+                                <button type="button" class="btn btn-info text-white" onclick="savePushConfig()">
+                                    <i class="fas fa-save me-2"></i>保存设置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 主题设置面板 -->
+                <div class="config-panel" id="panel-theme">
+                    <div class="card shadow-sm">
+                        <div class="card-header card-header-theme">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-palette me-2"></i>主题设置</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="card mb-3 card-theme-inner">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-palette me-2"></i>外观主题</h5>
+                                    <p class="card-text text-muted mb-4">从 5 款精心设计的主题中选择，每款主题均完整覆盖所有界面组件。</p>
+                                    
+                                    <div class="theme-picker-grid">
+
+                                        <!-- 主题1：暗夜紫 -->
+                                        <label class="theme-picker-card" for="theme-default">
+                                            <input class="theme-picker-radio" type="radio" name="theme" id="theme-default" value="default">
+                                            <span class="theme-picker-swatch" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);"></span>
+                                            <span class="theme-picker-body">
+                                                <span class="theme-picker-name">暗夜紫</span>
+                                                <span class="theme-picker-desc">深紫渐变 · 经典首选</span>
+                                            </span>
+                                            <i class="fas fa-check theme-picker-check"></i>
+                                        </label>
+
+                                        <!-- 主题2：深色模式 -->
+                                        <label class="theme-picker-card" for="theme-dark">
+                                            <input class="theme-picker-radio" type="radio" name="theme" id="theme-dark" value="dark">
+                                            <span class="theme-picker-swatch" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); border: 2px solid #6366f1;"></span>
+                                            <span class="theme-picker-body">
+                                                <span class="theme-picker-name">深色模式</span>
+                                                <span class="theme-picker-desc">深石板蓝 · 护眼夜间</span>
+                                            </span>
+                                            <i class="fas fa-check theme-picker-check"></i>
+                                        </label>
+
+                                        <!-- 主题3：深海蓝 -->
+                                        <label class="theme-picker-card" for="theme-ocean">
+                                            <input class="theme-picker-radio" type="radio" name="theme" id="theme-ocean" value="ocean">
+                                            <span class="theme-picker-swatch" style="background: linear-gradient(135deg, #020a14 0%, #082240 50%, #0c3560 100%); border: 2px solid #38bdf8;"></span>
+                                            <span class="theme-picker-body">
+                                                <span class="theme-picker-name">深海蓝</span>
+                                                <span class="theme-picker-desc">极深海洋 · 科技感</span>
+                                            </span>
+                                            <i class="fas fa-check theme-picker-check"></i>
+                                        </label>
+
+                                        <!-- 主题4：清新绿 -->
+                                        <label class="theme-picker-card" for="theme-green">
+                                            <input class="theme-picker-radio" type="radio" name="theme" id="theme-green" value="green">
+                                            <span class="theme-picker-swatch" style="background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);"></span>
+                                            <span class="theme-picker-body">
+                                                <span class="theme-picker-name">清新绿</span>
+                                                <span class="theme-picker-desc">翠绿自然 · 清爽明朗</span>
+                                            </span>
+                                            <i class="fas fa-check theme-picker-check"></i>
+                                        </label>
+
+                                        <!-- 主题5：暮色橙 -->
+                                        <label class="theme-picker-card" for="theme-sunset">
+                                            <input class="theme-picker-radio" type="radio" name="theme" id="theme-sunset" value="sunset">
+                                            <span class="theme-picker-swatch" style="background: linear-gradient(135deg, #dc2626 0%, #ea580c 40%, #f97316 100%);"></span>
+                                            <span class="theme-picker-body">
+                                                <span class="theme-picker-name">暮色橙</span>
+                                                <span class="theme-picker-desc">暖橙玫瑰 · 活力热情</span>
+                                            </span>
+                                            <i class="fas fa-check theme-picker-check"></i>
+                                        </label>
+
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>选择主题后立即预览，点击保存使设置持久化</small>
+                                    </div>
+                                    <div class="d-grid gap-2 mt-3">
+                                        <button type="button" class="btn btn-action-theme" onclick="saveThemeConfig()">
+                                            <i class="fas fa-save me-2"></i>保存设置
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                                            
+
+                <!-- 备份监控面板 -->
+                <div class="config-panel" id="panel-backup">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-database me-2"></i>备份监控</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="card mb-3 config-sub-card-backup" id="backup-monitor-config-inner">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-database me-2"></i>备份监控配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="backup-monitor-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="backup-monitor-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label class="form-label"><i class="fas fa-file-alt me-1"></i>备份数据库路径 (basic_backup.db3)</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="backup-db-path" placeholder="/path/to/basic_backup.db3">
+                                                <button class="btn btn-outline-success" type="button" onclick="testBackupDbConnection()">
+                                                    <i class="fas fa-plug me-1"></i>测试连接
+                                                </button>
+                                            </div>
+                                            <small class="text-muted">设置FNOS备份数据库路径，监控备份任务操作记录</small>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label"><i class="fas fa-clock me-1"></i>检查间隔(秒)</label>
+                                            <input type="number" class="form-control" id="backup-check-interval" min="5" max="300" value="10">
+                                            <small class="text-muted">建议10-60秒</small>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="fas fa-filter me-1"></i>推送状态筛选</label>
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="backup-status-1" value="1">
+                                                <label class="form-check-label" for="backup-status-1">
+                                                    <span class="badge bg-primary">开始</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="backup-status-2" value="2">
+                                                <label class="form-check-label" for="backup-status-2">
+                                                    <span class="badge bg-warning text-dark">取消</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="backup-status-3" value="3" checked>
+                                                <label class="form-check-label" for="backup-status-3">
+                                                    <span class="badge bg-success">成功</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="backup-status-4" value="4" checked>
+                                                <label class="form-check-label" for="backup-status-4">
+                                                    <span class="badge bg-danger">失败</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">选择需要推送的备份操作状态</small>
+                                    </div>
+                                    <div class="mt-3">
+                                        <small class="text-info"><i class="fas fa-info-circle me-1"></i>启用后将监控备份数据库，当有新的备份操作记录时自动推送通知</small>
+                                    </div>
+                                    <div class="d-grid gap-2 mt-3">
+                                        <button type="button" class="btn btn-success" onclick="saveBackupConfig()">
+                                            <i class="fas fa-save me-2"></i>保存设置
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 推送历史面板 -->
+                <div class="config-panel" id="panel-history">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 icon-text"><i class="fas fa-history me-2"></i>推送历史</h5>
+                                <button class="btn btn-sm text-white border-white" onclick="refreshHistory()" title="刷新">
+                                    <i class="fas fa-sync me-1"></i>刷新
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- 关键词搜索/高亮 + 日期筛选 -->
+                            <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+                                <label for="history-search" class="visually-hidden">搜索关键词</label>
+                                <div class="input-group" style="max-width: 300px;">
+                                    <span class="input-group-text"><i class="fas fa-search" aria-hidden="true"></i></span>
+                                    <input type="search" id="history-search" class="form-control log-search-input"
+                                        placeholder="输入关键词高亮匹配行…"
+                                        aria-label="搜索并高亮推送历史关键词"
+                                        oninput="onHistorySearch(this.value)">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="onHistorySearch('');document.getElementById('history-search').value='';" title="清除搜索">
+                                        <i class="fas fa-times" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group" style="max-width: 160px;">
+                                    <span class="input-group-text"><i class="fas fa-calendar" aria-hidden="true"></i></span>
+                                    <input type="date" id="history-date-start" class="form-control form-control-sm"
+                                        aria-label="开始日期" onchange="onHistoryDateFilter()">
+                                </div>
+                                <span class="text-muted">至</span>
+                                <div class="input-group" style="max-width: 160px;">
+                                    <input type="date" id="history-date-end" class="form-control form-control-sm"
+                                        aria-label="结束日期" onchange="onHistoryDateFilter()">
+                                </div>
+                                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="clearHistoryDateFilter()" title="清除日期筛选">
+                                    <i class="fas fa-times-circle" aria-hidden="true"></i> 清除
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:140px; white-space:nowrap;"><i class="fas fa-clock me-2"></i>时间</th>
+                                            <th style="width:80px;"><i class="fas fa-database me-2"></i>来源</th>
+                                            <th style="width:70px;"><i class="fas fa-check-circle me-2"></i>状态</th>
+                                            <th style="width:90px;"><i class="fas fa-paper-plane me-2"></i>渠道</th>
+                                            <th style="width:65px; white-space: nowrap;"><i class="fas fa-envelope me-2"></i>数量</th>
+                                            <th style="width:80px;"><i class="fas fa-hashtag me-2"></i>ID</th>
+                                            <th><i class="fas fa-file-alt me-2"></i>内容预览</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-table" aria-live="polite" aria-label="推送历史列表">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                <i class="fas fa-spinner fa-spin me-2"></i>加载中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- 分页控件（表格底部） -->
+                            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2 history-pagination">
+                                <span class="text-muted" style="font-size: 0.82rem;">
+                                    第 <span id="history-page-info">1</span> 页 &nbsp;·&nbsp;
+                                    共 <span id="history-total-info">0</span> 条
+                                </span>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="分页控制">
+                                    <button id="btn-prev-page" onclick="prevPage()" disabled
+                                            class="btn btn-outline-secondary"
+                                            aria-label="上一页">
+                                        <i class="fas fa-chevron-left me-1"></i>上一页
+                                    </button>
+                                    <button id="btn-next-page" onclick="nextPage()"
+                                            class="btn btn-outline-secondary"
+                                            aria-label="下一页">
+                                        下一页<i class="fas fa-chevron-right ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统健康检查面板 -->
+                <div class="config-panel" id="panel-health">
+                    <div class="card">
+                        <div class="card-header card-header-health">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-heartbeat me-2"></i>系统健康检查</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <button class="btn btn-success mb-3" onclick="loadHealthStatus()">
+                                    <i class="fas fa-sync me-2"></i>检查系统健康状态
+                                </button>
+                                <div id="health-status-content">
+                                    <div class="text-center">
+                                        <p>点击上方按钮检查系统健康状态</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">
+            <p class="mb-0">
+                <i class="fas fa-code me-2"></i>FNOS日志监控推送系统 v1.0 |
+                <i class="fas fa-heart me-2"></i>Powered by Flask & Bootstrap
+            </p>
+            <p class="mb-0 mt-1">
+                <i class="fas fa-copyright me-1"></i><span id="copyright-year"></span> 作者：一零一二
+            </p>
+        </div>
+
+        <!-- 通知容器 -->
+        <div class="notification-container" id="notification-container"></div>
+
+        <!-- Bootstrap 5 JS (本地) -->
+        <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+        <!-- 主JavaScript文件 -->
+        <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    </div>
+
+    <!-- 查看详情模态框 -->
+    <div class="modal fade" id="historyDetailModal" tabindex="-1" aria-labelledby="historyDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="historyDetailModalLabel">
+                        <i class="fas fa-file-alt me-2"></i>推送历史详情
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyDetailContent">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认操作模态框 -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title" id="confirmModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>确认操作
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmModalMessage">确定要执行此操作吗？</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirmModalConfirm">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Bootstrap JS Bundle -->
+    <!-- Bootstrap 5 JS (本地) -->
+
+    <!-- 移动端底部导航栏（精简为6个核心入口，主题入口已移至用户菜单） -->
+    <nav class="mobile-nav">
+        <ul class="mobile-nav-items">
+            <li class="mobile-nav-item">
+                <button class="mobile-nav-btn active" data-target="status" onclick="switchFabPanel(this, 'status')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>状态</span>
+                </button>
+            </li>
+            <li class="mobile-nav-item">
+                <button class="mobile-nav-btn" data-target="basic" onclick="switchFabPanel(this, 'basic')">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>日志</span>
+                </button>
+            </li>
+            <li class="mobile-nav-item">
+                <button class="mobile-nav-btn" data-target="backup" onclick="switchFabPanel(this, 'backup')">
+                    <i class="fas fa-hdd"></i>
+                    <span>备份</span>
+                </button>
+            </li>
+            <li class="mobile-nav-item">
+                <button class="mobile-nav-btn" data-target="push" onclick="switchFabPanel(this, 'push')">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>推送</span>
+                </button>
+            </li>
+            <li class="mobile-nav-item">
+                <button class="mobile-nav-btn" data-target="history" onclick="switchFabPanel(this, 'history')">
+                    <i class="fas fa-history"></i>
+                    <span>历史</span>
+                </button>
+            </li>
+            <li class="mobile-nav-item">
+                <button class="mobile-nav-btn" data-target="health" onclick="switchFabPanel(this, 'health')">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>健康</span>
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <script>
+        // 移动端底部导航栏点击事件
+        document.querySelectorAll('.mobile-nav-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                // 更新底部导航 active 状态
+                document.querySelectorAll('.mobile-nav-btn').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                // 同时更新浮动菜单的 active 状态
+                var target = this.getAttribute('data-target');
+                document.querySelectorAll('.fab-btn').forEach(function(b) {
+                    b.classList.remove('active');
+                    if (b.getAttribute('data-target') === target) {
+                        b.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // 刷新所有数据
+        function refreshAllData() {
+            loadStatus();
+            loadBasicConfig();
+            loadPushConfig();
+            loadBackupConfig();
+            showNotification('info', '刷新成功', '数据已更新');
+        }
+
+        // ========== KPI Header 同步 ==========
+        // 在原 loadStatus 完成后同步更新 Header KPI 卡片
+        (function patchLoadStatus() {
+            const _origLoadStatus = window.loadStatus;
+            if (typeof _origLoadStatus !== 'function') return;
+            window.loadStatus = function() {
+                _origLoadStatus.apply(this, arguments);
+                syncKpiFromStatus();
+            };
+        })();
+
+        function syncKpiFromStatus() {
+            // 从已渲染的 DOM 中读取数据，避免重复发请求
+            // 监控状态
+            const monitorBadge = document.getElementById('monitor-status');
+            if (monitorBadge) {
+                const running = monitorBadge.classList.contains('badge-online');
+                const kpiMonitor = document.getElementById('kpi-monitor-status');
+                const headerDot  = document.getElementById('header-status-dot');
+                const headerText = document.getElementById('header-status-text');
+                if (kpiMonitor) kpiMonitor.textContent = running ? '运行中' : '已停止';
+                if (kpiMonitor) kpiMonitor.style.color = running ? '' : '#ef4444';
+                // 状态点动画类
+                if (headerDot) {
+                    headerDot.style.color = running ? '#10b981' : '#ef4444';
+                    headerDot.classList.toggle('is-running', running);
+                    headerDot.classList.toggle('is-error',   !running);
+                }
+                if (headerText) headerText.textContent  = running ? '实时监控中' : '监控已停止';
+                // 检查间隔
+                const interval = document.getElementById('check-interval');
+                const kpiSub = document.getElementById('kpi-monitor-sub');
+                if (interval && kpiSub) kpiSub.textContent = '检查间隔 ' + interval.textContent;
+            }
+
+            // sync 图标旋转动画
+            const syncIcon = document.getElementById('header-sync-icon');
+            if (syncIcon) {
+                syncIcon.classList.add('spinning');
+                setTimeout(function() { syncIcon.classList.remove('spinning'); }, 800);
+            }
+
+            // 推送历史数量（带动画）
+            const histCount = document.getElementById('history-count');
+            const kpiPush = document.getElementById('kpi-push-count');
+            if (histCount && kpiPush) {
+                const newValue = histCount.textContent.replace(' 条 ', '').replace(' 条', '');
+                animateNumber(kpiPush, newValue);
+            }
+
+            // 告警聚合统计（带动画）
+            const aggTotal      = document.getElementById('status-agg-total');
+            const aggPassed     = document.getElementById('status-agg-passed');
+            const aggSuppressed = document.getElementById('status-agg-suppressed');
+            const kpiSuppress   = document.getElementById('kpi-suppress-count');
+            const kpiSuppressSub= document.getElementById('kpi-suppress-sub');
+            if (kpiSuppress) {
+                const suppressed = aggSuppressed ? aggSuppressed.textContent : '--';
+                const total   = aggTotal   ? aggTotal.textContent   : '--';
+                const passed  = aggPassed  ? aggPassed.textContent  : '--';
+                animateNumber(kpiSuppress, suppressed);
+                if (kpiSuppressSub) kpiSuppressSub.textContent = '接收 ' + total + ' / 推送 ' + passed;
+
+                // #5 压制数语义提示：压制数 > 推送数时显示警示
+                const hintEl = document.getElementById('kpi-suppress-hint');
+                const suppressedNum = parseInt(suppressed, 10);
+                const passedNum = parseInt(passed, 10);
+                if (hintEl && !isNaN(suppressedNum) && !isNaN(passedNum) && suppressedNum > passedNum && suppressedNum > 0) {
+                    hintEl.style.display = '';
+                    kpiSuppress.style.color = '#f59e0b';
+                } else if (hintEl) {
+                    hintEl.style.display = 'none';
+                    kpiSuppress.style.color = '';
+                }
+            }
+
+            // 最后推送时间（从 last-id-relative 读取）
+            const lastIdRel = document.getElementById('last-id-relative');
+            const kpiTime   = document.getElementById('kpi-last-push');
+            const kpiTimeSub= document.getElementById('kpi-last-push-sub');
+            if (lastIdRel && kpiTime) {
+                const txt = lastIdRel.textContent.trim();
+                if (txt) {
+                    const parts = txt.split(' · ');
+                    kpiTime.textContent    = parts[0] || '--';
+                    if (kpiTimeSub) kpiTimeSub.textContent = parts[1] || '';
+                } else {
+                    kpiTime.textContent = '--';
+                    if (kpiTimeSub) kpiTimeSub.textContent = '';
+                }
+            }
+
+            // header 右侧最后检查时间
+            const lastCheck = document.getElementById('header-last-check');
+            if (lastCheck) {
+                const now = new Date();
+                lastCheck.textContent = now.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' 已同步';
+            }
+        }
+
+        // 页面加载完成后执行一次同步，然后每次 loadStatus 自动触发
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(syncKpiFromStatus, 1500);
+
+            // 初始化所有 Bootstrap Tooltip（含 help-tooltip 按钮）
+            // trigger: 'hover focus' 确保键盘用户 Tab 到按钮后也能触发提示
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+                new bootstrap.Tooltip(el, {
+                    trigger: el.dataset.bsTrigger || 'hover focus',
+                    placement: el.dataset.bsPlacement || 'top'
+                });
+            });
+        });
+
+        // 赞助弹窗功能
+        function showSponsorModal() {
+            fetch('/api/sponsor')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.enabled) {
+                        document.getElementById('sponsorTitle').textContent = data.title || '感谢您的支持';
+                        document.getElementById('sponsorDesc').textContent = data.description || '您的赞助是我持续开发的最大动力';
+                        document.getElementById('sponsorQrcode').src = data.qrcode_url || '/static/images/sponsor_qrcode.png';
+                        document.getElementById('sponsorWeixin').src = data.weixin_url || '/static/images/weixin.jpg';
+                        var modal = new bootstrap.Modal(document.getElementById('sponsorModal'));
+                        modal.show();
+                    }
+                })
+                .catch(err => {
+                    console.error('获取赞助信息失败:', err);
+                });
+        }
+    </script>
+
+    <!-- 赞助弹窗 -->
+    <div class="modal fade" id="sponsorModal" tabindex="-1" style="display: none;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sponsorTitle"><i class="fas fa-heart text-danger me-2"></i>感谢您的支持 <span style="font-size: 0.8em;">🎉</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="sponsorDesc" class="mb-4 text-center">您的赞助是我持续开发的最大动力</p>
+                    <!-- 响应式布局：大屏幕左右排列，移动端上下排列 -->
+                    <div class="row justify-content-center g-4">
+                        <div class="col-12 col-md-6 text-center">
+                            <img id="sponsorQrcode" src="/static/images/sponsor_qrcode.png" alt="赞助二维码" class="rounded shadow sponsor-img" style="width: 180px; height: 180px; object-fit: contain; border: 3px solid #f59e0b; padding: 8px; background: white; cursor: zoom-in;" onclick="openImageModal(this)">
+                        </div>
+                        <div class="col-12 col-md-6 text-center">
+                            <img id="sponsorWeixin" src="/static/images/weixin.jpg" alt="微信二维码" class="rounded shadow sponsor-img" style="width: 180px; height: 180px; object-fit: contain; border: 3px solid #07c160; padding: 8px; background: white; cursor: zoom-in;" onclick="openImageModal(this)">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片放大预览模态框 -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" style="display: none;">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-0">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                    <img id="previewImage" src="" alt="预览" class="img-fluid" style="max-width: 90%; max-height: 90vh; object-fit: contain;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openImageModal(imgElement) {
+            document.getElementById('previewImage').src = imgElement.src;
+            var modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+            modal.show();
+        }
+    </script>
+  
+</body>
+</html>

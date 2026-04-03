@@ -1,0 +1,16 @@
+Flask==3.0.3
+flask-cors==4.0.1
+requests==2.32.3
+pytz==2024.1
+flask-socketio==5.3.6
+python-socketio==5.11.3
+python-engineio==4.9.1
+psutil==6.0.0
+eventlet==0.36.1
+# 安全增强（强制依赖，不可降级）
+bcrypt==4.2.0
+# 环境变量支持
+python-dotenv==1.0.1
+# 生产部署（推荐使用 gunicorn 替代 Werkzeug 开发服务器）
+gunicorn==22.0.0
+
