@@ -13,8 +13,10 @@ echo "=========================================="
 
 # 获取版本号
 VERSION=$(grep "^version" "$PROJECT_DIR/manifest" | awk -F'= ' '{print $2}')
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 echo "当前版本: $VERSION"
+echo "当前分支: $BRANCH"
 
 # 1. 更新 GitHub
 echo ""
@@ -23,7 +25,7 @@ cd "$PROJECT_DIR"
 if [ -d ".git" ]; then
     git add -A
     git commit -m "Release v$VERSION"
-    git push origin main
+    git push origin "$BRANCH"
     echo "✓ GitHub 更新完成"
 else
     echo "⚠ 未找到 Git 仓库，跳过"
@@ -34,10 +36,7 @@ echo ""
 echo "[2/2] 更新 Gitee 仓库..."
 cd "$PROJECT_DIR"
 if git remote get-url gitee &>/dev/null; then
-    git push gitee main
-    echo "✓ Gitee 更新完成"
-elif git remote get-url origin &>/dev/null && [[ "$(git remote get-url origin)" == *"gitee"* ]]; then
-    git push origin main
+    git push gitee "$BRANCH"
     echo "✓ Gitee 更新完成"
 else
     echo "⚠ 未配置 Gitee remote，跳过"
