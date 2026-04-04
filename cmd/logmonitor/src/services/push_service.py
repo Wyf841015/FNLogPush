@@ -422,11 +422,13 @@ class MeoWPushChannel(PushChannel):
             
             # 使用配置的标题或默认值
             if self.title:
+                # 自定义标题：整个消息作为内容
                 title = self.title[:50]
-                msg = lines[0] if len(lines) > 0 else content
+                msg = content
             else:
+                # 无自定义标题：第一行作为标题，其余作为内容
                 title = lines[0][:50] if lines else "日志哨兵"
-                msg = lines[1] if len(lines) > 1 else lines[0] if lines else content
+                msg = lines[1] if len(lines) > 1 else ""
             
             # 构建请求URL和参数
             url = f"{self.api_url}/{self.nickname}"
