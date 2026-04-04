@@ -190,13 +190,29 @@ def register_monitor_routes(app: Flask):
     @app.route('/api/test-webhook', methods=['POST'])
     @api_error_handler
     def test_webhook():
-        """测试Webhook"""
+        """测试推送（测试所有已启用的渠道）"""
         monitor = get_monitor()
         if not monitor:
             return jsonify({"error": "监控程序未启动"}), 500
 
         test_message = "测试消息 - 这是来自Web界面的测试推送"
         success = monitor.push_message(test_message)
+
+        # 添加到历史记录
+        from models.push_history import PushHistory
+        from datetime import datetime
+        history = PushHistory(
+            timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            content=test_message,
+            preview=test_message[:100] + '...' if len(test_message) > 100 else test_message,
+            success=success,
+            count=1,
+            last_id=0,
+            source='test',
+            channel_results=monitor.last_push_results if hasattr(monitor, 'last_push_results') else None
+        )
+        if monitor.history_service:
+            monitor.history_service.add_history(history)
 
         return jsonify({"success": success})
 

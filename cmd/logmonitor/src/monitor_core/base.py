@@ -117,6 +117,7 @@ class LogMonitor:
         self.running = False
         self.thread = None
         self.last_history_index = 0  # 用于跟踪历史记录变化
+        self.last_push_results = None  # 上次推送结果
 
         # 初始化处理器
         self.dnd_handler = DNDHandler(self.dnd_service)
@@ -220,7 +221,7 @@ class LogMonitor:
                         logger.warning("监控功能暂不可用,请检查数据库路径")
 
                 # 更新推送服务配置
-                if any(key in new_config for key in ['webhook_url', 'wecom', 'push_channels']):
+                if any(key in new_config for key in ['webhook_url', 'wecom', 'push_channels', 'meow', 'dingtalk', 'feishu', 'bark', 'pushplus']):
                     self.push_service.configure_from_config(self.config)
 
                 # 更新免打扰服务配置
@@ -617,7 +618,11 @@ class LogMonitor:
             是否推送成功
         """
         enabled_channels = self.config.get('push_channels', {})
-        return self.push_service.push_message(content, enabled_channels)
+        channel_results = self.push_service.push_message(content, enabled_channels)
+        # 保存结果供历史记录使用
+        self.last_push_results = channel_results
+        # 返回是否有至少一个渠道成功
+        return bool(channel_results) and any(channel_results.values())
     
     def get_backup_operations(self, limit: int = 10) -> List[Dict[str, Any]]:
         """

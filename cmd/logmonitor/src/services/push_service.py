@@ -387,6 +387,84 @@ class PushPlusPushChannel(PushChannel):
             return False
 
 
+class MeoWPushChannel(PushChannel):
+    """MeoW推送渠道"""
+    
+    def __init__(self, nickname: str, enabled: bool = True, title: str = "", msgtype: str = ""):
+        """
+        初始化MeoW推送渠道
+        
+        Args:
+            nickname: MeoW用户昵称
+            enabled: 是否启用
+            title: 标题模板
+            msgtype: 消息类型 (text/html/markdown)
+        """
+        self.nickname = nickname
+        self.enabled = enabled
+        self.title = title
+        self.msgtype = msgtype
+        self.api_url = "https://api.chuckfang.com"
+    
+    def push(self, content: str) -> bool:
+        """推送消息到MeoW"""
+        try:
+            if not self.enabled:
+                logger.warning("MeoW推送未启用")
+                return False
+            
+            if not self.nickname:
+                logger.warning("MeoW昵称未配置")
+                return False
+            
+            # 提取标题和内容
+            lines = content.split('\n', 1)
+            
+            # 使用配置的标题或默认值
+            if self.title:
+                title = self.title[:50]
+                msg = lines[0] if len(lines) > 0 else content
+            else:
+                title = lines[0][:50] if lines else "日志哨兵"
+                msg = lines[1] if len(lines) > 1 else lines[0] if lines else content
+            
+            # 构建请求URL和参数
+            url = f"{self.api_url}/{self.nickname}"
+            params = []
+            if self.msgtype:
+                params.append(f"msgType={self.msgtype}")
+            
+            if params:
+                url = f"{url}?{'&'.join(params)}"
+            
+            # POST JSON 方式发送
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+            payload = {
+                'title': title,
+                'msg': msg
+            }
+            
+            logger.info(f"MeoW推送请求: {url}, payload={payload}")
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            result = response.json()
+            logger.info(f"MeoW推送响应: {result}")
+            
+            if result.get('status') == 200:
+                logger.info("MeoW推送成功")
+                return True
+            else:
+                logger.error(f"MeoW推送失败: {result}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"MeoW推送时出错: {e}")
+            return False
+
+
 class PushTask:
     """推送任务类"""
     
@@ -983,6 +1061,20 @@ class PushService:
                 self.channels['pushplus'].token = token
                 self.channels['pushplus'].topic = topic
                 self.channels['pushplus'].enabled = True
+        
+        # 配置MeoW渠道
+        meow_config = config.get('meow', {})
+        if meow_config.get('enabled', False) and meow_config.get('nickname'):
+            nickname = meow_config['nickname']
+            title = meow_config.get('title', '')
+            msgtype = meow_config.get('msgtype', '')
+            if 'meow' not in self.channels:
+                self.register_channel('meow', MeoWPushChannel(nickname, True, title, msgtype))
+            else:
+                self.channels['meow'].nickname = nickname
+                self.channels['meow'].title = title
+                self.channels['meow'].msgtype = msgtype
+                self.channels['meow'].enabled = True
         
         # 更新重试参数（支持配置覆盖）
         if 'push_retry' in config:

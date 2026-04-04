@@ -830,6 +830,7 @@ function loadConfig() {
             document.getElementById('push-feishu-enabled').checked = pushChannels.feishu || false;
             document.getElementById('push-bark-enabled').checked = pushChannels.bark || false;
             document.getElementById('push-pushplus-enabled').checked = pushChannels.pushplus || false;
+            document.getElementById('push-meow-enabled').checked = pushChannels.meow || false;
 
             // 填充企业微信配置
             const wecomConfig = config.wecom || {};
@@ -854,6 +855,13 @@ function loadConfig() {
             const pushplusConfig = config.pushplus || {};
             document.getElementById('pushplus-token').value = pushplusConfig.token || '';
             document.getElementById('pushplus-topic').value = pushplusConfig.topic || '';
+
+            // 填充MeoW设置
+            const meowConfig = config.meow || {};
+            document.getElementById('push-meow-enabled').checked = meowConfig.enabled || false;
+            document.getElementById('meow-nickname').value = meowConfig.nickname || '';
+            document.getElementById('meow-title').value = meowConfig.title || '';
+            document.getElementById('meow-msgtype').value = meowConfig.msgtype || '';
 
             // 填充免打扰设置
             const dndConfig = config.do_not_disturb || {};
@@ -2137,7 +2145,8 @@ function savePushConfig() {
             dingtalk: document.getElementById('push-dingtalk-enabled').checked,
             feishu: document.getElementById('push-feishu-enabled').checked,
             bark: document.getElementById('push-bark-enabled').checked,
-            pushplus: document.getElementById('push-pushplus-enabled').checked
+            pushplus: document.getElementById('push-pushplus-enabled').checked,
+            meow: document.getElementById('push-meow-enabled').checked
         },
         wecom: {
             enabled: document.getElementById('push-wecom-enabled').checked,
@@ -2161,6 +2170,12 @@ function savePushConfig() {
             enabled: document.getElementById('push-pushplus-enabled').checked,
             token: document.getElementById('pushplus-token').value,
             topic: document.getElementById('pushplus-topic').value
+        },
+        meow: {
+            enabled: document.getElementById('push-meow-enabled').checked,
+            nickname: document.getElementById('meow-nickname').value,
+            title: document.getElementById('meow-title').value,
+            msgtype: document.getElementById('meow-msgtype').value
         },
         do_not_disturb: {
             enabled: document.getElementById('dnd-enabled').checked,

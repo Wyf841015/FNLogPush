@@ -552,6 +552,43 @@
                                 </div>
                             </div>
 
+                            <!-- MeoW推送配置 -->
+                            <div class="card mb-3 config-sub-card" id="meow-config-card">
+                                <div class="card-header py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-cat me-2 text-info"></i>MeoW 推送配置</h6>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="push-meow-enabled" style="width: 40px; height: 24px;">
+                                            <label class="form-check-label" for="push-meow-enabled"><strong>启用</strong></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label"><i class="fas fa-user me-1"></i>昵称</label>
+                                        <input type="text" class="form-control" id="meow-nickname" placeholder="你的MeoW昵称">
+                                        <small class="text-muted">MeoW 用户的昵称</small>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label"><i class="fas fa-heading me-1"></i>标题模板</label>
+                                            <input type="text" class="form-control" id="meow-title" placeholder="默认: 日志哨兵">
+                                            <small class="text-muted">推送消息的标题，留空使用默认</small>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label"><i class="fas fa-code me-1"></i>消息类型</label>
+                                            <select class="form-select" id="meow-msgtype">
+                                                <option value="">默认</option>
+                                                <option value="text">纯文本</option>
+                                                <option value="html">HTML</option>
+                                                <option value="markdown">Markdown</option>
+                                            </select>
+                                            <small class="text-muted">消息内容格式类型</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- 免打扰设置 -->
                             <div class="card mb-3 config-sub-card">
                                 <div class="card-header py-2">
