@@ -94,17 +94,23 @@ class ConfigManager:
         """
         result = {}
         for key, value in config.items():
+            # 构建完整路径
             current_path = f"{parent_path}.{key}" if parent_path else key
             
             if isinstance(value, dict):
+                # 递归处理嵌套字典
                 result[key] = self._encrypt_sensitive_fields(value, current_path)
-            elif isinstance(value, str) and value and is_sensitive_field(current_path):
-                # 跳过已经是加密的值（防止重复加密）
-                if value.startswith('__enc__') or value.startswith('__xor__'):
-                    result[key] = value
+            elif isinstance(value, str) and value:
+                # 检查是否是敏感字段（检查当前路径和完整路径）
+                field_name = key
+                if is_sensitive_field(field_name) or is_sensitive_field(current_path):
+                    # 跳过已经是加密的值
+                    if value.startswith('__enc__') or value.startswith('__xor__'):
+                        result[key] = value
+                    else:
+                        result[key] = self._crypto.encrypt(value)
                 else:
-                    # 加密敏感字段
-                    result[key] = self._crypto.encrypt(value)
+                    result[key] = value
             else:
                 result[key] = value
         return result
@@ -122,15 +128,23 @@ class ConfigManager:
         """
         result = {}
         for key, value in config.items():
+            # 构建完整路径
             current_path = f"{parent_path}.{key}" if parent_path else key
             
             if isinstance(value, dict):
+                # 递归处理嵌套字典
                 result[key] = self._decrypt_sensitive_fields(value, current_path)
             elif isinstance(value, str) and value:
+                # 检查是否是敏感字段（检查当前路径和完整路径）
+                field_name = key
+                is_sensitive = is_sensitive_field(field_name) or is_sensitive_field(current_path)
                 # 只对加密的值进行解密
-                if (is_sensitive_field(current_path) and 
-                    (value.startswith('__enc__') or value.startswith('__xor__'))):
-                    result[key] = self._crypto.decrypt(value)
+                if is_sensitive and (value.startswith('__enc__') or value.startswith('__xor__')):
+                    try:
+                        result[key] = self._crypto.decrypt(value)
+                    except Exception:
+                        # 解密失败，保留原值
+                        result[key] = value
                 else:
                     result[key] = value
             else:

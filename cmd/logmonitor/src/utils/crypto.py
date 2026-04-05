@@ -187,4 +187,5 @@ def decrypt_value(value: str) -> str:
 def is_sensitive_field(field_path: str) -> bool:
     """检查字段是否为敏感字段"""
     from utils.constants import SENSITIVE_FIELDS
-    return field_path in SENSITIVE_FIELDS
+    # 检查完整路径和字段名
+    return field_path in SENSITIVE_FIELDS or field_path.split('.')[-1] in SENSITIVE_FIELDS
