@@ -79,23 +79,76 @@ class ConfigManager:
         self.config_path = config_path
         self.validator = SchemaValidator()
         self.config = self.load_config()
-        # 暂时禁用加密功能，等待后续稳定后再启用
-        self._crypto = None
-        self._encrypt_enabled = False
+        # 启用加密功能
+        self._crypto = get_crypto_manager()
+        self._encrypt_enabled = True
+    
+    def _is_sensitive_key(self, key: str) -> bool:
+        """检查键名是否为敏感字段"""
+        from utils.constants import SENSITIVE_FIELDS
+        # 只检查键名，不检查路径
+        return key in SENSITIVE_FIELDS or key in ('webhook_url', 'secret', 'token', 'device_key', 'password')
+    
+    def _is_encrypted(self, value: str) -> bool:
+        """检查值是否已加密"""
+        return isinstance(value, str) and (value.startswith('__enc__') or value.startswith('__xor__'))
+    
+    def _encrypt_value(self, value: str) -> str:
+        """加密单个值"""
+        if not value or self._is_encrypted(value):
+            return value
+        try:
+            return self._crypto.encrypt(value)
+        except Exception as e:
+            logger.warning(f"加密失败，保留原值: {e}")
+            return value
+    
+    def _decrypt_value(self, value: str) -> str:
+        """解密单个值"""
+        if not value or not self._is_encrypted(value):
+            return value
+        try:
+            return self._crypto.decrypt(value)
+        except Exception as e:
+            logger.warning(f"解密失败，保留原值: {e}")
+            return value
+    
+    def _process_config_recursive(self, config: Dict[str, Any], encrypt: bool = True) -> Dict[str, Any]:
+        """
+        递归处理配置字典（加密或解密敏感字段）
+        
+        Args:
+            config: 配置字典
+            encrypt: True=加密, False=解密
+            
+        Returns:
+            处理后的配置
+        """
+        result = {}
+        for key, value in config.items():
+            if isinstance(value, dict):
+                # 递归处理嵌套字典
+                result[key] = self._process_config_recursive(value, encrypt)
+            elif isinstance(value, str) and value:
+                # 检查是否是敏感字段
+                if self._is_sensitive_key(key):
+                    if encrypt:
+                        result[key] = self._encrypt_value(value)
+                    else:
+                        result[key] = self._decrypt_value(value)
+                else:
+                    result[key] = value
+            else:
+                result[key] = value
+        return result
     
     def _encrypt_sensitive_fields(self, config: Dict[str, Any], parent_path: str = '') -> Dict[str, Any]:
-        """
-        递归加密敏感字段（暂时禁用）
-        """
-        # 暂时禁用加密，直接返回原配置
-        return config
+        """加密敏感字段"""
+        return self._process_config_recursive(config, encrypt=True)
     
     def _decrypt_sensitive_fields(self, config: Dict[str, Any], parent_path: str = '') -> Dict[str, Any]:
-        """
-        递归解密敏感字段（暂时禁用）
-        """
-        # 暂时禁用解密，直接返回原配置
-        return config
+        """解密敏感字段"""
+        return self._process_config_recursive(config, encrypt=False)
     
     def load_config(self) -> Dict[str, Any]:
         """
