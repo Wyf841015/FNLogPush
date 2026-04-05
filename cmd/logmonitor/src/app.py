@@ -51,8 +51,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-from flask import Flask
+from flask import Flask, session, request
 from flask_socketio import SocketIO
+import time
 
 # 初始化SocketIO
 socketio = SocketIO()
@@ -87,6 +88,41 @@ def create_app():
 
     # 初始化SocketIO
     socketio.init_app(app, cors_allowed_origins='*', async_mode='threading')
+
+    # Session 超时配置（5分钟无操作退出）
+    SESSION_TIMEOUT = 300  # 5分钟 = 300秒
+
+    @app.before_request
+    def check_session_timeout():
+        """检查 session 超时"""
+        # 跳过静态文件、登录相关的 API 和健康检查
+        skip_paths = ['/static/', '/api/auth/login', '/api/auth/check-setup', '/api/auth/check-session', 
+                      '/api/health', '/socket.io/', '/favicon.ico']
+        if any(request.path.startswith(p) for p in skip_paths):
+            return None
+        
+        if 'user' in session:
+            # 检查是否有登录时间
+            login_time = session.get('login_time')
+            last_activity = session.get('last_activity')
+            current_time = time.time()
+            
+            # 更新最后活动时间
+            session['last_activity'] = current_time
+            
+            # 检查是否超时（5分钟无操作）
+            if last_activity:
+                if current_time - last_activity > SESSION_TIMEOUT:
+                    # session 超时，清除并返回超时提示
+                    session.clear()
+                    from flask import jsonify
+                    return jsonify({'error': 'session_timeout', 'message': '登录已过期，请重新登录'}), 401
+            
+            # 如果没有登录时间或活动时间，设置初始值
+            if not login_time:
+                session['login_time'] = current_time
+            if not last_activity:
+                session['last_activity'] = current_time
 
     # 注册所有路由
     from routes import register_all_routes

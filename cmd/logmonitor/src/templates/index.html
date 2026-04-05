@@ -1238,6 +1238,9 @@
                     placement: el.dataset.bsPlacement || 'top'
                 });
             });
+
+            // 启动Session超时检查（5分钟无操作退出）
+            startSessionCheck();
         });
 
         // 赞助弹窗功能

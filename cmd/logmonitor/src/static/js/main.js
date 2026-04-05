@@ -6,23 +6,58 @@
 // 统一Fetch函数（使用 api.js 中的实现）
 // 此文件中的 apiFetch 已由 api.js 提供
 
-// ========== 定时检查session有效性 ==========
+// ========== Session 超时管理（5分钟无操作退出） ==========
 let sessionCheckInterval = null;
+let activityRefreshInterval = null;
+let lastActivityTime = Date.now();
 
+// 刷新活动时间
+async function refreshActivity() {
+    try {
+        const response = await apiFetch('/api/auth/refresh-activity', { method: 'POST' });
+        if (!response.ok) {
+            console.log('Session已过期，请重新登录');
+            window.location.reload();
+        }
+    } catch (e) {
+        console.error('刷新活动时间失败:', e);
+    }
+}
+
+// 检测用户活动
+function setupActivityDetection() {
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    
+    activityEvents.forEach(event => {
+        document.addEventListener(event, () => {
+            lastActivityTime = Date.now();
+        }, { passive: true });
+    });
+}
+
+// 启动定时检查（每分钟检查一次，5分钟无操作则退出）
 function startSessionCheck() {
     if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+    
+    // 启动活动检测
+    setupActivityDetection();
+    
+    // 每分钟检查一次无操作时间
     sessionCheckInterval = setInterval(async () => {
+        const idleTime = (Date.now() - lastActivityTime) / 1000; // 秒
+        if (idleTime > 300) { // 5分钟无操作
+            console.log('无操作超过5分钟，退出登录');
+            window.location.href = '/logout';
+            return;
+        }
+        
+        // 有操作时刷新活动时间
         try {
-            const response = await apiFetch('/api/auth/check-session');
-            const data = await response.json();
-            if (!data.logged_in) {
-                console.log('Session已过期，刷新页面');
-                window.location.reload();
-            }
+            await refreshActivity();
         } catch (e) {
             console.error('Session检查失败:', e);
         }
-    }, 5 * 60 * 1000);
+    }, 60 * 1000); // 每分钟检查
 }
 
 // 动态设置版权年份

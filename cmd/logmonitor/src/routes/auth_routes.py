@@ -6,6 +6,7 @@
 """
 from flask import Flask, request, jsonify, session
 import logging
+import time
 
 from services.auth_service import AuthService
 from utils import api_error_handler
@@ -61,6 +62,8 @@ def register_auth_routes(app: Flask):
         if success:
             # 设置永久session
             session['user'] = username
+            session['login_time'] = time.time()
+            session['last_activity'] = time.time()
             session.permanent = True
             logger.info(f"用户登录成功: {username}")
             return jsonify({'success': True, 'message': message, 'username': username})
@@ -84,6 +87,8 @@ def register_auth_routes(app: Flask):
     def check_session():
         """检查会话状态"""
         if 'user' in session:
+            # 更新活动时间
+            session['last_activity'] = time.time()
             return jsonify({
                 'logged_in': True,
                 'username': session['user']
@@ -92,6 +97,15 @@ def register_auth_routes(app: Flask):
             'logged_in': False,
             'username': None
         })
+
+    @app.route('/api/auth/refresh-activity', methods=['POST'])
+    @api_error_handler
+    def refresh_activity():
+        """刷新活动时间（用于前端保持登录状态）"""
+        if 'user' in session:
+            session['last_activity'] = time.time()
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': '未登录'}), 401
 
     @app.route('/api/auth/change-password', methods=['POST'])
     @login_required
