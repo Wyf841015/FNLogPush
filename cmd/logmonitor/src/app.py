@@ -99,7 +99,7 @@ def create_app():
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SECURE'] = False  # 允许 HTTP
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 允许正常导航
-    app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7  # 7天
+    app.config['PERMANENT_SESSION_LIFETIME'] = TimeConstants.SESSION_LIFETIME
     app.config['SESSION_REFRESH_EACH_REQUEST'] = True  # 每次请求刷新session过期时间
     
     app.config['JSON_AS_ASCII'] = False
@@ -109,7 +109,8 @@ def create_app():
     socketio.init_app(app, cors_allowed_origins='*', async_mode='threading')
 
     # Session 超时配置（5分钟无操作退出）
-    SESSION_TIMEOUT = 300  # 5分钟 = 300秒
+    from utils.constants import TimeConstants
+    SESSION_TIMEOUT = TimeConstants.SESSION_TIMEOUT
 
     @app.before_request
     def check_session_timeout():

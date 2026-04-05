@@ -10,7 +10,8 @@ from typing import Dict, Any, Optional, Tuple, List
 from pathlib import Path
 
 from .schema import SchemaValidator
-from utils.crypto import encrypt_value, decrypt_value, is_sensitive_field, get_crypto_manager
+from utils.crypto import encrypt_value, decrypt_value, get_crypto_manager
+from utils.constants import SENSITIVE_FIELDS
 
 logger = logging.getLogger(__name__)
 

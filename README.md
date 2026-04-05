@@ -3,7 +3,7 @@
 > 自动监控飞牛NAS系统日志和备份进度，实时推送至多种渠道
 
 [![Platform](https://img.shields.io/badge/platform-FNOS-blue)](https://www.fnnas.com/)
-[![Version](https://img.shields.io/badge/version-0.7.4-green)](https://gitee.com/wyf1015/FNLogPush)
+[![Version](https://img.shields.io/badge/version-0.7.5-green)](https://gitee.com/wyf1015/FNLogPush)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 ## 功能特性
@@ -103,6 +103,12 @@ FNLogPush/
 - 数据存储在应用目录内
 
 ## 更新日志
+
+### v0.7.5 (2026-04-05)
+- 🛠️ **代码质量优化** - 提取公共函数，减少重复代码
+- 🛠️ **代码质量优化** - 新增 constants.py 常量模块
+- 🛠️ **代码质量优化** - 状态值使用常量替代硬编码字符串
+- 🛠️ **代码质量优化** - Session/重试间隔等数值使用常量管理
 
 ### v0.7.4 (2026-04-05)
 - 🔒 **安全加固：移除硬编码 Secret Key** - 使用环境变量或配置文件固定密钥

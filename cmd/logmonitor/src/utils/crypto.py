@@ -184,20 +184,7 @@ def decrypt_value(value: str) -> str:
     return get_crypto_manager().decrypt(value)
 
 
-# 敏感字段列表（这些字段的值需要加密存储）
-SENSITIVE_FIELDS = [
-    'webhook_url',
-    'wecom.webhook_url',
-    'wecom.secret',
-    'dingtalk.webhook_url',
-    'dingtalk.secret',
-    'feishu.webhook_url',
-    'bark.device_key',
-    'pushplus.token',
-    'meow.token',
-]
-
-
 def is_sensitive_field(field_path: str) -> bool:
     """检查字段是否为敏感字段"""
+    from utils.constants import SENSITIVE_FIELDS
     return field_path in SENSITIVE_FIELDS

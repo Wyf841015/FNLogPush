@@ -3,6 +3,26 @@
 // websocket.js - WebSocket 管理模块
 // components.js - UI 组件模块
 
+// ========== 常量定义 ==========
+const CONSTANTS = {
+    // 状态常量
+    DB_STATUS: {
+        CONNECTED: CONSTANTS.DB_STATUS.CONNECTED,
+        FAILED: '连接失败',
+        DISCONNECTED: CONSTANTS.DB_STATUS.DISCONNECTED
+    },
+    // 刷新间隔（毫秒）
+    REFRESH_INTERVAL: {
+        HEALTH: 15000,      // 健康状态
+        AUTO: 30000,        // 自动刷新
+        SESSION: 60000      // Session检查
+    },
+    // Session 超时（秒）
+    SESSION_TIMEOUT: 300,   // 5分钟
+    // 通知持续时间（毫秒）
+    NOTIFICATION_DURATION: 5000
+};
+
 // 统一Fetch函数（使用 api.js 中的实现）
 // 此文件中的 apiFetch 已由 api.js 提供
 
@@ -367,7 +387,7 @@ function startHealthUpdate() {
         if (!wsManager || !wsManager.connected) {
             updateHealthStatus();
         }
-    }, 15000); // 每15秒轮询一次作为备用
+    }, CONSTANTS.REFRESH_INTERVAL.HEALTH); // 健康状态轮询备用作为备用
     
     NotificationManager.info('实时更新', '已开始实时更新系统状态（WebSocket推送）');
 }
@@ -625,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(() => {
         loadStatus();
         checkDatabase(); // 定期刷新数据库面板
-    }, 15000);
+    }, CONSTANTS.REFRESH_INTERVAL.HEALTH);
 
     // 监听推送历史 Tab 切换，自动加载数据
     const historyTabEl = document.getElementById('history-tab');
@@ -699,12 +719,12 @@ function loadStatus() {
 
             // 更新数据库状态指示器
             const dbStatusIndicator = document.getElementById('db-status-indicator');
-            const connectionStatus = data.db_connection_status || '未连接';
+            const connectionStatus = data.db_connection_status || CONSTANTS.DB_STATUS.DISCONNECTED;
 
             // 根据连接状态设置样式和文字
-            if (connectionStatus === '已连接') {
+            if (connectionStatus === CONSTANTS.DB_STATUS.CONNECTED) {
                 dbStatusIndicator.className = 'badge badge-online';
-            } else if (connectionStatus === '连接失败') {
+            } else if (connectionStatus === CONSTANTS.DB_STATUS.FAILED) {
                 dbStatusIndicator.className = 'badge badge-offline';
             } else {
                 dbStatusIndicator.className = 'badge bg-secondary';
@@ -714,7 +734,7 @@ function loadStatus() {
 
             // 更新备份数据库状态指示器（实时检查）
             const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
-            const backupDbStatus = backupData.db_available ? '已连接' : '未连接';
+            const backupDbStatus = backupData.db_available ? CONSTANTS.DB_STATUS.CONNECTED : CONSTANTS.DB_STATUS.DISCONNECTED;
 
             if (backupData.db_available) {
                 backupDbStatusIndicator.className = 'badge badge-online';
@@ -741,7 +761,7 @@ function loadStatus() {
             }
 
             // 如果连接状态是"连接失败",记录警告并显示通知
-            if (connectionStatus === '连接失败') {
+            if (connectionStatus === CONSTANTS.DB_STATUS.FAILED) {
                 console.warn('数据库连接失败,请检查数据库配置');
                 NotificationManager.warning('数据库连接失败', '请检查数据库配置和路径');
             }
@@ -783,7 +803,7 @@ function loadBackupDbStatus() {
         .then(r => r.json())
         .then(data => {
             const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
-            const backupDbStatus = data.db_available ? '已连接' : '未连接';
+            const backupDbStatus = data.db_available ? CONSTANTS.DB_STATUS.CONNECTED : CONSTANTS.DB_STATUS.DISCONNECTED;
 
             if (data.db_available) {
                 backupDbStatusIndicator.className = 'badge badge-online';
@@ -812,7 +832,7 @@ function loadBackupDbStatus() {
         .catch(error => {
             const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
             backupDbStatusIndicator.className = 'badge badge-offline';
-            backupDbStatusIndicator.textContent = '未连接';
+            backupDbStatusIndicator.textContent = CONSTANTS.DB_STATUS.DISCONNECTED;
             backupDbStatusIndicator.setAttribute('aria-label', '备份数据库：未连接');
         });
 }
