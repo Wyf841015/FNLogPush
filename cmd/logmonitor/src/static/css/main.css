@@ -94,6 +94,88 @@
     /* ---- 空状态 ---- */
     --empty-icon-size: 2.5rem;
     --empty-text-color: #9ca3af;
+
+    /* ---- 字体系统 (P0优化) ---- */
+    --font-display: 'Noto Serif SC', 'Source Han Serif CN', serif;           /* 标题/Logo - 优雅古典 */
+    --font-heading: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;  /* 卡片标题 */
+    --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;     /* 正文 */
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;       /* 代码/状态 */
+
+    /* 字体应用 */
+    --font-family-base: var(--font-body);
+    --font-family-heading: var(--font-heading);
+}
+
+/* 字体系统应用 */
+h1, h2, h3, h4, h5, h6,
+.card-title, .card-header h5,
+.header-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+}
+
+/* 代码/状态使用等宽字体 */
+code, kbd, pre, .badge, .status-value,
+#db-status-indicator, #backup-db-status-indicator,
+#monitor-status-indicator, #push-status-indicator {
+    font-family: var(--font-mono);
+}
+
+/* Logo/品牌使用 display 字体 */
+.header-title, .login-header h1 {
+    font-family: var(--font-display);
+}
+
+/* ---- 背景装饰光晕 (P0优化) ---- */
+.bg-glow {
+    position: fixed;
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.3;
+}
+
+.bg-glow-1 {
+    top: -200px;
+    right: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #667eea 0%, transparent 70%);
+    animation: float-glow 20s ease-in-out infinite;
+}
+
+.bg-glow-2 {
+    bottom: -150px;
+    left: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, #764ba2 0%, transparent 70%);
+    animation: float-glow 25s ease-in-out infinite reverse;
+}
+
+@keyframes float-glow {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(20px, -20px) scale(1.05); }
+    50% { transform: translate(0, -30px) scale(1.1); }
+    75% { transform: translate(-20px, -10px) scale(1.05); }
+}
+
+/* 深色主题背景光晕 */
+body.theme-dark .bg-glow-1,
+body.theme-ocean .bg-glow-1 {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+}
+
+body.theme-dark .bg-glow-2,
+body.theme-ocean .bg-glow-2 {
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+}
+
+/* 浅色主题降低光晕 */
+body.theme-green .bg-glow,
+body.theme-sunset .bg-glow {
+    opacity: 0.15;
 }
 
 /* ========== 移动端底部导航栏 ========== */
@@ -4148,14 +4230,48 @@ a:focus-visible {
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* ---- 卡片悬浮动效 ---- */
+/* ---- 卡片悬浮动效增强 (P0优化) ---- */
 .card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.3s ease;
 }
 
 .card:not(.no-hover):hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* 卡片悬浮时边框发光 */
+.card:not(.no-hover):hover {
+    border-color: rgba(102, 126, 234, 0.4);
+}
+
+/* 悬浮时卡片内元素微动 */
+.card:not(.no-hover):hover .card-body {
+    transform: translateY(-2px);
+    transition: transform 0.3s ease;
+}
+
+/* 卡片图标悬浮放大 */
+.card:not(.no-hover):hover .card-header i,
+.card:not(.no-hover):hover .icon-text i {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+.card-header i, .icon-text i {
+    transition: transform 0.3s ease;
+}
+
+/* 配置子卡片悬浮效果 */
+.config-sub-card {
+    transition: all 0.25s ease;
+}
+
+.config-sub-card:hover {
+    background: rgba(102, 126, 234, 0.05);
+    border-color: rgba(102, 126, 234, 0.3);
 }
 
 /* ---- 状态指示器脉冲发光 ---- */
