@@ -214,63 +214,107 @@
             </div>
         </div>
 
-        <!-- 浮动按钮式导航菜单（桌面端默认展开） -->
-        <div class="fab-menu active" id="fabMenu">
-            <!-- 展开/收起主按钮 -->
-            <button class="fab-btn fab-main" onclick="toggleFabMenu()" title="收起菜单">
-                <i class="fas fa-bars"></i>
+        <!-- 移动端菜单切换按钮 -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <!-- 移动端遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- 现代侧边栏导航 -->
+        <div class="sidebar-container" id="sidebarContainer">
+            <!-- 收缩按钮 -->
+            <button class="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="收缩/展开侧边栏">
+                <i class="fas fa-chevron-left"></i>
             </button>
-            <!-- 隐藏的菜单按钮列表 -->
-            <div class="fab-items" id="fabItems">
-                <button class="fab-btn fab-btn-home active" data-target="status" data-label="系统状态" onclick="switchFabPanel(this, 'status')" title="系统状态">
-                    <i class="fas fa-tachometer-alt"></i>
-                </button>
-                <button class="fab-btn fab-btn-db" data-target="dbstatus" data-label="数据库" onclick="switchFabPanel(this, 'dbstatus')" title="数据库状态">
-                    <i class="fas fa-database"></i>
-                </button>
-                <button class="fab-btn fab-btn-monitor" data-target="basic" data-label="日志" onclick="switchFabPanel(this, 'basic')" title="日志监控">
-                    <i class="fas fa-sliders"></i>
-                </button>
-                <button class="fab-btn fab-btn-backup" data-target="backup" data-label="备份" onclick="switchFabPanel(this, 'backup')" title="备份监控">
-                    <i class="fas fa-hdd"></i>
-                </button>
-                <button class="fab-btn fab-btn-push" data-target="push" data-label="推送" onclick="switchFabPanel(this, 'push')" title="推送配置">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-                <button class="fab-btn fab-btn-theme" data-target="theme" data-label="主题" onclick="switchFabPanel(this, 'theme')" title="主题设置">
-                    <i class="fas fa-palette"></i>
-                </button>
-                <button class="fab-btn fab-btn-history" data-target="history" data-label="历史" onclick="switchFabPanel(this, 'history')" title="推送历史">
-                    <i class="fas fa-history"></i>
-                </button>
-               <button class="fab-btn fab-btn-health" data-target="health" onclick="switchFabPanel(this, 'health')" title="系统健康">
-                    <i class="fas fa-heartbeat"></i>
-                </button>
-                <button class="fab-btn fab-btn-user" data-label="用户" onclick="showUserMenu()" title="用户管理">
-                    <i class="fas fa-user"></i>
-                </button>
+            
+            <div class="sidebar">
+                <!-- Logo区域 -->
+                <div class="sidebar-header">
+                    <div class="sidebar-logo">
+                        <div class="sidebar-logo-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div>
+                            <div class="sidebar-logo-text">日志哨兵</div>
+                        </div>
+                    </div>
+                    <div class="sidebar-subtitle">FNOS Log Monitor</div>
+                </div>
 
+                <!-- 导航菜单 -->
+                <nav class="sidebar-nav">
+                    <div class="nav-group">
+                        <div class="nav-group-title">监控</div>
+                        <a class="nav-item active" data-target="status" data-label="系统状态" onclick="switchNavPanel(this, 'status')">
+                            <div class="nav-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            <span class="nav-text">系统状态</span>
+                        </a>
+                        <a class="nav-item" data-target="dbstatus" data-label="数据库" onclick="switchNavPanel(this, 'dbstatus')">
+                            <div class="nav-icon"><i class="fas fa-database"></i></div>
+                            <span class="nav-text">数据库</span>
+                        </a>
+                        <a class="nav-item" data-target="health" data-label="健康检查" onclick="switchNavPanel(this, 'health')">
+                            <div class="nav-icon"><i class="fas fa-heartbeat"></i></div>
+                            <span class="nav-text">健康检查</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-group">
+                        <div class="nav-group-title">配置</div>
+                        <a class="nav-item" data-target="basic" data-label="日志监控" onclick="switchNavPanel(this, 'basic')">
+                            <div class="nav-icon"><i class="fas fa-sliders-h"></i></div>
+                            <span class="nav-text">日志监控</span>
+                        </a>
+                        <a class="nav-item" data-target="backup" data-label="备份监控" onclick="switchNavPanel(this, 'backup')">
+                            <div class="nav-icon"><i class="fas fa-hdd"></i></div>
+                            <span class="nav-text">备份监控</span>
+                        </a>
+                        <a class="nav-item" data-target="push" data-label="推送配置" onclick="switchNavPanel(this, 'push')">
+                            <div class="nav-icon"><i class="fas fa-paper-plane"></i></div>
+                            <span class="nav-text">推送配置</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-group">
+                        <div class="nav-group-title">系统</div>
+                        <a class="nav-item" data-target="theme" data-label="主题设置" onclick="switchNavPanel(this, 'theme')">
+                            <div class="nav-icon"><i class="fas fa-palette"></i></div>
+                            <span class="nav-text">主题设置</span>
+                        </a>
+                        <a class="nav-item" data-target="history" data-label="推送历史" onclick="switchNavPanel(this, 'history')">
+                            <div class="nav-icon"><i class="fas fa-history"></i></div>
+                            <span class="nav-text">推送历史</span>
+                        </a>
+                    </div>
+                </nav>
+
+                <!-- 底部用户区域 -->
+                <div class="sidebar-footer">
+                    <div class="user-info" onclick="showUserMenu()">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name" id="sidebar-username">用户</div>
+                            <div class="user-role">已登录</div>
+                        </div>
+                        <div class="user-actions">
+                            <button class="user-action-btn" onclick="event.stopPropagation(); showChangePasswordModal();" title="修改密码">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button class="user-action-btn" onclick="event.stopPropagation(); logout();" title="退出登录">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 用户菜单弹窗 -->
-        <div class="user-menu-popup" id="userMenuPopup">
-            <div class="user-menu-header">
-                <i class="fas fa-user-circle"></i>
-                <span id="popup-username">用户</span>
-            </div>
-            <div class="user-menu-items">
-                <a href="#" onclick="showChangePasswordModal(); hideUserMenu();">
-                    <i class="fas fa-key"></i>修改密码
-                </a>
-                <a href="#" onclick="switchFabPanel(document.querySelector('.fab-btn[data-target=theme]'),'theme'); hideUserMenu();">
-                    <i class="fas fa-palette"></i>主题设置
-                </a>
-                <a href="#" onclick="logout();">
-                    <i class="fas fa-sign-out-alt"></i>退出登录
-                </a>
-            </div>
-        </div>
+        <!-- 主内容区域包装 -->
+        <div class="main-wrapper" id="mainWrapper">
 
         <!-- 右侧内容区域 -->
         <div class="config-content" id="configContent">
@@ -1120,39 +1164,33 @@
     <nav class="mobile-nav">
         <ul class="mobile-nav-items">
             <li class="mobile-nav-item">
-                <button class="mobile-nav-btn active" data-target="status" onclick="switchFabPanel(this, 'status')">
+                <button class="mobile-nav-btn active" data-target="status" onclick="switchNavPanel(this, 'status')">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>状态</span>
                 </button>
             </li>
             <li class="mobile-nav-item">
-                <button class="mobile-nav-btn" data-target="basic" onclick="switchFabPanel(this, 'basic')">
+                <button class="mobile-nav-btn" data-target="basic" onclick="switchNavPanel(this, 'basic')">
                     <i class="fas fa-sliders-h"></i>
                     <span>日志</span>
                 </button>
             </li>
             <li class="mobile-nav-item">
-                <button class="mobile-nav-btn" data-target="backup" onclick="switchFabPanel(this, 'backup')">
+                <button class="mobile-nav-btn" data-target="backup" onclick="switchNavPanel(this, 'backup')">
                     <i class="fas fa-hdd"></i>
                     <span>备份</span>
                 </button>
             </li>
             <li class="mobile-nav-item">
-                <button class="mobile-nav-btn" data-target="push" onclick="switchFabPanel(this, 'push')">
+                <button class="mobile-nav-btn" data-target="push" onclick="switchNavPanel(this, 'push')">
                     <i class="fas fa-paper-plane"></i>
                     <span>推送</span>
                 </button>
             </li>
             <li class="mobile-nav-item">
-                <button class="mobile-nav-btn" data-target="history" onclick="switchFabPanel(this, 'history')">
+                <button class="mobile-nav-btn" data-target="history" onclick="switchNavPanel(this, 'history')">
                     <i class="fas fa-history"></i>
                     <span>历史</span>
-                </button>
-            </li>
-            <li class="mobile-nav-item">
-                <button class="mobile-nav-btn" data-target="health" onclick="switchFabPanel(this, 'health')">
-                    <i class="fas fa-heartbeat"></i>
-                    <span>健康</span>
                 </button>
             </li>
         </ul>
@@ -1160,24 +1198,7 @@
 
     <script>
         // 移动端底部导航栏点击事件
-        document.querySelectorAll('.mobile-nav-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                // 更新底部导航 active 状态
-                document.querySelectorAll('.mobile-nav-btn').forEach(function(b) {
-                    b.classList.remove('active');
-                });
-                this.classList.add('active');
-
-                // 同时更新浮动菜单的 active 状态
-                var target = this.getAttribute('data-target');
-                document.querySelectorAll('.fab-btn').forEach(function(b) {
-                    b.classList.remove('active');
-                    if (b.getAttribute('data-target') === target) {
-                        b.classList.add('active');
-                    }
-                });
-            });
-        });
+        // 使用 onclick 已足够，无需额外事件监听器
 
         // 刷新所有数据
         function refreshAllData() {

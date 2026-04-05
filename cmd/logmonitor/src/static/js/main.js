@@ -23,6 +23,86 @@ const CONSTANTS = {
     NOTIFICATION_DURATION: 5000
 };
 
+// ========== 现代侧边栏导航 ==========
+let sidebarOpen = false;
+let sidebarCollapsed = false;
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebarContainer');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('mobileMenuToggle');
+    
+    sidebarOpen = !sidebarOpen;
+    
+    if (sidebarOpen) {
+        sidebar.classList.add('mobile-open');
+        overlay.classList.add('active');
+        toggle.innerHTML = '<i class="fas fa-times"></i>';
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+        toggle.innerHTML = '<i class="fas fa-bars"></i>';
+        document.body.style.overflow = '';
+    }
+}
+
+function closeSidebar() {
+    if (sidebarOpen) {
+        toggleSidebar();
+    }
+}
+
+// 侧边栏收缩/展开
+function toggleSidebarCollapse() {
+    const sidebar = document.getElementById('sidebarContainer');
+    const mainWrapper = document.getElementById('mainWrapper');
+    
+    sidebarCollapsed = !sidebarCollapsed;
+    
+    if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        if (mainWrapper) mainWrapper.classList.add('sidebar-collapsed');
+    } else {
+        sidebar.classList.remove('collapsed');
+        if (mainWrapper) mainWrapper.classList.remove('sidebar-collapsed');
+    }
+}
+
+// 侧边栏菜单切换（移动端点击后自动关闭）
+function switchNavPanel(element, target) {
+    // 关闭侧边栏（移动端）
+    closeSidebar();
+    
+    // 查找对应的浮动按钮并触发
+    const fabBtn = document.querySelector(`.fab-btn[data-target="${target}"]`);
+    if (fabBtn) {
+        switchFabPanel(fabBtn, target);
+    } else {
+        // 如果没有浮动按钮，直接切换面板
+        switchFabPanel(element, target);
+    }
+}
+
+// 同步侧边栏和浮动菜单的激活状态
+function syncNavActive(target) {
+    // 同步侧边栏
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.target === target) {
+            item.classList.add('active');
+        }
+    });
+    
+    // 同步浮动按钮（如果可见）
+    document.querySelectorAll('.fab-btn[data-target]').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.target === target) {
+            btn.classList.add('active');
+        }
+    });
+}
+
 // 统一Fetch函数（使用 api.js 中的实现）
 // 此文件中的 apiFetch 已由 api.js 提供
 
@@ -2035,11 +2115,14 @@ function switchFabPanel(element, target) {
     // 停止健康检查的实时更新（如果正在运行）
     stopHealthUpdate();
 
-    // 更新按钮激活状态
+    // 更新浮动按钮激活状态
     document.querySelectorAll('.fab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     element.classList.add('active');
+    
+    // 同步侧边栏导航激活状态
+    syncNavActive(target);
 
     // 更新面板显示
     document.querySelectorAll('.config-panel').forEach(panel => {
@@ -2063,10 +2146,7 @@ function switchFabPanel(element, target) {
     }
 }
 
-// 保留旧函数兼容性
-function toggleSidebar() {
-    toggleFabMenu();
-}
+// 保留旧函数兼容性 - 已迁移到现代侧边栏，旧toggleFabMenu不再使用
 
 function switchConfigPanel(element, target) {
     const targetBtn = document.querySelector(`.fab-btn[data-target="${target}"]`);

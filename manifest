@@ -1,5 +1,5 @@
 appname               = fnlogpush
-version               = 0.7.5
+version               = 0.7.6
 display_name          = 日志哨兵
 desc                  = 飞牛NAS日志监控与多渠道推送工具，支持WebSocket实时推送健康状态，实时监控系统日志和备份进度，支持企业微信、钉钉、飞书、Bark、PushPlus、MeoW等推送渠道
 platform              = all
