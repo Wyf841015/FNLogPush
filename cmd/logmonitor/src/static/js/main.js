@@ -1714,17 +1714,6 @@ function checkDatabaseFull() {
     .then(([dbData, connData, backupStatusData, backupData]) => {
         let html = '';
 
-        // 更新系统状态中的备份数据库状态（使用backup-status接口，更快响应）
-        const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
-        const backupDbStatus = backupStatusData.db_available ? '已连接' : '未连接';
-        if (backupStatusData.db_available) {
-            backupDbStatusIndicator.className = 'badge badge-online';
-        } else {
-            backupDbStatusIndicator.className = 'badge badge-offline';
-        }
-        backupDbStatusIndicator.textContent = backupDbStatus;
-        backupDbStatusIndicator.setAttribute('aria-label', '备份数据库：' + backupDbStatus);
-
         // 更新最后备份时间
         const lastBackupTimeEl = document.getElementById('last-backup-time');
         if (lastBackupTimeEl) {
@@ -1798,7 +1787,6 @@ function checkDatabaseFull() {
                 <i class="fas fa-times-circle me-2"></i>检查失败: ${error.message}
             </div>
         `;
-        showNotification('数据库检查失败', 'danger');
     });
 }
 
