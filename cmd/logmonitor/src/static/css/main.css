@@ -126,6 +126,73 @@ code, kbd, pre, .badge, .status-value,
     font-family: var(--font-display);
 }
 
+/* ---- 滚动条美化 (P3优化) ---- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Firefox 滚动条 */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) rgba(255,255,255,0.05);
+}
+
+/* 深色主题滚动条 */
+body.theme-dark,
+body.theme-ocean {
+    ::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.15);
+    }
+}
+
+/* 浅色主题滚动条 */
+body.theme-green,
+body.theme-sunset {
+    ::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.15);
+    }
+}
+
+/* ---- 输入框增强 (P3优化) ---- */
+.form-control {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-control::placeholder {
+    transition: opacity 0.2s ease;
+}
+
+.form-control:focus::placeholder {
+    opacity: 0.5;
+}
+
+/* 输入框悬浮效果 */
+.form-control:hover:not(:focus) {
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
 /* ---- 背景装饰光晕 (P0优化) ---- */
 .bg-glow {
     position: fixed;

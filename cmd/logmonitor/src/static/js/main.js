@@ -556,8 +556,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // 页面加载时初始化
     console.log('开始执行初始化...');
     
-    // 隐藏页面加载进度条
+    // 获取页面加载进度条和骨架屏
     const pageLoader = document.getElementById('pageLoader');
+    const skeletonLoader = document.getElementById('skeleton-loader');
+    const realContent = document.getElementById('real-content');
+    
+    // 显示骨架屏，隐藏真实内容
+    if (skeletonLoader && realContent) {
+        skeletonLoader.style.display = 'block';
+        realContent.style.display = 'none';
+    }
     
     // 统一初始化：同时获取所有状态
     Promise.all([
@@ -566,18 +574,27 @@ document.addEventListener('DOMContentLoaded', function() {
         checkDatabase() // 包含日志数据库、备份数据库状态的统一获取
     ]).then(() => {
         loadHistory();
-        // 数据加载完成后隐藏进度条
-        if (pageLoader) {
-            pageLoader.style.opacity = '0';
-            setTimeout(() => pageLoader.remove(), 300);
-        }
+        // 数据加载完成后完成过渡
+        finishLoading();
     }).catch(() => {
-        // 出错也要隐藏进度条
+        // 出错也要完成过渡
+        finishLoading();
+    });
+    
+    // 加载完成过渡函数
+    function finishLoading() {
+        // 隐藏进度条
         if (pageLoader) {
             pageLoader.style.opacity = '0';
             setTimeout(() => pageLoader.remove(), 300);
         }
-    });
+        
+        // 切换骨架屏到真实内容
+        if (skeletonLoader && realContent) {
+            skeletonLoader.style.display = 'none';
+            realContent.style.display = 'block';
+        }
+    }
     
     // 每15秒更新状态（loadStatus内部已包含备份状态获取）
     setInterval(() => {

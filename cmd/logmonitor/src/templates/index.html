@@ -60,6 +60,48 @@
     </div>
 
     <div class="container">
+        <!-- 骨架屏加载状态 (默认隐藏) -->
+        <div id="skeleton-loader" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card page-card" style="opacity: 1;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="skeleton skeleton-box" style="width: 50px; height: 50px; border-radius: 10px;"></div>
+                                <div class="flex-grow-1">
+                                    <div class="skeleton skeleton-title" style="width: 200px;"></div>
+                                    <div class="skeleton skeleton-text" style="width: 120px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card page-card" style="opacity: 1;">
+                        <div class="card-body">
+                            <div class="skeleton skeleton-title" style="width: 80%;"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                            <div class="skeleton skeleton-text" style="width: 75%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card page-card" style="opacity: 1;">
+                        <div class="card-body">
+                            <div class="skeleton skeleton-title" style="width: 70%;"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text" style="width: 65%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 真实内容 -->
+        <div id="real-content">
         <!-- 标题 + KPI Dashboard Header -->
         <div class="row mb-4">
             <div class="col-12">
@@ -1295,6 +1337,7 @@
                 </div>
             </div>
         </div>
+        </div><!-- 关闭 real-content -->
     </div>
 
     <!-- 图片放大预览模态框 -->
