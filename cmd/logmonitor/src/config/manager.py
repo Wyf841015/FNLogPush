@@ -87,7 +87,9 @@ class ConfigManager:
         """检查键名是否为敏感字段"""
         from utils.constants import SENSITIVE_FIELDS
         # 只检查键名，不检查路径
-        return key in SENSITIVE_FIELDS or key in ('webhook_url', 'secret', 'token', 'device_key', 'password')
+        return key in SENSITIVE_FIELDS or key in (
+            'webhook_url', 'secret', 'token', 'device_key', 'password', 'password_hash', 'username'
+        )
     
     def _is_encrypted(self, value: str) -> bool:
         """检查值是否已加密"""

@@ -69,15 +69,33 @@ class AuthService:
     # ----------------------------------------------------------------------- #
 
     def _load_config(self) -> Dict:
-        """加载配置文件"""
+        """加载配置文件（处理加密）"""
         try:
             if os.path.exists(self.config_path):
                 with open(self.config_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    config = json.load(f)
+                # 解密 auth 部分（如果被加密）
+                return self._decrypt_auth(config)
             return {}
         except Exception as e:
             logger.error(f"加载配置文件失败: {e}")
             return {}
+
+    def _decrypt_auth(self, config: Dict) -> Dict:
+        """解密配置中的 auth 部分"""
+        if 'auth' in config and isinstance(config['auth'], dict):
+            auth = config['auth']
+            for key in ('username', 'password_hash'):
+                if key in auth and isinstance(auth[key], str):
+                    # 检查是否加密（ConfigManager 会加密这些字段）
+                    if auth[key].startswith('__enc__') or auth[key].startswith('__xor__'):
+                        try:
+                            from utils.crypto import decrypt_value
+                            auth[key] = decrypt_value(auth[key])
+                            logger.info(f"已解密 auth.{key}")
+                        except Exception as e:
+                            logger.warning(f"解密 auth.{key} 失败: {e}")
+        return config
 
     def _save_config(self) -> bool:
         """保存配置文件"""
