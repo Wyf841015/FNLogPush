@@ -237,6 +237,36 @@ def main():
 
     logger.info(f"✓ Web服务地址: http://{host}:{port}")
     logger.info("✓ WebSocket支持已启用")
+    
+    # 启动健康状态推送线程（WebSocket推送替代轮询）
+    import threading
+    
+    def health_push_loop():
+        """后台线程：定期推送健康状态到WebSocket"""
+        import time
+        from routes.api_routes import get_health_data
+        from websocket_manager import get_websocket_manager
+        
+        ws_manager = get_websocket_manager()
+        push_interval = 15  # 每15秒推送一次
+        
+        while True:
+            try:
+                time.sleep(push_interval)
+                
+                # 获取健康数据
+                health_data = get_health_data()
+                
+                # 通过WebSocket推送
+                ws_manager.broadcast_health_status(health_data)
+                
+            except Exception as e:
+                logger.error(f"健康状态推送失败: {e}")
+    
+    health_thread = threading.Thread(target=health_push_loop, daemon=True)
+    health_thread.start()
+    logger.info("✓ 健康状态WebSocket推送已启动（每15秒）")
+    
     logger.info("=" * 50)
 
     socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)

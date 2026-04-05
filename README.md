@@ -3,7 +3,7 @@
 > 自动监控飞牛NAS系统日志和备份进度，实时推送至多种渠道
 
 [![Platform](https://img.shields.io/badge/platform-FNOS-blue)](https://www.fnnas.com/)
-[![Version](https://img.shields.io/badge/version-0.7.2-green)](https://gitee.com/wyf1015/FNLogPush)
+[![Version](https://img.shields.io/badge/version-0.8.0-green)](https://gitee.com/wyf1015/FNLogPush)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 ## 功能特性
@@ -105,6 +105,8 @@ FNLogPush/
 ## 更新日志
 
 ### v0.8.0 (2026-04-05)
+- ⚡ **性能优化：WebSocket推送健康状态** - 替代轮询，实时推送系统状态，降低服务器负载
+- 🎨 **界面全面升级**：字体系统、动画效果、状态指示器
 - 🎨 **界面全面升级**：字体系统、动画效果、状态指示器
 - 📊 添加页面加载进度条 + 骨架屏加载
 - 🎬 卡片入场动画 (fadeInUp + stagger)

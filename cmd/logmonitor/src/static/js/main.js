@@ -299,54 +299,77 @@ function loadHealthStatus() {
         });
 }
 
-// 实时更新健康状态
+// ========== 健康状态更新（WebSocket推送 + 备用轮询） ==========
+
+// 更新健康状态UI（供轮询和WebSocket共用）
+function updateHealthStatusData(data) {
+    if (data.status === 'healthy') {
+        // 更新CPU使用率
+        if (data.cpu) {
+            const cpuUsageElement = document.getElementById('cpu-usage');
+            if (cpuUsageElement) {
+                cpuUsageElement.textContent = data.cpu.cpu_percent;
+            }
+        }
+        
+        // 更新内存使用率
+        if (data.memory) {
+            const memoryUsageElement = document.getElementById('memory-usage');
+            const memoryPercentElement = document.getElementById('memory-percent');
+            if (memoryUsageElement && memoryPercentElement) {
+                const usedMem = (data.memory.used / 1024 / 1024 / 1024).toFixed(2);
+                memoryUsageElement.textContent = usedMem;
+                memoryPercentElement.textContent = data.memory.percent;
+            }
+        }
+        
+        // 更新进程使用率
+        if (data.process) {
+            const processMemoryElement = document.getElementById('process-memory');
+            const processCpuElement = document.getElementById('process-cpu');
+            if (processMemoryElement && processCpuElement) {
+                processMemoryElement.textContent = data.process.memory_percent.toFixed(2);
+                processCpuElement.textContent = data.process.cpu_percent.toFixed(2);
+            }
+        }
+    }
+}
+
+// HTTP轮询更新健康状态（备用方案）
 function updateHealthStatus() {
     apiFetch('/api/health')
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'healthy') {
-                // 更新CPU使用率
-                if (data.cpu) {
-                    const cpuUsageElement = document.getElementById('cpu-usage');
-                    if (cpuUsageElement) {
-                        cpuUsageElement.textContent = data.cpu.cpu_percent;
-                    }
-                }
-                
-                // 更新内存使用率
-                if (data.memory) {
-                    const memoryUsageElement = document.getElementById('memory-usage');
-                    const memoryPercentElement = document.getElementById('memory-percent');
-                    if (memoryUsageElement && memoryPercentElement) {
-                        const usedMem = (data.memory.used / 1024 / 1024 / 1024).toFixed(2);
-                        memoryUsageElement.textContent = usedMem;
-                        memoryPercentElement.textContent = data.memory.percent;
-                    }
-                }
-                
-                // 更新进程使用率
-                if (data.process) {
-                    const processMemoryElement = document.getElementById('process-memory');
-                    const processCpuElement = document.getElementById('process-cpu');
-                    if (processMemoryElement && processCpuElement) {
-                        processMemoryElement.textContent = data.process.memory_percent.toFixed(2);
-                        processCpuElement.textContent = data.process.cpu_percent.toFixed(2);
-                    }
-                }
-            }
+            updateHealthStatusData(data);
         })
         .catch(error => {
             console.error('更新健康状态失败:', error);
         });
 }
 
-// 开始实时更新
+// 开始实时更新（WebSocket推送 + 备用轮询）
 function startHealthUpdate() {
     if (healthUpdateInterval) {
         clearInterval(healthUpdateInterval);
     }
-    healthUpdateInterval = setInterval(updateHealthStatus, 15000); // 每15秒更新一次
-    NotificationManager.info('实时更新', '已开始实时更新系统状态');
+    
+    // 设置WebSocket健康状态回调
+    if (wsManager && wsManager.onHealthStatus === null) {
+        wsManager.onHealthStatus = (data) => {
+            updateHealthStatusData(data);
+        };
+        console.log('已注册WebSocket健康状态监听器');
+    }
+    
+    // 保留备用轮询（如果WebSocket断开时自动切换）
+    healthUpdateInterval = setInterval(() => {
+        // 只有在WebSocket未连接时才使用轮询
+        if (!wsManager || !wsManager.connected) {
+            updateHealthStatus();
+        }
+    }, 15000); // 每15秒轮询一次作为备用
+    
+    NotificationManager.info('实时更新', '已开始实时更新系统状态（WebSocket推送）');
 }
 
 // 停止实时更新
@@ -354,10 +377,11 @@ function stopHealthUpdate() {
     if (healthUpdateInterval) {
         clearInterval(healthUpdateInterval);
         healthUpdateInterval = null;
-        NotificationManager.info('实时更新', '已停止实时更新系统状态');
     }
+    NotificationManager.info('实时更新', '已停止实时更新系统状态');
 }
 
+// 当切换到健康检查面板时自动开始实时更新
 // 当切换到健康检查面板时自动开始实时更新
 function switchFabPanel(btn, target) {
     // 停止之前的所有定时器

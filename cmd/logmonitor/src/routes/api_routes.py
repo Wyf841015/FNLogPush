@@ -17,6 +17,65 @@ from utils import api_error_handler
 logger = logging.getLogger(__name__)
 
 
+def get_health_data() -> dict:
+    """
+    获取系统健康数据（供WebSocket推送使用）
+    
+    Returns:
+        dict: 健康数据字典
+    """
+    try:
+        # 获取CPU信息
+        cpu_info = {
+            "physical_cores": psutil.cpu_count(logical=False),
+            "total_cores": psutil.cpu_count(logical=True),
+            "cpu_percent": psutil.cpu_percent(interval=0),
+            "cpu_freq": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else {}
+        }
+
+        # 获取内存信息
+        memory_info = psutil.virtual_memory()._asdict()
+
+        # 获取进程信息
+        process_info = {
+            "pid": os.getpid(),
+            "name": psutil.Process(os.getpid()).name(),
+            "memory_percent": psutil.Process(os.getpid()).memory_percent(),
+            "cpu_percent": psutil.Process(os.getpid()).cpu_percent(interval=0)
+        }
+
+        # 获取数据库健康信息
+        db_health = {"status": "not_initialized"}
+        try:
+            from monitor_core import get_monitor
+            monitor = get_monitor()
+            if monitor and monitor.db_service:
+                db_health = monitor.db_service.health_check()
+        except Exception as db_err:
+            logger.debug(f"获取数据库健康状态失败: {db_err}")
+            db_health = {"status": "error", "error": str(db_err)}
+
+        return {
+            "status": "healthy",
+            "timestamp": int(__import__('time').time()),
+            "cpu": cpu_info,
+            "memory": memory_info,
+            "process": process_info,
+            "database": db_health
+        }
+    except ImportError:
+        return {
+            "status": "healthy",
+            "message": "psutil not installed, basic health check only"
+        }
+    except Exception as e:
+        logger.error(f"获取健康数据失败: {e}")
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+
 def register_api_routes(app: Flask):
     """
     注册通用API路由
