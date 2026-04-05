@@ -1791,13 +1791,6 @@ function checkDatabaseFull() {
         }
         
         panel.innerHTML = html;
-        
-        // 显示通知
-        if (connData.success && connData.connection_status === '已连接' && dbData.success) {
-            showNotification('数据库检查完成，状态正常', 'success');
-        } else {
-            showNotification('数据库检查完成，存在异常', 'warning');
-        }
     })
     .catch(error => {
         panel.innerHTML = `
