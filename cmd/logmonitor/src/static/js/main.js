@@ -7,18 +7,18 @@
 const CONSTANTS = {
     // 状态常量
     DB_STATUS: {
-        CONNECTED: CONSTANTS.DB_STATUS.CONNECTED,
+        CONNECTED: '已连接',
         FAILED: '连接失败',
-        DISCONNECTED: CONSTANTS.DB_STATUS.DISCONNECTED
+        DISCONNECTED: '未连接'
     },
     // 刷新间隔（毫秒）
     REFRESH_INTERVAL: {
-        HEALTH: 15000,      // 健康状态
-        AUTO: 30000,        // 自动刷新
-        SESSION: 60000      // Session检查
+        HEALTH: 15000,
+        AUTO: 30000,
+        SESSION: 60000
     },
     // Session 超时（秒）
-    SESSION_TIMEOUT: 300,   // 5分钟
+    SESSION_TIMEOUT: 300,
     // 通知持续时间（毫秒）
     NOTIFICATION_DURATION: 5000
 };
