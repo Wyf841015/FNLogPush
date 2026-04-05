@@ -155,7 +155,8 @@ code, kbd, pre, .badge, .status-value,
 
 /* 深色主题滚动条 */
 body.theme-dark,
-body.theme-ocean {
+body.theme-ocean,
+body.theme-cyber {
     ::-webkit-scrollbar-track {
         background: rgba(0,0,0,0.2);
     }
@@ -230,12 +231,14 @@ body.theme-sunset {
 
 /* 深色主题背景光晕 */
 body.theme-dark .bg-glow-1,
-body.theme-ocean .bg-glow-1 {
+body.theme-ocean .bg-glow-1,
+body.theme-cyber .bg-glow-1 {
     background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
 }
 
 body.theme-dark .bg-glow-2,
-body.theme-ocean .bg-glow-2 {
+body.theme-ocean .bg-glow-2,
+body.theme-cyber .bg-glow-2 {
     background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
 }
 
@@ -1530,45 +1533,53 @@ body.theme-sunset .bg-glow {
 
         /* body 背景 */
         body.theme-dark   { background: var(--bg-primary); }
+        body.theme-cyber { background: var(--bg-primary); }
         body.theme-ocean  { background: var(--bg-primary); }
 
         /* config-content 背景 */
         .theme-dark  .config-content,
-        .theme-ocean .config-content { background: transparent; }
+        .theme-ocean .config-content,
+        .theme-cyber .config-content { background: transparent; }
 
         /* 卡片 */
         .theme-dark .card,
-        .theme-ocean .card {
+        .theme-ocean .card,
+        .theme-cyber .card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
         }
         .theme-dark .card:hover,
-        .theme-ocean .card:hover {
+        .theme-ocean .card:hover,
+        .theme-cyber .card:hover {
             background: var(--card-bg-hover);
             border-color: var(--border-bright);
         }
 
         /* card-body 背景 */
         .theme-dark  .card-body,
-        .theme-ocean .card-body {
+        .theme-ocean .card-body,
+        .theme-cyber .card-body {
             background: var(--card-bg) !important;
             color: var(--text-primary);
         }
 
         /* list-group-item — Bootstrap 默认白色，需覆盖 */
         .theme-dark  .list-group-item,
-        .theme-ocean .list-group-item {
+        .theme-ocean .list-group-item,
+        .theme-cyber .list-group-item {
             background-color: var(--card-bg) !important;
             border-color: var(--table-border) !important;
             color: var(--text-primary) !important;
         }
         .theme-dark  .list-group-item:hover,
-        .theme-ocean .list-group-item:hover {
+        .theme-ocean .list-group-item:hover,
+        .theme-cyber .list-group-item:hover {
             background-color: var(--table-row-hover) !important;
         }
         /* list-group-flush 无圆角版本同步 */
         .theme-dark  .list-group-flush > .list-group-item,
-        .theme-ocean .list-group-flush > .list-group-item {
+        .theme-ocean .list-group-flush > .list-group-item,
+        .theme-cyber .list-group-flush > .list-group-item {
             background-color: var(--card-bg) !important;
             border-color: var(--table-border) !important;
             color: var(--text-primary) !important;
@@ -1576,25 +1587,29 @@ body.theme-sunset .bg-glow {
 
         /* alert 在深色主题下背景/文字适配 */
         .theme-dark  .alert-success,
-        .theme-ocean .alert-success {
+        .theme-ocean .alert-success,
+        .theme-cyber .alert-success {
             background-color: rgba(16, 185, 129, 0.12) !important;
             border-color: rgba(16, 185, 129, 0.35) !important;
             color: var(--text-primary) !important;
         }
         .theme-dark  .alert-danger,
-        .theme-ocean .alert-danger {
+        .theme-ocean .alert-danger,
+        .theme-cyber .alert-danger {
             background-color: rgba(239, 68, 68, 0.12) !important;
             border-color: rgba(239, 68, 68, 0.35) !important;
             color: var(--text-primary) !important;
         }
         .theme-dark  .alert-warning,
-        .theme-ocean .alert-warning {
+        .theme-ocean .alert-warning,
+        .theme-cyber .alert-warning {
             background-color: rgba(245, 158, 11, 0.12) !important;
             border-color: rgba(245, 158, 11, 0.35) !important;
             color: var(--text-primary) !important;
         }
         .theme-dark  .alert-info,
-        .theme-ocean .alert-info {
+        .theme-ocean .alert-info,
+        .theme-cyber .alert-info {
             background-color: rgba(59, 130, 246, 0.12) !important;
             border-color: rgba(59, 130, 246, 0.35) !important;
             color: var(--text-primary) !important;
@@ -1632,38 +1647,44 @@ body.theme-sunset .bg-glow {
 
         /* card-header */
         .theme-dark  .card-header,
-        .theme-ocean .card-header {
+        .theme-ocean .card-header,
+        .theme-cyber .card-header {
             background: var(--config-card-header-bg) !important;
             color: var(--config-card-header-color) !important;
             border-bottom: 1px solid var(--border-color) !important;
         }
         /* 保留彩色 header（带 bg-* 类的） */
         .theme-dark  .card-header.bg-primary,
-        .theme-ocean .card-header.bg-primary {
+        .theme-ocean .card-header.bg-primary,
+        .theme-cyber .card-header.bg-primary {
             background: var(--primary-gradient) !important;
             color: #ffffff !important;
             border-bottom: none !important;
         }
         .theme-dark  .card-header.bg-success,
-        .theme-ocean .card-header.bg-success {
+        .theme-ocean .card-header.bg-success,
+        .theme-cyber .card-header.bg-success {
             background: var(--success-gradient) !important;
             color: #ffffff !important;
             border-bottom: none !important;
         }
         .theme-dark  .card-header.bg-danger,
-        .theme-ocean .card-header.bg-danger {
+        .theme-ocean .card-header.bg-danger,
+        .theme-cyber .card-header.bg-danger {
             background: var(--danger-gradient) !important;
             color: #ffffff !important;
             border-bottom: none !important;
         }
         .theme-dark  .card-header.bg-warning,
-        .theme-ocean .card-header.bg-warning {
+        .theme-ocean .card-header.bg-warning,
+        .theme-cyber .card-header.bg-warning {
             background: var(--warning-gradient) !important;
             color: #ffffff !important;
             border-bottom: none !important;
         }
         .theme-dark  .card-header.bg-info,
-        .theme-ocean .card-header.bg-info {
+        .theme-ocean .card-header.bg-info,
+        .theme-cyber .card-header.bg-info {
             background: var(--info-gradient) !important;
             color: #ffffff !important;
             border-bottom: none !important;
@@ -1673,7 +1694,9 @@ body.theme-sunset .bg-glow {
         .theme-dark  .form-control,
         .theme-dark  .form-select,
         .theme-ocean .form-control,
-        .theme-ocean .form-select {
+        .theme-ocean .form-select,
+        .theme-cyber .form-control,
+        .theme-cyber .form-select {
             background-color: var(--input-bg) !important;
             border-color: var(--input-border) !important;
             color: var(--input-color) !important;
@@ -1681,17 +1704,21 @@ body.theme-sunset .bg-glow {
         .theme-dark  .form-control:focus,
         .theme-dark  .form-select:focus,
         .theme-ocean .form-control:focus,
-        .theme-ocean .form-select:focus {
+        .theme-ocean .form-select:focus,
+        .theme-cyber .form-control:focus,
+        .theme-cyber .form-select:focus {
             background-color: var(--input-bg-focus) !important;
             border-color: var(--input-border-focus) !important;
             color: var(--input-color) !important;
             box-shadow: var(--input-shadow-focus) !important;
         }
         .theme-dark  .form-control::placeholder,
-        .theme-ocean .form-control::placeholder { color: var(--input-placeholder); }
+        .theme-ocean .form-control::placeholder,
+        .theme-cyber .form-control::placeholder { color: var(--input-placeholder); }
         /* input-group-text 同步深色 */
         .theme-dark  .input-group-text,
-        .theme-ocean .input-group-text {
+        .theme-ocean .input-group-text,
+        .theme-cyber .input-group-text {
             background-color: var(--input-bg) !important;
             border-color: var(--input-border) !important;
             color: var(--text-muted) !important;
@@ -1699,7 +1726,8 @@ body.theme-sunset .bg-glow {
 
         /* 表格 */
         .theme-dark  .table,
-        .theme-ocean .table {
+        .theme-ocean .table,
+        .theme-cyber .table {
             /* 覆盖 Bootstrap 5 的 --bs-table-bg / --bs-table-color */
             --bs-table-bg:           var(--table-bg);
             --bs-table-striped-bg:   var(--table-stripe);
@@ -1711,56 +1739,67 @@ body.theme-sunset .bg-glow {
             color: var(--text-primary);
         }
         .theme-dark  .table thead th,
-        .theme-ocean .table thead th {
+        .theme-ocean .table thead th,
+        .theme-cyber .table thead th {
             background: var(--table-head-bg) !important;
             color: var(--table-head-color) !important;
             border-color: var(--table-border);
         }
         /* tbody 行背景（覆盖 Bootstrap 默认白色） */
         .theme-dark  .table tbody tr,
-        .theme-ocean .table tbody tr {
+        .theme-ocean .table tbody tr,
+        .theme-cyber .table tbody tr {
             background-color: var(--table-bg) !important;
             color: var(--text-primary);
         }
         .theme-dark  .table tbody td,
-        .theme-ocean .table tbody td {
+        .theme-ocean .table tbody td,
+        .theme-cyber .table tbody td {
             border-color: var(--table-border);
             background-color: transparent !important;
             color: var(--text-primary);
         }
         .theme-dark  .table tbody tr:hover td,
-        .theme-ocean .table tbody tr:hover td {
+        .theme-ocean .table tbody tr:hover td,
+        .theme-cyber .table tbody tr:hover td {
             background-color: var(--table-row-hover) !important;
         }
         /* table-hover Bootstrap 覆盖 */
         .theme-dark  .table-hover > tbody > tr:hover > *,
-        .theme-ocean .table-hover > tbody > tr:hover > * {
+        .theme-ocean .table-hover > tbody > tr:hover > *,
+        .theme-cyber .table-hover > tbody > tr:hover > * {
             --bs-table-accent-bg: var(--table-row-hover);
             color: var(--text-primary);
         }
 
         /* 导航栏 */
         .theme-dark  .mobile-nav,
-        .theme-ocean .mobile-nav { background: var(--nav-bg); border-top-color: var(--border-color); }
+        .theme-ocean .mobile-nav,
+        .theme-cyber .mobile-nav { background: var(--nav-bg); border-top-color: var(--border-color); }
         .theme-dark  .mobile-nav-btn,
-        .theme-ocean .mobile-nav-btn { color: var(--nav-btn-color); }
+        .theme-ocean .mobile-nav-btn,
+        .theme-cyber .mobile-nav-btn { color: var(--nav-btn-color); }
         .theme-dark  .mobile-nav-btn.active,
-        .theme-ocean .mobile-nav-btn.active {
+        .theme-ocean .mobile-nav-btn.active,
+        .theme-cyber .mobile-nav-btn.active {
             color: var(--nav-btn-active);
             background: var(--nav-btn-active-bg);
         }
 
         /* FAB 按钮 */
         .theme-dark  .fab-btn,
-        .theme-ocean .fab-btn {
+        .theme-ocean .fab-btn,
+        .theme-cyber .fab-btn {
             background: var(--card-bg);
             color: var(--text-secondary);
             border: 1px solid var(--border-color);
         }
         .theme-dark  .fab-btn:hover,
-        .theme-ocean .fab-btn:hover { background: var(--card-bg-hover); border-color: var(--border-bright); }
+        .theme-ocean .fab-btn:hover,
+        .theme-cyber .fab-btn:hover { background: var(--card-bg-hover); border-color: var(--border-bright); }
         .theme-dark  .fab-btn.active,
-        .theme-ocean .fab-btn.active {
+        .theme-ocean .fab-btn.active,
+        .theme-cyber .fab-btn.active {
             background: var(--primary-gradient);
             color: #ffffff;
             border-color: transparent;
@@ -1768,37 +1807,44 @@ body.theme-sunset .bg-glow {
 
         /* 模态框 */
         .theme-dark  .modal-content,
-        .theme-ocean .modal-content {
+        .theme-ocean .modal-content,
+        .theme-cyber .modal-content {
             background: var(--modal-bg);
             border-color: var(--modal-border);
         }
         .theme-dark  .modal-header,
-        .theme-ocean .modal-header {
+        .theme-ocean .modal-header,
+        .theme-cyber .modal-header {
             background: var(--modal-header-bg);
             color: var(--modal-header-color);
             border-bottom-color: var(--modal-border);
         }
         .theme-dark  .modal-footer,
-        .theme-ocean .modal-footer {
+        .theme-ocean .modal-footer,
+        .theme-cyber .modal-footer {
             background: var(--modal-footer-bg);
             border-top-color: var(--modal-border);
         }
         .theme-dark  .modal-body,
-        .theme-ocean .modal-body { color: var(--text-primary); }
+        .theme-ocean .modal-body,
+        .theme-cyber .modal-body { color: var(--text-primary); }
 
         /* 用户菜单 */
         .theme-dark  #userMenuPopup,
-        .theme-ocean #userMenuPopup {
+        .theme-ocean #userMenuPopup,
+        .theme-cyber #userMenuPopup {
             background: var(--user-menu-bg);
             border-color: var(--user-menu-border);
             color: var(--user-menu-color);
         }
         .theme-dark  .user-menu-items a:hover,
-        .theme-ocean .user-menu-items a:hover { background: var(--user-menu-item-hover); }
+        .theme-ocean .user-menu-items a:hover,
+        .theme-cyber .user-menu-items a:hover { background: var(--user-menu-item-hover); }
 
         /* 通知 — 基础 */
         .theme-dark  .notification,
-        .theme-ocean .notification {
+        .theme-ocean .notification,
+        .theme-cyber .notification {
             background: var(--notification-bg);
             border-left-color: var(--notification-border);
             color: var(--notification-color);
@@ -1806,25 +1852,29 @@ body.theme-sunset .bg-glow {
 
         /* 通知 — 各类型子类（覆盖浅色渐变背景） */
         .theme-dark  .notification.success,
-        .theme-ocean .notification.success {
+        .theme-ocean .notification.success,
+        .theme-cyber .notification.success {
             background: rgba(16, 185, 129, 0.15) !important;
             border-left-color: #10b981 !important;
             color: var(--text-primary) !important;
         }
         .theme-dark  .notification.error,
-        .theme-ocean .notification.error {
+        .theme-ocean .notification.error,
+        .theme-cyber .notification.error {
             background: rgba(239, 68, 68, 0.15) !important;
             border-left-color: #ef4444 !important;
             color: var(--text-primary) !important;
         }
         .theme-dark  .notification.warning,
-        .theme-ocean .notification.warning {
+        .theme-ocean .notification.warning,
+        .theme-cyber .notification.warning {
             background: rgba(245, 158, 11, 0.15) !important;
             border-left-color: #f59e0b !important;
             color: var(--text-primary) !important;
         }
         .theme-dark  .notification.info,
-        .theme-ocean .notification.info {
+        .theme-ocean .notification.info,
+        .theme-cyber .notification.info {
             background: rgba(59, 130, 246, 0.15) !important;
             border-left-color: #3b82f6 !important;
             color: var(--text-primary) !important;
@@ -1832,11 +1882,13 @@ body.theme-sunset .bg-glow {
 
         /* 通知内部细节文字 */
         .theme-dark  .notification-time,
-        .theme-ocean .notification-time {
+        .theme-ocean .notification-time,
+        .theme-cyber .notification-time {
             color: var(--text-muted) !important;
         }
         .theme-dark  .notification-close:hover,
-        .theme-ocean .notification-close:hover {
+        .theme-ocean .notification-close:hover,
+        .theme-cyber .notification-close:hover {
             background: rgba(255, 255, 255, 0.1) !important;
             color: var(--text-primary) !important;
         }
@@ -2232,11 +2284,13 @@ body.theme-sunset .bg-glow {
 
         /* ---- mobile nav btn active & hover ---- */
         .theme-dark  .mobile-nav-btn:active,
-        .theme-ocean .mobile-nav-btn:active { background: var(--nav-btn-active-bg); }
+        .theme-ocean .mobile-nav-btn:active,
+        .theme-cyber .mobile-nav-btn.active { background: var(--nav-btn-active-bg); }
 
         /* ---- table thead（通用 primary-gradient） ---- */
         .theme-dark  .table thead th,
-        .theme-ocean .table thead th {
+        .theme-ocean .table thead th,
+        .theme-cyber .table thead th {
             background: var(--table-head-bg);
             color: var(--table-head-color);
         }

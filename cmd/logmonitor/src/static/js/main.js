@@ -404,9 +404,9 @@ let lastHistoryIndex = null;
 
 // 主题管理
 const ThemeManager = {
-    // 主题列表（5个精选主题）
+    // 主题列表（6个精选主题）
     themes: [
-        'default', 'dark', 'ocean', 'green', 'sunset'
+        'default', 'dark', 'ocean', 'green', 'sunset', 'cyber'
     ],
 
     // 主题名称映射
@@ -415,7 +415,8 @@ const ThemeManager = {
         'dark':    '深色模式',
         'ocean':   '深海蓝',
         'green':   '清新绿',
-        'sunset':  '暮色橙'
+        'sunset':  '暮色橙',
+        'cyber':   '科技感霓虹'
     },
     
     // 获取当前主题
@@ -833,13 +834,14 @@ function showNewPushNotification() {
         ocean:   { bg: 'rgba(16,185,129,0.18)',  border: 'rgba(16,185,129,0.45)',  color: '#d1fae5' },
         green:   { bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.35)',  color: '#065f46' },
         sunset:  { bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.35)',  color: '#064e3b' },
+        cyber:   { bg: 'rgba(0,255,255,0.18)',   border: 'rgba(0,255,255,0.45)',  color: '#00ffff' },
     };
 
     const colors = themeColors[currentTheme] || themeColors.default;
     // 使用 background 简写属性而非 background-color，避免被 CSS 的 background 简写覆盖
     const extraStyle = `background:${colors.bg} !important; border-color:${colors.border} !important; color:${colors.color} !important;`;
 
-    const darkThemes = ['dark', 'ocean'];
+    const darkThemes = ['dark', 'ocean', 'cyber'];
     const isDark = darkThemes.includes(currentTheme);
     const closeBtnStyle = isDark ? 'filter:invert(1) grayscale(100%) brightness(200%);' : '';
 
@@ -1887,7 +1889,7 @@ function showNotification(message, type = 'info') {
     if (type === 'danger') icon = 'fa-times-circle';
 
     // 亮色系主题（green / sunset）的关闭按钮无需反色，深色系主题需要
-    const darkThemes = ['dark', 'ocean'];
+    const darkThemes = ['dark', 'ocean', 'cyber'];
     const isDark = darkThemes.includes(currentTheme);
     const closeBtnStyle = isDark ? 'filter:invert(1) grayscale(100%) brightness(200%);' : '';
     notification.innerHTML = `

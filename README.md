@@ -3,7 +3,7 @@
 > 自动监控飞牛NAS系统日志和备份进度，实时推送至多种渠道
 
 [![Platform](https://img.shields.io/badge/platform-FNOS-blue)](https://www.fnnas.com/)
-[![Version](https://img.shields.io/badge/version-0.6.6-green)](https://gitee.com/wyf1015/FNLogPush)
+[![Version](https://img.shields.io/badge/version-0.7.2-green)](https://gitee.com/wyf1015/FNLogPush)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 ## 功能特性
@@ -23,6 +23,8 @@
 - 钉钉机器人
 - 飞书机器人
 - Bark推送
+- PushPlus推送
+- MeoW推送
 - Webhook自定义
 
 ### 🔔 告警聚合
@@ -31,10 +33,11 @@
 - 免打扰模式
 
 ### 🎨 界面特性
-- 多主题支持（默认/黑暗/海洋/绿色）
+- 6个精选主题（暗夜紫/深色/深海蓝/清新绿/暮色橙/科技感霓虹）
 - 响应式设计
 - 实时WebSocket推送
 - 移动端优化
+- 加载动画、骨架屏、卡片悬浮动效
 
 ## 安装方式
 
@@ -100,6 +103,35 @@ FNLogPush/
 - 数据存储在应用目录内
 
 ## 更新日志
+
+### v0.8.0 (2026-04-05)
+- 🎨 **界面全面升级**：字体系统、动画效果、状态指示器
+- 📊 添加页面加载进度条 + 骨架屏加载
+- 🎬 卡片入场动画 (fadeInUp + stagger)
+- 💫 按钮点击波纹 + 悬浮上浮效果
+- 📦 卡片悬浮动效 (translateY + shadow)
+- ✨ 输入框聚焦/悬浮效果
+- 📱 模态框缩放动画
+- 🔔 Toast 通知滑动动画
+- 🎯 状态指示器脉冲发光
+- 🎨 自定义滚动条样式
+- ♿ prefers-reduced-motion 无障碍支持
+
+### v0.7.2 (2026-04-05)
+- 🎨 **主题系统重构**：分离独立主题CSS文件
+- ✨ 新增科技感霓虹主题（Cyber）
+
+### v0.7.0 (2026-04-05)
+- 🔒 **新增Session超时机制**：5分钟无操作自动退出登录
+
+### v0.6.9 (2026-03-29)
+- 🆕 新增 MeoW 推送渠道
+
+### v0.6.8 (2026-03-29)
+- 🆕 新增存储管理事件、防火墙事件
+
+### v0.6.7 (2026-03-28)
+- 🔧 Web界面优化、JS模块化拆分
 
 ### v0.6.6
 - ✨ **WebSocket实时推送** - 启用前后端WebSocket通信，新日志实时推送到前端

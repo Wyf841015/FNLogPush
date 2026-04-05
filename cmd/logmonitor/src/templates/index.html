@@ -8,6 +8,8 @@
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <!-- Font Awesome (本地) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+    <!-- 主题样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
     <!-- 自定义样式 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <!-- Socket.IO Client -->
@@ -824,6 +826,17 @@
                                             <span class="theme-picker-body">
                                                 <span class="theme-picker-name">暮色橙</span>
                                                 <span class="theme-picker-desc">暖橙玫瑰 · 活力热情</span>
+                                            </span>
+                                            <i class="fas fa-check theme-picker-check"></i>
+                                        </label>
+
+                                        <!-- 主题6：科技感霓虹 -->
+                                        <label class="theme-picker-card" for="theme-cyber">
+                                            <input class="theme-picker-radio" type="radio" name="theme" id="theme-cyber" value="cyber">
+                                            <span class="theme-picker-swatch" style="background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #00f5ff 100%); border: 2px solid #00f5ff;"></span>
+                                            <span class="theme-picker-body">
+                                                <span class="theme-picker-name">科技感霓虹</span>
+                                                <span class="theme-picker-desc">赛博朋克 · 霓虹灯光</span>
                                             </span>
                                             <i class="fas fa-check theme-picker-check"></i>
                                         </label>

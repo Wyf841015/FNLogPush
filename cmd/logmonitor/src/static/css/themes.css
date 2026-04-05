@@ -1,0 +1,266 @@
+/* ========================================================
+   FNLogPush 主题系统
+   包含所有主题样式定义
+   ======================================================== */
+
+/* ========== 主题1：暗夜紫 (默认) ========== */
+.theme-default {
+    --primary: #667eea;
+    --primary-rgb: 102, 126, 234;
+    --secondary: #764ba2;
+    --dark-gradient: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: rgba(30, 30, 50, 0.85);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border-color: rgba(102, 126, 234, 0.2);
+    --glass-bg: rgba(30, 30, 50, 0.85);
+    --glass-border: rgba(102, 126, 234, 0.3);
+    --header-bg: linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+    --theme-inner-bg: linear-gradient(135deg, #f5f3ff, #ede9fe);
+    --theme-inner-border: #a78bfa;
+    --btn-theme-from: #7c3aed;
+    --btn-theme-to: #6d28d9;
+    --shadow-color: rgba(102, 126, 234, 0.3);
+    --config-card-border: rgba(102, 126, 234, 0.2);
+}
+
+/* ========== 主题2：深色模式 ========== */
+.theme-dark {
+    --primary: #6366f1;
+    --primary-rgb: 99, 102, 241;
+    --secondary: #4f46e5;
+    --dark-gradient: linear-gradient(160deg, #020617 0%, #0f172a 60%, #1e293b 100%);
+    --bg-primary: #020617;
+    --bg-secondary: #0f172a;
+    --bg-card: rgba(15, 23, 42, 0.9);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border-color: rgba(99, 102, 241, 0.15);
+    --glass-bg: rgba(15, 23, 42, 0.9);
+    --glass-border: rgba(99, 102, 241, 0.2);
+    --header-bg: linear-gradient(160deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+    --theme-inner-bg: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(79,70,229,0.08));
+    --theme-inner-border: rgba(99,102,241,0.35);
+    --btn-theme-from: #6366f1;
+    --btn-theme-to: #4f46e5;
+    --shadow-color: rgba(99, 102, 241, 0.25);
+    --config-card-border: rgba(99, 102, 241, 0.15);
+}
+
+/* ========== 主题3：深海蓝 ========== */
+.theme-ocean {
+    --primary: #0ea5e9;
+    --primary-rgb: 14, 165, 233;
+    --secondary: #0284c7;
+    --dark-gradient: linear-gradient(160deg, #0c4a6e 0%, #0369a1 50%, #075985 100%);
+    --bg-primary: #0c4a6e;
+    --bg-secondary: #0369a1;
+    --bg-card: rgba(7, 89, 133, 0.85);
+    --text-primary: #e0f2fe;
+    --text-secondary: #bae6fd;
+    --text-muted: #7dd3fc;
+    --border-color: rgba(14, 165, 233, 0.25);
+    --glass-bg: rgba(7, 89, 133, 0.85);
+    --glass-border: rgba(14, 165, 233, 0.3);
+    --header-bg: linear-gradient(160deg, #0c4a6e 0%, #0369a1 50%, #0891b2 100%);
+    --theme-inner-bg: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(2,132,199,0.1));
+    --theme-inner-border: rgba(14,165,233,0.4);
+    --btn-theme-from: #0ea5e9;
+    --btn-theme-to: #0284c7;
+    --shadow-color: rgba(14, 165, 233, 0.3);
+    --config-card-border: rgba(14, 165, 233, 0.2);
+}
+
+/* ========== 主题4：清新绿 ========== */
+.theme-green {
+    --primary: #10b981;
+    --primary-rgb: 16, 185, 129;
+    --secondary: #059669;
+    --dark-gradient: linear-gradient(160deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+    --bg-primary: #ecfdf5;
+    --bg-secondary: #d1fae5;
+    --bg-card: rgba(255, 255, 255, 0.9);
+    --text-primary: #064e3b;
+    --text-secondary: #065f46;
+    --text-muted: #047857;
+    --border-color: rgba(16, 185, 129, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(16, 185, 129, 0.3);
+    --header-bg: linear-gradient(160deg, #10b981 0%, #059669 50%, #047857 100%);
+    --theme-inner-bg: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    --theme-inner-border: #6ee7b7;
+    --btn-theme-from: #10b981;
+    --btn-theme-to: #059669;
+    --shadow-color: rgba(16, 185, 129, 0.2);
+    --config-card-border: rgba(16, 185, 129, 0.15);
+}
+
+/* ========== 主题5：暮色橙 ========== */
+.theme-sunset {
+    --primary: #f97316;
+    --primary-rgb: 249, 115, 22;
+    --secondary: #ea580c;
+    --dark-gradient: linear-gradient(160deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%);
+    --bg-primary: #fff7ed;
+    --bg-secondary: #ffedd5;
+    --bg-card: rgba(255, 255, 255, 0.9);
+    --text-primary: #431407;
+    --text-secondary: #7c2d12;
+    --text-muted: #9a3412;
+    --border-color: rgba(249, 115, 22, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(249, 115, 22, 0.3);
+    --header-bg: linear-gradient(160deg, #f97316 0%, #ea580c 50%, #c2410c 100%);
+    --theme-inner-bg: linear-gradient(135deg, #fff7ed, #ffedd5);
+    --theme-inner-border: #fdba74;
+    --btn-theme-from: #f97316;
+    --btn-theme-to: #ea580c;
+    --shadow-color: rgba(249, 115, 22, 0.2);
+    --config-card-border: rgba(249, 115, 22, 0.15);
+}
+
+/* ========== 主题6：科技感霓虹 (Cyber Neon) ========== */
+.theme-cyber {
+    --primary: #00f5ff;
+    --primary-rgb: 0, 245, 255;
+    --secondary: #ff00ff;
+    --dark-gradient: linear-gradient(160deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f23 100%);
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #0f0f1a;
+    --bg-card: rgba(10, 10, 15, 0.85);
+    --text-primary: #e0f2fe;
+    --text-secondary: #bae6fd;
+    --text-muted: #7dd3fc;
+    --border-color: rgba(0, 245, 255, 0.3);
+    --glass-bg: rgba(10, 10, 20, 0.8);
+    --glass-border: rgba(0, 245, 255, 0.4);
+    --header-bg: linear-gradient(160deg, #0a0a0f 0%, #1a1a2e 50%, #2d1b4e 100%);
+    --theme-inner-bg: linear-gradient(135deg, rgba(0,245,255,0.1), rgba(255,0,255,0.05));
+    --theme-inner-border: rgba(0, 245, 255, 0.5);
+    --btn-theme-from: #00f5ff;
+    --btn-theme-to: #ff00ff;
+    --shadow-color: rgba(0, 245, 255, 0.4);
+    --config-card-border: rgba(0, 245, 255, 0.2);
+    
+    /* main.css 使用的变量 */
+    --primary-gradient: linear-gradient(135deg, #00f5ff 0%, #ff00ff 100%);
+    --secondary-gradient: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%);
+    --success-gradient: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
+    --warning-gradient: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
+    --danger-gradient: linear-gradient(135deg, #ff00ff 0%, #ff0088 100%);
+    --info-gradient: linear-gradient(135deg, #00f5ff 0%, #0088ff 100%);
+    --card-bg: #0f0f1a;
+    --card-bg-hover: #1a1a2e;
+    --shadow-sm: 0 2px 12px rgba(0, 245, 255, 0.15);
+    --shadow-md: 0 6px 24px rgba(0, 245, 255, 0.2);
+    --shadow-lg: 0 12px 40px rgba(0, 245, 255, 0.25);
+    --border-bright: rgba(0, 245, 255, 0.5);
+    --color-accent: #00f5ff;
+    --color-accent-glow: rgba(0, 245, 255, 0.25);
+    --color-success: #00ffff;
+    --color-success-glow: rgba(0, 255, 255, 0.2);
+    --color-warning: #ffaa00;
+    --color-warning-glow: rgba(255, 170, 0, 0.2);
+    --color-danger: #ff00ff;
+    --color-danger-glow: rgba(255, 0, 255, 0.2);
+    --table-bg: #0f0f1a;
+    --table-head-bg: linear-gradient(135deg, #0a0a0f, #1a1a2e);
+    --table-head-color: #00f5ff;
+    --table-row-hover: rgba(0, 245, 255, 0.08);
+    --table-border: rgba(0, 245, 255, 0.15);
+    --table-stripe: rgba(0, 245, 255, 0.03);
+    --input-bg: #0a0a0f;
+    --input-bg-focus: #1a1a2e;
+    --input-border: rgba(0, 245, 255, 0.3);
+    --input-border-focus: #00f5ff;
+    --input-color: #e0f2fe;
+    --input-placeholder: #64748b;
+    --input-shadow-focus: 0 0 0 3px rgba(0, 245, 255, 0.2);
+    --modal-bg: #0f0f1a;
+    --modal-header-bg: linear-gradient(135deg, #0a0a0f, #1a1a2e);
+    --modal-header-color: #00f5ff;
+    --modal-border: rgba(0, 245, 255, 0.3);
+    --modal-footer-bg: #0a0a0f;
+    --user-menu-bg: #0f0f1a;
+    --user-menu-border: rgba(0, 245, 255, 0.3);
+    --user-menu-item-hover: rgba(0, 245, 255, 0.1);
+    --user-menu-color: #e0f2fe;
+    --notification-bg: #0f0f1a;
+    --notification-border: rgba(0, 245, 255, 0.3);
+    --config-card-header-bg: linear-gradient(135deg, #0a0a0f, #1a1a2e);
+    --config-card-header-color: #00f5ff;
+    --nav-bg: #0a0a0f;
+    --nav-btn-color: #7dd3fc;
+}
+
+/* ========== 背景光晕主题适配 ========== */
+body.theme-default .bg-glow-1,
+body.theme-dark .bg-glow-1,
+body.theme-cyber .bg-glow-1 {
+    background: radial-gradient(ellipse at 20% 0%, rgba(102, 126, 234, 0.15) 0%, transparent 50%);
+}
+body.theme-default .bg-glow-2,
+body.theme-dark .bg-glow-2,
+body.theme-cyber .bg-glow-2 {
+    background: radial-gradient(ellipse at 80% 100%, rgba(118, 75, 162, 0.12) 0%, transparent 50%);
+}
+
+body.theme-ocean .bg-glow-1 {
+    background: radial-gradient(ellipse at 20% 0%, rgba(14, 165, 233, 0.2) 0%, transparent 50%);
+}
+body.theme-ocean .bg-glow-2 {
+    background: radial-gradient(ellipse at 80% 100%, rgba(2, 132, 199, 0.15) 0%, transparent 50%);
+}
+
+body.theme-green .bg-glow-1,
+body.theme-sunset .bg-glow-1 {
+    background: radial-gradient(ellipse at 20% 0%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+}
+body.theme-green .bg-glow-2,
+body.theme-sunset .bg-glow-2 {
+    background: radial-gradient(ellipse at 80% 100%, rgba(5, 150, 105, 0.08) 0%, transparent 50%);
+}
+
+/* ========== 科技感霓虹特效 ========== */
+.theme-cyber .card {
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.1), inset 0 0 20px rgba(0, 245, 255, 0.03);
+}
+
+.theme-cyber .card:hover {
+    border-color: rgba(0, 245, 255, 0.5);
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.2), inset 0 0 30px rgba(0, 245, 255, 0.05);
+}
+
+.theme-cyber .badge-online {
+    color: #00f5ff;
+    text-shadow: 0 0 10px #00f5ff;
+}
+
+.theme-cyber .header-card {
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    box-shadow: 0 0 40px rgba(0, 245, 255, 0.15);
+}
+
+/* 霓虹扫描线动画 */
+@keyframes neon-scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+}
+
+.theme-cyber .header-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00f5ff, transparent);
+    animation: neon-scan 3s linear infinite;
+    opacity: 0.5;
+}
+
