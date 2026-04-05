@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (navBrand) navBrand.appendChild(statusEl);
         }
         statusEl.textContent = connected ? '实时在线' : '实时离线';
-        statusEl.className = connected ? 'badge bg-success ms-2' : 'badge bg-danger ms-2';
+        statusEl.className = connected ? 'badge badge-online bg-success ms-2' : 'badge bg-danger ms-2';
     }
 
     // 页面加载时初始化

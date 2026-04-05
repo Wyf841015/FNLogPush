@@ -4341,27 +4341,107 @@ a:focus-visible {
     border-color: rgba(102, 126, 234, 0.3);
 }
 
-/* ---- 状态指示器脉冲发光 ---- */
+/* ---- 状态指示器脉冲发光 (P2优化) ---- */
 @keyframes pulse-glow {
     0%, 100% { 
-        box-shadow: 0 0 5px currentColor;
+        box-shadow: 0 0 4px currentColor;
         opacity: 1;
     }
     50% { 
-        box-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+        box-shadow: 0 0 12px currentColor, 0 0 20px currentColor;
         opacity: 0.9;
     }
 }
 
+/* 在线状态 badge */
 .badge-online {
     position: relative;
     animation: pulse-glow 2s infinite;
+    border: none;
 }
 
-/* 在线状态发光效果 */
-.status-online {
-    animation: pulse-glow 2s infinite;
-    color: #10b981;
+/* 监控状态在线时的图标动画 */
+#monitor-status[data-status="running"] i,
+.badge-online i {
+    animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* 状态指示器特殊样式 */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: status-pulse 2s infinite;
+}
+
+.status-indicator.online::before {
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+.status-indicator.offline::before {
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+}
+
+.status-indicator.warning::before {
+    background: #f59e0b;
+    box-shadow: 0 0 8px #f59e0b;
+}
+
+@keyframes status-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+/* 头部状态徽章增强 */
+.header-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    transition: all 0.3s ease;
+}
+
+.header-status-badge:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.header-status-badge.offline {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.header-status-badge.offline:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* 状态圆点动画 */
+.header-status-dot {
+    font-size: 8px;
+    animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
 }
 
 /* ---- 加载骨架屏 ---- */

@@ -1190,6 +1190,7 @@
             // 从已渲染的 DOM 中读取数据，避免重复发请求
             // 监控状态
             const monitorBadge = document.getElementById('monitor-status');
+            const headerBadge = document.getElementById('header-status-badge');
             if (monitorBadge) {
                 const running = monitorBadge.classList.contains('badge-online');
                 const kpiMonitor = document.getElementById('kpi-monitor-status');
@@ -1204,6 +1205,10 @@
                     headerDot.classList.toggle('is-error',   !running);
                 }
                 if (headerText) headerText.textContent  = running ? '实时监控中' : '监控已停止';
+                // 更新头部状态徽章类
+                if (headerBadge) {
+                    headerBadge.classList.toggle('offline', !running);
+                }
                 // 检查间隔
                 const interval = document.getElementById('check-interval');
                 const kpiSub = document.getElementById('kpi-monitor-sub');
