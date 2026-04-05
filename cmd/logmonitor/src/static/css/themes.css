@@ -349,6 +349,45 @@ body.theme-sunset {
     filter: brightness(1.1);
 }
 
+/* 健康检查主按钮 - 使用主题主色 */
+.health-btn-primary {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+}
+
+.health-btn-primary:hover {
+    opacity: 0.9;
+    filter: brightness(1.1);
+}
+
+/* 浅色主题的主按钮适配 */
+body.theme-green .health-btn-primary,
+body.theme-sunset .health-btn-primary {
+    background: var(--primary) !important;
+    color: #fff !important;
+}
+
+/* 危险/错误按钮 */
+.health-btn-danger {
+    background: var(--health-danger-bg) !important;
+    color: var(--health-danger-color) !important;
+    border-color: var(--health-danger-bg) !important;
+}
+
+.health-btn-danger:hover {
+    opacity: 0.9;
+    filter: brightness(1.1);
+}
+
+/* 为各主题定义健康按钮变量 */
+:root {
+    --health-success-bg: #10b981;
+    --health-success-color: #fff;
+    --health-danger-bg: #ef4444;
+    --health-danger-color: #fff;
+}
+
 /* 健康检查信息卡片头部 */
 .health-card-system {
     background: var(--health-info-bg, var(--primary)) !important;

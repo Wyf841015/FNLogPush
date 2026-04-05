@@ -928,7 +928,7 @@
                                         <small class="text-info"><i class="fas fa-info-circle me-1"></i>启用后将监控备份数据库，当有新的备份操作记录时自动推送通知</small>
                                     </div>
                                     <div class="d-grid gap-2 mt-3">
-                                        <button type="button" class="btn btn-success" onclick="saveBackupConfig()">
+                                        <button type="button" class="btn health-btn-success" onclick="saveBackupConfig()">
                                             <i class="fas fa-save me-2"></i>保存设置
                                         </button>
                                     </div>
@@ -1030,7 +1030,7 @@
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <button class="btn btn-success mb-3" onclick="loadHealthStatus()">
+                                <button class="btn health-btn-primary mb-3" onclick="loadHealthStatus()">
                                     <i class="fas fa-sync me-2"></i>检查系统健康状态
                                 </button>
                                 <div id="health-status-content">
@@ -1107,7 +1107,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-danger" id="confirmModalConfirm">确认</button>
+                    <button type="button" class="btn health-btn-danger" id="confirmModalConfirm">确认</button>
                 </div>
             </div>
         </div>
