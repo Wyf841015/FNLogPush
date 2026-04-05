@@ -380,3 +380,46 @@ body.theme-sunset {
     --health-cpu-color: #fff;
 }
 
+/* ========== 健康检查 Alert 主题适配 ========== */
+/* 默认/暗色主题的 alert 覆盖 */
+body.theme-default .alert-success,
+body.theme-dark .alert-success,
+body.theme-ocean .alert-success,
+body.theme-cyber .alert-success,
+.alert-success,
+.health-alert-success {
+    background-color: rgba(var(--primary-rgb), 0.15);
+    border-color: rgba(var(--primary-rgb), 0.3);
+    color: var(--text-primary);
+}
+
+body.theme-default .alert-danger,
+body.theme-dark .alert-danger,
+body.theme-ocean .alert-danger,
+body.theme-cyber .alert-danger,
+.alert-danger,
+.health-alert-danger {
+    background-color: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--text-primary);
+}
+
+/* 浅色主题的 alert 覆盖 */
+body.theme-green .alert-success,
+body.theme-sunset .alert-success,
+body.theme-green .health-alert-success,
+body.theme-sunset .health-alert-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #065f46;
+}
+
+body.theme-green .alert-danger,
+body.theme-sunset .alert-danger,
+body.theme-green .health-alert-danger,
+body.theme-sunset .health-alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #991b1b;
+}
+

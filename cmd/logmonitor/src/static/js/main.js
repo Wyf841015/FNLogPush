@@ -193,7 +193,7 @@ function loadHealthStatus() {
         .then(data => {
             if (data.status === 'healthy') {
                 let html = `
-                    <div class="alert alert-success">
+                    <div class="health-alert-success">
                         <h6 class="mb-3">系统健康状态: <span class="badge health-badge-success" aria-label="系统健康状态：健康"><i class="fas fa-check-circle me-1" aria-hidden="true"></i>健康</span></h6>
                         <div class="mb-2">
                             <button class="btn btn-sm btn-outline-secondary" onclick="startHealthUpdate()">
@@ -299,7 +299,7 @@ function loadHealthStatus() {
                 NotificationManager.success('健康检查', '系统状态正常');
             } else {
                 content.innerHTML = `
-                    <div class="alert alert-danger">
+                    <div class="health-alert-danger">
                         <h6>系统健康状态: <span class="badge health-badge-danger" aria-label="系统健康状态：异常"><i class="fas fa-exclamation-circle me-1" aria-hidden="true"></i>异常</span></h6>
                         <p>错误信息: ${data.error}</p>
                     </div>
@@ -310,7 +310,7 @@ function loadHealthStatus() {
         .catch(error => {
             console.error('健康检查失败:', error);
             content.innerHTML = `
-                <div class="alert alert-danger">
+                <div class="health-alert-danger">
                     <h6>健康检查失败</h6>
                     <p>无法连接到健康检查服务</p>
                 </div>
