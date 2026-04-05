@@ -79,77 +79,23 @@ class ConfigManager:
         self.config_path = config_path
         self.validator = SchemaValidator()
         self.config = self.load_config()
-        self._crypto = get_crypto_manager()
+        # 暂时禁用加密功能，等待后续稳定后再启用
+        self._crypto = None
+        self._encrypt_enabled = False
     
     def _encrypt_sensitive_fields(self, config: Dict[str, Any], parent_path: str = '') -> Dict[str, Any]:
         """
-        递归加密敏感字段
-        
-        Args:
-            config: 配置字典
-            parent_path: 父路径
-            
-        Returns:
-            加密后的配置
+        递归加密敏感字段（暂时禁用）
         """
-        result = {}
-        for key, value in config.items():
-            # 构建完整路径
-            current_path = f"{parent_path}.{key}" if parent_path else key
-            
-            if isinstance(value, dict):
-                # 递归处理嵌套字典
-                result[key] = self._encrypt_sensitive_fields(value, current_path)
-            elif isinstance(value, str) and value:
-                # 检查是否是敏感字段（检查当前路径和完整路径）
-                field_name = key
-                if is_sensitive_field(field_name) or is_sensitive_field(current_path):
-                    # 跳过已经是加密的值
-                    if value.startswith('__enc__') or value.startswith('__xor__'):
-                        result[key] = value
-                    else:
-                        result[key] = self._crypto.encrypt(value)
-                else:
-                    result[key] = value
-            else:
-                result[key] = value
-        return result
+        # 暂时禁用加密，直接返回原配置
+        return config
     
     def _decrypt_sensitive_fields(self, config: Dict[str, Any], parent_path: str = '') -> Dict[str, Any]:
         """
-        递归解密敏感字段
-        
-        Args:
-            config: 配置字典
-            parent_path: 父路径
-            
-        Returns:
-            解密后的配置
+        递归解密敏感字段（暂时禁用）
         """
-        result = {}
-        for key, value in config.items():
-            # 构建完整路径
-            current_path = f"{parent_path}.{key}" if parent_path else key
-            
-            if isinstance(value, dict):
-                # 递归处理嵌套字典
-                result[key] = self._decrypt_sensitive_fields(value, current_path)
-            elif isinstance(value, str) and value:
-                # 检查是否是敏感字段（检查当前路径和完整路径）
-                field_name = key
-                is_sensitive = is_sensitive_field(field_name) or is_sensitive_field(current_path)
-                # 只对加密的值进行解密
-                if is_sensitive and (value.startswith('__enc__') or value.startswith('__xor__')):
-                    try:
-                        result[key] = self._crypto.decrypt(value)
-                    except Exception:
-                        # 解密失败，保留原值
-                        result[key] = value
-                else:
-                    result[key] = value
-            else:
-                result[key] = value
-        return result
+        # 暂时禁用解密，直接返回原配置
+        return config
     
     def load_config(self) -> Dict[str, Any]:
         """
