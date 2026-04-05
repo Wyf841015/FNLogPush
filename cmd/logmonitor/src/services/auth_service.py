@@ -69,33 +69,15 @@ class AuthService:
     # ----------------------------------------------------------------------- #
 
     def _load_config(self) -> Dict:
-        """加载配置文件（处理加密）"""
+        """加载配置文件"""
         try:
             if os.path.exists(self.config_path):
                 with open(self.config_path, 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-                # 解密 auth 部分（如果被加密）
-                return self._decrypt_auth(config)
+                    return json.load(f)
             return {}
         except Exception as e:
             logger.error(f"加载配置文件失败: {e}")
             return {}
-
-    def _decrypt_auth(self, config: Dict) -> Dict:
-        """解密配置中的 auth 部分"""
-        if 'auth' in config and isinstance(config['auth'], dict):
-            auth = config['auth']
-            for key in ('username', 'password_hash'):
-                if key in auth and isinstance(auth[key], str):
-                    # 检查是否加密（ConfigManager 会加密这些字段）
-                    if auth[key].startswith('__enc__') or auth[key].startswith('__xor__'):
-                        try:
-                            from utils.crypto import decrypt_value
-                            auth[key] = decrypt_value(auth[key])
-                            logger.info(f"已解密 auth.{key}")
-                        except Exception as e:
-                            logger.warning(f"解密 auth.{key} 失败: {e}")
-        return config
 
     def _save_config(self) -> bool:
         """保存配置文件"""
@@ -194,16 +176,8 @@ class AuthService:
             'password_hash': password_hash
         }
 
-        logger.info(f"设置初始用户: {username}, 密码哈希长度: {len(password_hash)}")
-        
         if self._save_config():
             logger.info(f"初始用户设置成功: {username}")
-            # 验证保存是否成功
-            test_config = self._load_config()
-            if 'auth' in test_config and test_config['auth'].get('username') == username:
-                logger.info(f"配置保存验证成功")
-            else:
-                logger.error(f"配置保存验证失败")
             return True, "用户设置成功"
         return False, "保存配置失败"
 
@@ -212,9 +186,6 @@ class AuthService:
         验证登录凭证（含限速检查）。
         如验证通过且哈希为旧版格式，自动升级为 bcrypt。
         """
-        # 0. 强制重新加载配置（确保读取最新保存的数据）
-        self.config = self._load_config()
-        
         # 1. 限速检查
         allowed, reason = self._check_rate_limit(username)
         if not allowed:
@@ -222,15 +193,11 @@ class AuthService:
 
         # 2. 基础校验
         if 'auth' not in self.config:
-            logger.warning(f"验证登录失败: auth 配置不存在")
             return False, "用户未设置"
 
         auth_config = self.config['auth']
         stored_username = auth_config.get('username')
         stored_hash = auth_config.get('password_hash')
-
-        logger.info(f"验证登录: 输入用户={username}, 存储用户={stored_username}, 哈希长度={len(stored_hash) if stored_hash else 0}")
-        logger.debug(f"密码哈希: {stored_hash[:20]}..." if stored_hash else "无")
 
         if not stored_username or not stored_hash:
             return False, "用户未设置"
