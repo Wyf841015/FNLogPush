@@ -4056,3 +4056,233 @@ a:focus-visible {
         overflow-y: auto;
     }
 }
+
+/* ========== P1 优化：加载动画 + 按钮动效 ========== */
+
+/* ---- 入场动画基础 ---- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ---- 入场动画类 ---- */
+.animate-fade-in-up {
+    animation: fadeInUp 0.5s ease forwards;
+    opacity: 0;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s ease forwards;
+}
+
+/* 卡片入场动画 */
+.page-card {
+    opacity: 0;
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+/* 延迟 stagger */
+.page-card:nth-child(1) { animation-delay: 0.05s; }
+.page-card:nth-child(2) { animation-delay: 0.1s; }
+.page-card:nth-child(3) { animation-delay: 0.15s; }
+.page-card:nth-child(4) { animation-delay: 0.2s; }
+.page-card:nth-child(5) { animation-delay: 0.25s; }
+.page-card:nth-child(6) { animation-delay: 0.3s; }
+
+/* ---- 按钮点击波纹效果 ---- */
+.btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+.btn:active::before {
+    transform: scale(2);
+    opacity: 1;
+}
+
+/* 按钮悬浮效果 */
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ---- 卡片悬浮动效 ---- */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:not(.no-hover):hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ---- 状态指示器脉冲发光 ---- */
+@keyframes pulse-glow {
+    0%, 100% { 
+        box-shadow: 0 0 5px currentColor;
+        opacity: 1;
+    }
+    50% { 
+        box-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+        opacity: 0.9;
+    }
+}
+
+.badge-online {
+    position: relative;
+    animation: pulse-glow 2s infinite;
+}
+
+/* 在线状态发光效果 */
+.status-online {
+    animation: pulse-glow 2s infinite;
+    color: #10b981;
+}
+
+/* ---- 加载骨架屏 ---- */
+.skeleton {
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.05) 25%, 
+        rgba(255,255,255,0.1) 50%, 
+        rgba(255,255,255,0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 1em;
+    margin-bottom: 0.5em;
+}
+
+.skeleton-title {
+    height: 1.5em;
+    width: 60%;
+    margin-bottom: 1em;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-box {
+    min-height: 100px;
+}
+
+/* ---- 页面加载进度条 ---- */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+    background-size: 200% 100%;
+    animation: loader-gradient 1.5s linear infinite;
+    z-index: 9999;
+    transform-origin: left;
+}
+
+@keyframes loader-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ---- 输入框聚焦效果增强 ---- */
+.form-control:focus {
+    border-color: var(--primary, #667eea);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ---- 切换开关动画 ---- */
+.form-switch .form-check-input {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.form-switch .form-check-input:checked {
+    transform: scale(1.05);
+}
+
+/* ---- Toast 通知动画 ---- */
+.toast.show {
+    animation: toast-slide-in 0.3s ease;
+}
+
+@keyframes toast-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ---- 模态框动画 ---- */
+.modal.fade .modal-dialog {
+    animation: modal-scale-in 0.3s ease;
+}
+
+@keyframes modal-scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

@@ -556,6 +556,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 页面加载时初始化
     console.log('开始执行初始化...');
     
+    // 隐藏页面加载进度条
+    const pageLoader = document.getElementById('pageLoader');
+    
     // 统一初始化：同时获取所有状态
     Promise.all([
         loadStatus(),
@@ -563,6 +566,17 @@ document.addEventListener('DOMContentLoaded', function() {
         checkDatabase() // 包含日志数据库、备份数据库状态的统一获取
     ]).then(() => {
         loadHistory();
+        // 数据加载完成后隐藏进度条
+        if (pageLoader) {
+            pageLoader.style.opacity = '0';
+            setTimeout(() => pageLoader.remove(), 300);
+        }
+    }).catch(() => {
+        // 出错也要隐藏进度条
+        if (pageLoader) {
+            pageLoader.style.opacity = '0';
+            setTimeout(() => pageLoader.remove(), 300);
+        }
     });
     
     // 每15秒更新状态（loadStatus内部已包含备份状态获取）

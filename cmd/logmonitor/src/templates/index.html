@@ -18,6 +18,9 @@
     <script src="{{ url_for('static', filename='js/components.js') }}"></script>
 </head>
 <body>
+    <!-- 页面加载进度条 -->
+    <div class="page-loader" id="pageLoader"></div>
+    
     <!-- 移动端遮罩层 -->
     <div id="modal-backdrop" class="modal-backdrop-custom" style="display: none;"></div>
 
@@ -56,7 +59,7 @@
         <!-- 标题 + KPI Dashboard Header -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card header-card">
+                <div class="card header-card page-card">
                     <div class="card-body header-card-body">
                         <!-- 第一行：标题区域 -->
                         <div class="header-title-row">
@@ -225,7 +228,7 @@
         <div class="config-content" id="configContent">
                 <!-- 系统状态面板 -->
                 <div class="config-panel active" id="panel-status">
-                    <div class="card status-card">
+                    <div class="card status-card page-card">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0 icon-text"><i class="fas fa-tachometer-alt me-2"></i>系统状态</h5>
                         </div>
