@@ -95,6 +95,9 @@ def create_app():
     app.secret_key = secret_key
 
     # Session 配置 - 确保 cookie 正确工作
+    # Session 超时配置常量
+    from utils.constants import TimeConstants
+    
     app.config['SESSION_COOKIE_NAME'] = 'fnlogpush_session'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SECURE'] = False  # 允许 HTTP
@@ -108,8 +111,6 @@ def create_app():
     # 初始化SocketIO
     socketio.init_app(app, cors_allowed_origins='*', async_mode='threading')
 
-    # Session 超时配置（5分钟无操作退出）
-    from utils.constants import TimeConstants
     SESSION_TIMEOUT = TimeConstants.SESSION_TIMEOUT
 
     @app.before_request
