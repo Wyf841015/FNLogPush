@@ -264,3 +264,119 @@ body.theme-sunset .bg-glow-2 {
     opacity: 0.5;
 }
 
+/* ========== 健康检查卡片主题适配 ========== */
+/* 使用主题变量替代硬编码颜色 */
+:root {
+    --health-memory-bg: var(--primary);
+    --health-memory-color: #fff;
+    --health-disk-bg: var(--primary);
+    --health-disk-color: #fff;
+    --health-process-bg: var(--primary);
+    --health-process-color: #fff;
+    --health-success-bg: var(--color-success, var(--primary));
+    --health-success-color: #fff;
+    --health-warning-bg: var(--color-warning, #f59e0b);
+    --health-warning-color: #fff;
+    --health-danger-bg: var(--color-danger, #ef4444);
+    --health-danger-color: #fff;
+}
+
+/* 暗色主题适配 */
+body.theme-default,
+body.theme-dark,
+body.theme-ocean,
+body.theme-cyber {
+    --health-memory-bg: rgba(16, 185, 129, 0.8);
+    --health-memory-color: #fff;
+    --health-disk-bg: rgba(245, 158, 11, 0.8);
+    --health-disk-color: #fff;
+    --health-process-bg: rgba(99, 102, 241, 0.8);
+    --health-process-color: #fff;
+}
+
+/* 浅色主题适配 */
+body.theme-green,
+body.theme-sunset {
+    --health-memory-bg: #10b981;
+    --health-memory-color: #fff;
+    --health-disk-bg: #f59e0b;
+    --health-disk-color: #fff;
+    --health-process-bg: #6366f1;
+    --health-process-color: #fff;
+}
+
+/* 健康检查卡片头部 */
+.health-card-memory {
+    background: var(--health-memory-bg) !important;
+    color: var(--health-memory-color) !important;
+}
+
+.health-card-disk {
+    background: var(--health-disk-bg) !important;
+    color: var(--health-disk-color) !important;
+}
+
+.health-card-process {
+    background: var(--health-process-bg) !important;
+    color: var(--health-process-color) !important;
+}
+
+/* 健康检查状态徽章 */
+.health-badge-success {
+    background: var(--health-success-bg) !important;
+    color: var(--health-success-color) !important;
+}
+
+.health-badge-warning {
+    background: var(--health-warning-bg) !important;
+    color: var(--health-warning-color) !important;
+}
+
+.health-badge-danger {
+    background: var(--health-danger-bg) !important;
+    color: var(--health-danger-color) !important;
+}
+
+/* 按钮主题适配 */
+.health-btn-success {
+    background: var(--health-success-bg) !important;
+    color: var(--health-success-color) !important;
+    border-color: var(--health-success-bg) !important;
+}
+
+.health-btn-success:hover {
+    opacity: 0.9;
+    filter: brightness(1.1);
+}
+
+/* 健康检查信息卡片头部 */
+.health-card-system {
+    background: var(--health-info-bg, var(--primary)) !important;
+    color: var(--health-info-color, #fff) !important;
+}
+
+.health-card-cpu {
+    background: var(--health-cpu-bg, var(--primary)) !important;
+    color: var(--health-cpu-color, #fff) !important;
+}
+
+/* 暗色主题适配信息卡片 */
+body.theme-default,
+body.theme-dark,
+body.theme-ocean,
+body.theme-cyber {
+    --health-info-bg: rgba(14, 165, 233, 0.8);
+    --health-info-color: #fff;
+    --health-cpu-bg: rgba(99, 102, 241, 0.8);
+    --health-cpu-color: #fff;
+}
+
+/* 浅色主题适配信息卡片 */
+body.theme-green,
+body.theme-sunset {
+    --health-info-bg: #0ea5e9;
+    --health-info-color: #fff;
+    --health-cpu-bg: #6366f1;
+    --health-cpu-color: #fff;
+}
+

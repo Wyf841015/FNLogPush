@@ -194,7 +194,7 @@ function loadHealthStatus() {
             if (data.status === 'healthy') {
                 let html = `
                     <div class="alert alert-success">
-                        <h6 class="mb-3">系统健康状态: <span class="badge bg-success" aria-label="系统健康状态：健康"><i class="fas fa-check-circle me-1" aria-hidden="true"></i>健康</span></h6>
+                        <h6 class="mb-3">系统健康状态: <span class="badge health-badge-success" aria-label="系统健康状态：健康"><i class="fas fa-check-circle me-1" aria-hidden="true"></i>健康</span></h6>
                         <div class="mb-2">
                             <button class="btn btn-sm btn-outline-secondary" onclick="startHealthUpdate()">
                                 <i class="fas fa-play me-1"></i>开始实时更新
@@ -209,7 +209,7 @@ function loadHealthStatus() {
                 if (data.system) {
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-info text-white">系统信息</div>
+                            <div class="card-header health-card-system">系统信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">系统: ${data.system.system} ${data.system.release}</li>
@@ -225,7 +225,7 @@ function loadHealthStatus() {
                 if (data.cpu) {
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-primary text-white">CPU信息</div>
+                            <div class="card-header health-card-cpu">CPU信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">物理核心: ${data.cpu.physical_cores}</li>
@@ -245,7 +245,7 @@ function loadHealthStatus() {
                     
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-success text-white">内存信息</div>
+                            <div class="card-header health-card-memory">内存信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">总内存: ${totalMem} GB</li>
@@ -265,7 +265,7 @@ function loadHealthStatus() {
                     
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-warning text-dark">磁盘信息</div>
+                            <div class="card-header health-card-disk">磁盘信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">总空间: ${totalDisk} GB</li>
@@ -300,7 +300,7 @@ function loadHealthStatus() {
             } else {
                 content.innerHTML = `
                     <div class="alert alert-danger">
-                        <h6>系统健康状态: <span class="badge bg-danger" aria-label="系统健康状态：异常"><i class="fas fa-exclamation-circle me-1" aria-hidden="true"></i>异常</span></h6>
+                        <h6>系统健康状态: <span class="badge health-badge-danger" aria-label="系统健康状态：异常"><i class="fas fa-exclamation-circle me-1" aria-hidden="true"></i>异常</span></h6>
                         <p>错误信息: ${data.error}</p>
                     </div>
                 `;
@@ -595,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (navBrand) navBrand.appendChild(statusEl);
         }
         statusEl.textContent = connected ? '实时在线' : '实时离线';
-        statusEl.className = connected ? 'badge badge-online bg-success ms-2' : 'badge bg-danger ms-2';
+        statusEl.className = connected ? 'badge badge-online health-badge-success ms-2' : 'badge health-badge-danger ms-2';
     }
 
     // 页面加载时初始化
@@ -1482,13 +1482,13 @@ function loadHistory(retry = 0) {
                 }
 
                 const successBadge = item.success ?
-                    '<span class="badge bg-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
-                    '<span class="badge bg-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
+                    '<span class="badge health-badge-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
+                    '<span class="badge health-badge-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
 
                 // 来源标签
                 const sourceBadge = item.source === 'backup' ?
-                    '<span class="badge bg-warning text-dark" aria-label="来源：备份监控"><i class="fas fa-database me-1" aria-hidden="true"></i>备份</span>' :
-                    '<span class="badge bg-info" aria-label="来源：日志监控"><i class="fas fa-file-alt me-1" aria-hidden="true"></i>日志</span>';
+                    '<span class="badge health-badge-warning" aria-label="来源：备份监控"><i class="fas fa-database me-1" aria-hidden="true"></i>备份</span>' :
+                    '<span class="badge health-card-system" aria-label="来源：日志监控"><i class="fas fa-file-alt me-1" aria-hidden="true"></i>日志</span>';
 
                 // 使用 preview 字段，并高亮关键词
                 const rawPreview = item.preview ||
@@ -1521,7 +1521,7 @@ function loadHistory(retry = 0) {
                             'pushplus': 'fa-plus'
                         };
                         const icon = iconMap[ch] || 'fa-paper-plane';
-                        const statusClass = result ? 'bg-success' : 'bg-danger';
+                        const statusClass = result ? 'health-badge-success' : 'health-badge-danger';
                         const statusIcon = result ? 'fa-check' : 'fa-times';
                         channelBadges.push(`<span class="badge ${statusClass} me-1" title="${ch}: ${result ? '成功' : '失败'}"><i class="fas ${icon} me-1"></i><i class="fas ${statusIcon}"></i></span>`);
                     }
@@ -1539,7 +1539,7 @@ function loadHistory(retry = 0) {
                     <td>${successBadge}</td>
                     <td>${channelHtml}</td>
                     <td style="white-space: nowrap;">
-                        <span class="badge bg-primary rounded-pill">
+                        <span class="badge health-card-cpu rounded-pill">
                             ${item.count}
                         </span>
                     </td>
@@ -1646,8 +1646,8 @@ function showHistoryDetail(historyId) {
                 });
 
                 const successBadge = data.success ?
-                    '<span class="badge bg-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
-                    '<span class="badge bg-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
+                    '<span class="badge health-badge-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
+                    '<span class="badge health-badge-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
 
                 // 构建详情内容
                 let levelsHtml = '';
@@ -1657,7 +1657,7 @@ function showHistoryDetail(historyId) {
                             <h6 class="text-primary"><i class="fas fa-layer-group me-2"></i>日志级别统计</h6>
                             <div class="d-flex flex-wrap gap-2">
                                 ${Object.entries(data.levels).map(([level, count]) => `
-                                    <span class="badge bg-info">${level}: ${count}</span>
+                                    <span class="badge health-card-system">${level}: ${count}</span>
                                 `).join('')}
                             </div>
                         </div>
@@ -1708,7 +1708,7 @@ function showHistoryDetail(historyId) {
                                                 </tr>
                                                 <tr>
                                                     <td>日志数量</td>
-                                                    <td><span class="badge bg-primary rounded-pill">${data.count}</span> 条</td>
+                                                    <td><span class="badge health-card-cpu rounded-pill">${data.count}</span> 条</td>
                                                 </tr>
                                                 <tr>
                                                     <td>最后日志ID</td>
