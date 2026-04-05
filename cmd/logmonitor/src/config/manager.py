@@ -99,8 +99,12 @@ class ConfigManager:
             if isinstance(value, dict):
                 result[key] = self._encrypt_sensitive_fields(value, current_path)
             elif isinstance(value, str) and value and is_sensitive_field(current_path):
-                # 加密敏感字段
-                result[key] = self._crypto.encrypt(value)
+                # 跳过已经是加密的值（防止重复加密）
+                if value.startswith('__enc__') or value.startswith('__xor__'):
+                    result[key] = value
+                else:
+                    # 加密敏感字段
+                    result[key] = self._crypto.encrypt(value)
             else:
                 result[key] = value
         return result
@@ -122,9 +126,13 @@ class ConfigManager:
             
             if isinstance(value, dict):
                 result[key] = self._decrypt_sensitive_fields(value, current_path)
-            elif isinstance(value, str) and value and is_sensitive_field(current_path):
-                # 解密敏感字段
-                result[key] = self._crypto.decrypt(value)
+            elif isinstance(value, str) and value:
+                # 只对加密的值进行解密
+                if (is_sensitive_field(current_path) and 
+                    (value.startswith('__enc__') or value.startswith('__xor__'))):
+                    result[key] = self._crypto.decrypt(value)
+                else:
+                    result[key] = value
             else:
                 result[key] = value
         return result
