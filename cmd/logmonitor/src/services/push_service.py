@@ -49,9 +49,10 @@ class WebhookPushChannel(PushChannel):
         初始化Webhook推送渠道
         
         Args:
-            webhook_url: Webhook URL
+            webhook_url: Webhook URL，支持 {content} 占位符或 JSON body 模式
         """
         self.webhook_url = webhook_url
+        self._use_post = '{content}' not in webhook_url  # 无占位符时使用 POST
     
     def push(self, content: str) -> bool:
         """推送消息到Webhook"""
@@ -60,21 +61,36 @@ class WebhookPushChannel(PushChannel):
                 logger.warning("Webhook URL未配置")
                 return False
             
-            # URL编码内容
-            encoded_content = urllib.parse.quote(content)
-            url = self.webhook_url.replace('{content}', encoded_content)
+            if self._use_post:
+                # POST 模式：将内容作为 JSON body 发送
+                payload = {"content": content}
+                response = requests.post(
+                    self.webhook_url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                logger.debug(f"Webhook POST推送: {self.webhook_url[:50]}...")
+            else:
+                # GET 模式：使用 URL 占位符（向后兼容）
+                encoded_content = urllib.parse.quote(content)
+                url = self.webhook_url.replace('{content}', encoded_content)
+                response = requests.get(url, timeout=10)
+                logger.debug(f"Webhook GET推送: {url[:50]}...")
             
-            logger.debug(f"Webhook推送URL: {url[:100]}...")
-            
-            response = requests.get(url, timeout=10)
-            
-            if response.status_code == 200:
-                logger.info(f"Webhook推送成功，响应: {response.text[:100]}...")
+            if response.status_code in (200, 201):
+                logger.info(f"Webhook推送成功，状态码: {response.status_code}")
                 return True
             else:
-                logger.error(f"Webhook推送失败，状态码: {response.status_code}, 响应: {response.text}")
+                logger.error(f"Webhook推送失败，状态码: {response.status_code}, 响应: {response.text[:200]}")
                 return False
                 
+        except requests.exceptions.Timeout:
+            logger.error("Webhook推送超时")
+            return False
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Webhook连接失败")
+            return False
         except Exception as e:
             logger.error(f"Webhook推送时出错: {e}")
             return False

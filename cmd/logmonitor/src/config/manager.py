@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional, Tuple, List
 from pathlib import Path
 
 from .schema import SchemaValidator
+from utils.crypto import encrypt_value, decrypt_value, is_sensitive_field, get_crypto_manager
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,55 @@ class ConfigManager:
         self.config_path = config_path
         self.validator = SchemaValidator()
         self.config = self.load_config()
+        self._crypto = get_crypto_manager()
+    
+    def _encrypt_sensitive_fields(self, config: Dict[str, Any], parent_path: str = '') -> Dict[str, Any]:
+        """
+        递归加密敏感字段
+        
+        Args:
+            config: 配置字典
+            parent_path: 父路径
+            
+        Returns:
+            加密后的配置
+        """
+        result = {}
+        for key, value in config.items():
+            current_path = f"{parent_path}.{key}" if parent_path else key
+            
+            if isinstance(value, dict):
+                result[key] = self._encrypt_sensitive_fields(value, current_path)
+            elif isinstance(value, str) and value and is_sensitive_field(current_path):
+                # 加密敏感字段
+                result[key] = self._crypto.encrypt(value)
+            else:
+                result[key] = value
+        return result
+    
+    def _decrypt_sensitive_fields(self, config: Dict[str, Any], parent_path: str = '') -> Dict[str, Any]:
+        """
+        递归解密敏感字段
+        
+        Args:
+            config: 配置字典
+            parent_path: 父路径
+            
+        Returns:
+            解密后的配置
+        """
+        result = {}
+        for key, value in config.items():
+            current_path = f"{parent_path}.{key}" if parent_path else key
+            
+            if isinstance(value, dict):
+                result[key] = self._decrypt_sensitive_fields(value, current_path)
+            elif isinstance(value, str) and value and is_sensitive_field(current_path):
+                # 解密敏感字段
+                result[key] = self._crypto.decrypt(value)
+            else:
+                result[key] = value
+        return result
     
     def load_config(self) -> Dict[str, Any]:
         """
@@ -109,7 +159,8 @@ class ConfigManager:
                 if not is_valid:
                     logger.warning(f"配置验证失败: {errors}")
                 
-                return merged_config
+                # 解密敏感字段（运行时使用）
+                return self._decrypt_sensitive_fields(merged_config)
                 
         except json.JSONDecodeError as e:
             logger.error(f"配置文件JSON解析错误: {e}")
@@ -120,14 +171,16 @@ class ConfigManager:
     
     def save_config(self) -> bool:
         """
-        保存配置到文件
+        保存配置到文件（敏感字段加密存储）
         
         Returns:
             是否保存成功
         """
         try:
+            # 加密敏感字段后再保存
+            config_to_save = self._encrypt_sensitive_fields(self.config.copy())
             with open(self.config_path, 'w', encoding='utf-8') as f:
-                json.dump(self.config, f, ensure_ascii=False, indent=4)
+                json.dump(config_to_save, f, ensure_ascii=False, indent=4)
             logger.info(f"配置已保存到: {self.config_path}")
             return True
         except Exception as e:

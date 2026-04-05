@@ -3,7 +3,7 @@
 > 自动监控飞牛NAS系统日志和备份进度，实时推送至多种渠道
 
 [![Platform](https://img.shields.io/badge/platform-FNOS-blue)](https://www.fnnas.com/)
-[![Version](https://img.shields.io/badge/version-0.7.3-green)](https://gitee.com/wyf1015/FNLogPush)
+[![Version](https://img.shields.io/badge/version-0.7.4-green)](https://gitee.com/wyf1015/FNLogPush)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 ## 功能特性
@@ -103,6 +103,13 @@ FNLogPush/
 - 数据存储在应用目录内
 
 ## 更新日志
+
+### v0.7.4 (2026-04-05)
+- 🔒 **安全加固：移除硬编码 Secret Key** - 使用环境变量或配置文件固定密钥
+- 🔒 **安全加固：Webhook 改用 POST 请求** - 默认使用 POST JSON body，更安全
+- 🔒 **安全加固：敏感信息加密存储** - Webhook URL、Token 等敏感字段自动加密
+- 🔧 新增 `utils/crypto.py` 加密模块（Fernet AES 加密）
+- 🔧 新增 `.encrypt_key` 密钥文件管理
 
 ### v0.7.3 (2026-04-05)
 - ⚡ **性能优化：WebSocket推送健康状态** - 替代轮询，实时推送系统状态，降低服务器负载

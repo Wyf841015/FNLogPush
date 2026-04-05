@@ -68,11 +68,30 @@ def create_app():
                 template_folder=str(template_dir),
                 static_folder=str(static_dir))
 
-    # Secret Key - 使用固定的密钥，确保session持久化
+    # Secret Key - 优先使用环境变量，生成安全的随机密钥
     secret_key = os.environ.get('SECRET_KEY')
     if not secret_key:
-        # 使用固定的密钥，确保重启后session仍然有效
-        secret_key = 'fnlogpush-secret-key-2024'
+        # 优先尝试从配置文件读取
+        config_secret = None
+        try:
+            config_path = os.environ.get('APP_HOME', str(CODE_DIR))
+            config_file = Path(config_path) / 'config' / 'config.json'
+            if config_file.exists():
+                import json
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+                    config_secret = config_data.get('app_secret_key')
+        except Exception:
+            pass
+        
+        if config_secret:
+            secret_key = config_secret
+            logger.info("从配置文件加载 Secret Key")
+        else:
+            # 生成安全的随机密钥（仅首次启动使用）
+            import secrets
+            secret_key = secrets.token_hex(32)
+            logger.warning("使用随机生成的 Secret Key，请通过 SECRET_KEY 环境变量或配置文件固定")
     app.secret_key = secret_key
 
     # Session 配置 - 确保 cookie 正确工作
