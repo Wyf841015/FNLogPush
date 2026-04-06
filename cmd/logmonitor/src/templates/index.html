@@ -1118,10 +1118,12 @@
                             </div>
                             
                             <!-- 事件列表 -->
-                            <div id="events-list-container">
-                                <div class="text-center text-muted py-4">
-                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                                    <p class="mt-2">加载中...</p>
+                            <div class="table-responsive">
+                                <div id="events-list-container">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                        <p class="mt-2">加载中...</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1213,11 +1215,20 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="event-color" class="form-label">颜色</label>
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="color" class="form-control form-control-color" id="event-color" value="#007bff" title="选择颜色">
-                                    <input type="text" class="form-control" id="event-color-text" value="#007bff" style="max-width: 100px;">
+                                <label class="form-label">颜色</label>
+                                <div class="d-flex flex-wrap gap-2" id="color-presets">
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#007bff;border:2px solid transparent;" onclick="selectEventColor('#007bff')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#28a745;border:2px solid transparent;" onclick="selectEventColor('#28a745')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#dc3545;border:2px solid transparent;" onclick="selectEventColor('#dc3545')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#ffc107;border:2px solid transparent;" onclick="selectEventColor('#ffc107')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#17a2b8;border:2px solid transparent;" onclick="selectEventColor('#17a2b8')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#6f42c1;border:2px solid transparent;" onclick="selectEventColor('#6f42c1')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#e83e8c;border:2px solid transparent;" onclick="selectEventColor('#e83e8c')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#fd7e14;border:2px solid transparent;" onclick="selectEventColor('#fd7e14')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#20c997;border:2px solid transparent;" onclick="selectEventColor('#20c997')"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="width:32px;height:32px;padding:0;background:#343a40;border:2px solid transparent;" onclick="selectEventColor('#343a40')"></button>
                                 </div>
+                                <input type="hidden" id="event-color" value="#007bff">
                             </div>
                             <div class="col-md-6">
                                 <label for="event-icon" class="form-label">图标</label>
