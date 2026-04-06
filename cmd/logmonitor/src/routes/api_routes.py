@@ -319,23 +319,31 @@ def register_api_routes(app: Flask):
         from pathlib import Path
         
         app_home = os.environ.get('APP_HOME')
+        logger.info(f"_get_events_file_path: APP_HOME={app_home}")
+        
         if app_home:
             path = Path(app_home) / 'config' / 'events.json'
+            logger.info(f"_get_events_file_path: 检查 {path}, exists={path.exists()}")
             if path.exists() or True:  # 允许返回不存在的路径
                 return path
         
         # fallback 到源码目录
-        return _find_events_json()
+        src_path = _find_events_json()
+        logger.info(f"_get_events_file_path: fallback 到 {src_path}")
+        return src_path
 
     def _load_events_config():
         """加载事件配置"""
         import json
         events_file = _get_events_file_path()
+        logger.info(f"_load_events_config: 文件路径={events_file}")
         
         if events_file and events_file.exists():
             try:
                 with open(events_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    config = json.load(f)
+                logger.info(f"_load_events_config: 成功加载 {len(config.get('categories', []))} 个分类")
+                return config
             except Exception as e:
                 logger.error(f"加载事件配置失败: {e}")
         
@@ -361,6 +369,7 @@ def register_api_routes(app: Flask):
         获取事件列表（扁平化所有分类下的事件）
         """
         try:
+            logger.info("=== /api/events/list 被调用 ===")
             config = _load_events_config()
             events = []
             for category in config.get('categories', []):
@@ -374,6 +383,7 @@ def register_api_routes(app: Flask):
                         "category_id": category.get('id')
                     })
             
+            logger.info(f"=== 返回 {len(events)} 个事件 ===")
             return jsonify({
                 "status": "success",
                 "events": events,
@@ -441,9 +451,22 @@ def register_api_routes(app: Flask):
             })
             
             if _save_events_config(config):
+                # 自动将新事件添加到监控列表
+                try:
+                    from monitor_core import get_monitor
+                    monitor = get_monitor()
+                    if monitor and monitor.config:
+                        event_ids = monitor.config.get('event_ids', [])
+                        if event_id not in event_ids:
+                            event_ids.append(event_id)
+                            monitor.update_config({'event_ids': event_ids})
+                            logger.info(f"已将事件 '{event_id}' 自动添加到监控列表")
+                except Exception as e:
+                    logger.warning(f"自动添加到监控列表失败: {e}")
+                
                 return jsonify({
                     "status": "success",
-                    "message": f"事件 '{event_name}' 添加成功"
+                    "message": f"事件 '{event_name}' 添加成功并已启用监控"
                 })
             else:
                 return jsonify({"error": "保存配置文件失败"}), 500
@@ -573,6 +596,67 @@ def register_api_routes(app: Flask):
             })
         except Exception as e:
             logger.error(f"获取分类列表失败: {e}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/api/events/query-latest', methods=['GET'])
+    @api_error_handler
+    def events_query_latest():
+        """
+        根据事件ID查询数据库中该事件的最新一条记录
+        """
+        try:
+            from flask import request
+            from monitor_core import get_monitor
+            from utils.time_utils import TimeUtils
+            
+            event_id = request.args.get('event_id', '').strip()
+            if not event_id:
+                return jsonify({"error": "事件ID不能为空"}), 400
+            
+            monitor = get_monitor()
+            if not monitor or not monitor.db_available or not monitor.db_service:
+                return jsonify({"error": "数据库未连接"}), 500
+            
+            # 使用上下文管理器获取数据库连接
+            with monitor.db_service.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, logtime, loglevel, category, eventId, serviceId, uname, parameter
+                    FROM log 
+                    WHERE eventId = ? 
+                    ORDER BY id DESC 
+                    LIMIT 1
+                """, (event_id,))
+                row = cursor.fetchone()
+                
+                if row:
+                    # 使用 TimeUtils 转换时间戳为上海时区时间
+                    logtime_str = TimeUtils.timestamp_to_shanghai(row[1]) if row[1] else ""
+                    result = {
+                        "id": row[0],
+                        "logtime": row[1],
+                        "logtime_str": logtime_str,
+                        "loglevel": row[2],
+                        "category": row[3],
+                        "eventId": row[4],
+                        "serviceId": row[5],
+                        "uname": row[6],
+                        "parameter": row[7]
+                    }
+                    return jsonify({
+                        "status": "success",
+                        "found": True,
+                        "log": result
+                    })
+                else:
+                    return jsonify({
+                        "status": "success",
+                        "found": False,
+                        "message": f"数据库中未找到事件ID '{event_id}' 的记录"
+                    })
+                
+        except Exception as e:
+            logger.error(f"查询事件记录失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
     return app

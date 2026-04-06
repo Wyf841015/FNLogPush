@@ -455,6 +455,15 @@ body.theme-sunset .bg-glow {
 
     .modal-body {
         padding: 15px;
+        color: var(--text-primary);
+    }
+    
+    .modal-body .form-label {
+        color: var(--text-primary);
+    }
+    
+    .modal-body .form-text {
+        color: var(--text-secondary);
     }
 
     .notification-container {
@@ -4608,6 +4617,11 @@ a:focus-visible {
 /* 事件管理样式 */
 .card-header-events { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 .event-icon-preview { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; border-radius: 4px; font-size: 20px; }
+#event-query-result .alert { background: var(--bg-secondary, #f8f9fa); border: 1px solid var(--border-color, #dee2e6); color: var(--text-primary); }
+#event-query-result .log-detail-row { display: flex; margin-bottom: 4px; font-size: 13px; }
+#event-query-result .log-detail-label { font-weight: 600; min-width: 80px; color: var(--text-secondary, #495057); }
+#event-query-result .log-detail-value { flex: 1; word-break: break-all; color: var(--text-primary); }
+#event-query-result .log-message { background: var(--card-bg, #fff); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color, #e9ecef); margin-top: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: var(--text-primary); }
 .icon-btn { transition: all 0.2s; }
 .icon-btn:hover { transform: scale(1.1); }
 .icon-btn.border-primary { border: 2px solid #007bff; background: #e7f1ff !important; }

@@ -87,4 +87,8 @@
         {"id": "DISK_PLUG_IN", "name": "磁盘插入", "icon": "fa-plug", "color": "#00b09b"},
         {"id": "DISK_PLUG_OUT", "name": "磁盘拔出", "icon": "fa-eject", "color": "#ffc107"},
         {"id": "RAID_DEGRADED", "name": "RAID降级", "icon": "fa-exclamation-circle", "color": "#ff6b6b"},
-        {"id": "RAID_REBUILDING", "name": "RAID重建中", "
+        {"id": "RAID_REBUILDING", "name": "RAID重建中", "icon": "fa-sync", "color": "#fd7e14"}
+      ]
+    }
+  ]
+}
