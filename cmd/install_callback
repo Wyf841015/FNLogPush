@@ -88,6 +88,14 @@ if [ ! -f "${TRIM_PKGVAR}/config/config.json" ]; then
     fi
 fi
 
+# 处理 events.json 配置（如果不存在则复制）
+DEFAULT_EVENTS_FILE="${APP_CODE_DIR}/config/events.json"
+if [ ! -f "${TRIM_PKGVAR}/config/events.json" ]; then
+    if [ -f "${DEFAULT_EVENTS_FILE}" ]; then
+        cp -f "${DEFAULT_EVENTS_FILE}" "${TRIM_PKGVAR}/config/events.json"
+    fi
+fi
+
 _append_venv_log() {
     local f="$1"
     if [ -n "${TRIM_TEMP_LOGFILE:-}" ] && [ -f "${f}" ]; then

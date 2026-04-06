@@ -229,6 +229,17 @@ def main():
             shutil.copy(src_config, config_file)
             logger.info(f"配置文件已复制到: {config_file}")
 
+    # 处理 events.json 配置（如果不存在则复制，与 config.json 逻辑一致）
+    events_file = config_dir / 'events.json'
+    if not events_file.exists():
+        src_events = SRC_DIR / 'config' / 'events.json'
+        if not src_events.exists():
+            src_events = SRC_DIR / 'events.json'
+        if src_events.exists():
+            import shutil
+            shutil.copy(src_events, events_file)
+            logger.info(f"事件配置文件已复制到: {events_file}")
+
     # 设置工作目录为APP_HOME，确保相对路径配置正确
     os.chdir(APP_HOME)
     logger.info(f"工作目录: {os.getcwd()}")

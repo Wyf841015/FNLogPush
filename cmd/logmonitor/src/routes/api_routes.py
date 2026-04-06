@@ -259,16 +259,24 @@ def register_api_routes(app: Flask):
             return jsonify({"error": str(e)}), 500
 
     def _find_events_json():
-        """查找 events.json 文件的多个可能位置"""
+        """查找 events.json 文件的多个可能位置（与 config.json 逻辑一致）"""
+        import os
         from pathlib import Path
         
+        # APP_HOME 目录（与 app.py 中一致）
+        app_home = os.environ.get('APP_HOME')
+        
         # 可能的路径（按优先级排序）
-        possible_paths = [
-            Path(__file__).parent / 'events.json',           # routes/events.json
-            Path(__file__).parent.parent / 'events.json',    # src/events.json
-            Path(__file__).parent.parent / 'config' / 'events.json',  # config/events.json
-            Path(__file__).parent.parent.parent / 'config' / 'events.json',  # cmd/config/events.json
-        ]
+        possible_paths = []
+        
+        # 1. APP_HOME/config/events.json（优先，与 config.json 逻辑一致）
+        if app_home:
+            possible_paths.append(Path(app_home) / 'config' / 'events.json')
+        
+        # 2. 源码目录下的 events.json
+        possible_paths.append(Path(__file__).parent / 'events.json')           # routes/events.json
+        possible_paths.append(Path(__file__).parent.parent / 'events.json')    # src/events.json
+        possible_paths.append(Path(__file__).parent.parent / 'config' / 'events.json')  # src/config/events.json
         
         for path in possible_paths:
             if path.exists():
