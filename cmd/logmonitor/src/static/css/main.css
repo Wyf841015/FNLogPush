@@ -4603,3 +4603,12 @@ a:focus-visible {
         transform: scale(1) translateY(0);
     }
 }
+
+
+/* 事件管理样式 */
+.card-header-events { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.event-icon-preview { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; border-radius: 4px; font-size: 20px; }
+.icon-btn { transition: all 0.2s; }
+.icon-btn:hover { transform: scale(1.1); }
+.icon-btn.border-primary { border: 2px solid #007bff; background: #e7f1ff !important; }
+#icon-picker-grid .col-2 { min-width: 60px; }

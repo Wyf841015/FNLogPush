@@ -541,6 +541,11 @@ function switchFabPanel(btn, target) {
             startHealthUpdate();
         }, 1000);
     }
+
+    // 如果切换到事件管理面板，加载事件列表
+    if (target === 'events') {
+        refreshEventsList();
+    }
 }
 
 // 在页面加载时显示欢迎通知
@@ -2182,6 +2187,11 @@ function switchFabPanel(element, target) {
         setTimeout(() => {
             startHealthUpdate();
         }, 1000);
+    }
+
+    // 如果切换到事件管理面板，加载事件列表
+    if (target === 'events') {
+        refreshEventsList();
     }
 }
 

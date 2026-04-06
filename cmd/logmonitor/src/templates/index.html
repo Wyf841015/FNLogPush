@@ -275,6 +275,10 @@
                             <div class="nav-icon"><i class="fas fa-paper-plane"></i></div>
                             <span class="nav-text">推送配置</span>
                         </a>
+                        <a class="nav-item" data-target="events" data-label="事件管理" onclick="switchNavPanel(this, 'events')">
+                            <div class="nav-icon"><i class="fas fa-bolt"></i></div>
+                            <span class="nav-text">事件管理</span>
+                        </a>
                     </div>
 
                     <div class="nav-group">
@@ -1086,6 +1090,43 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 事件管理面板 -->
+                <div class="config-panel" id="panel-events">
+                    <div class="card">
+                        <div class="card-header card-header-events">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 icon-text"><i class="fas fa-bolt me-2"></i>事件管理</h5>
+                                <button class="btn btn-sm text-white border-white" onclick="showAddEventModal()" title="添加事件">
+                                    <i class="fas fa-plus me-1"></i>添加事件
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- 搜索和筛选 -->
+                            <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+                                <div class="input-group" style="max-width: 250px;">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="event-search" class="form-control" placeholder="搜索事件ID或名称…" oninput="filterEvents()">
+                                </div>
+                                <select id="event-category-filter" class="form-select" style="max-width: 150px;" onchange="filterEvents()">
+                                    <option value="">全部分类</option>
+                                </select>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="refreshEventsList()" title="刷新">
+                                    <i class="fas fa-sync"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- 事件列表 -->
+                            <div id="events-list-container">
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                    <p class="mt-2">加载中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         </div>
@@ -1108,6 +1149,7 @@
         <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
         <!-- 主JavaScript文件 -->
         <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/events_manager.js') }}"></script>
     </div>
 
     <!-- 查看详情模态框 -->
@@ -1131,6 +1173,89 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑事件模态框 -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="eventModalLabel">
+                        <i class="fas fa-bolt me-2"></i>添加事件
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="eventForm">
+                        <input type="hidden" id="event-id-original">
+                        <div class="mb-3">
+                            <label for="event-id" class="form-label">事件ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="event-id" placeholder="例如: CUSTOM_EVENT_001" required>
+                            <div class="form-text">唯一标识符，不能与现有事件重复</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="event-name" class="form-label">事件名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="event-name" placeholder="例如: 自定义事件" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="event-category" class="form-label">所属分类</label>
+                            <select class="form-select" id="event-category">
+                                <option value="custom">自定义事件</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="event-color" class="form-label">颜色</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="color" class="form-control form-control-color" id="event-color" value="#007bff" title="选择颜色">
+                                    <input type="text" class="form-control" id="event-color-text" value="#007bff" style="max-width: 100px;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="event-icon" class="form-label">图标</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div id="event-icon-preview" class="event-icon-preview">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="showIconPicker()">
+                                        选择图标
+                                    </button>
+                                    <input type="hidden" id="event-icon" value="fa-bell">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveEvent()">
+                        <i class="fas fa-save me-1"></i>保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图标选择器模态框 -->
+    <div class="modal fade" id="iconPickerModal" tabindex="-1" aria-labelledby="iconPickerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="iconPickerModalLabel">
+                        <i class="fas fa-icons me-2"></i>选择图标
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="icon-search" placeholder="搜索图标…" oninput="filterIcons(this.value)">
+                    </div>
+                    <div class="row" id="icon-picker-grid">
+                        <!-- 图标将通过 JavaScript 动态加载 -->
+                    </div>
                 </div>
             </div>
         </div>
