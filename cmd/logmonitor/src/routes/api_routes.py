@@ -258,6 +258,23 @@ def register_api_routes(app: Flask):
             logger.error(f"获取活跃聚合组失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    def _find_events_json():
+        """查找 events.json 文件的多个可能位置"""
+        from pathlib import Path
+        
+        # 可能的路径（按优先级排序）
+        possible_paths = [
+            Path(__file__).parent / 'events.json',           # routes/events.json
+            Path(__file__).parent.parent / 'events.json',    # src/events.json
+            Path(__file__).parent.parent / 'config' / 'events.json',  # config/events.json
+            Path(__file__).parent.parent.parent / 'config' / 'events.json',  # cmd/config/events.json
+        ]
+        
+        for path in possible_paths:
+            if path.exists():
+                return path
+        return None
+
     @app.route('/api/events/config', methods=['GET'])
     @api_error_handler
     def events_config():
@@ -268,16 +285,15 @@ def register_api_routes(app: Flask):
             import json
             from pathlib import Path
             
-            # 获取事件配置文件路径
-            base_dir = Path(__file__).parent.parent
-            events_file = base_dir / 'events.json'
+            # 获取事件配置文件路径（搜索多个可能位置）
+            events_file = _find_events_json()
             
-            if events_file.exists():
+            if events_file:
                 with open(events_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                 return jsonify({
                     "status": "success",
-                    "source": "file",
+                    "source": str(events_file),
                     "config": config
                 })
             else:
@@ -309,11 +325,9 @@ def register_api_routes(app: Flask):
             
             # 尝试合并 events.json 配置
             try:
-                import json
-                from pathlib import Path
-                base_dir = Path(__file__).parent.parent
-                events_file = base_dir / 'events.json'
-                if events_file.exists():
+                events_file = _find_events_json()
+                if events_file:
+                    import json
                     with open(events_file, 'r', encoding='utf-8') as f:
                         config = json.load(f)
                     for category in config.get('categories', []):
