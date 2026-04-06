@@ -258,4 +258,82 @@ def register_api_routes(app: Flask):
             logger.error(f"获取活跃聚合组失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @app.route('/api/events/config', methods=['GET'])
+    @api_error_handler
+    def events_config():
+        """
+        获取事件配置（从 events.json 文件加载）
+        """
+        try:
+            import json
+            from pathlib import Path
+            
+            # 获取事件配置文件路径
+            base_dir = Path(__file__).parent.parent
+            events_file = base_dir / 'events.json'
+            
+            if events_file.exists():
+                with open(events_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                return jsonify({
+                    "status": "success",
+                    "source": "file",
+                    "config": config
+                })
+            else:
+                return jsonify({
+                    "status": "error",
+                    "message": "事件配置文件不存在"
+                }), 404
+        except Exception as e:
+            logger.error(f"加载事件配置失败: {e}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/api/events/mappings', methods=['GET'])
+    @api_error_handler
+    def events_mappings():
+        """
+        获取事件映射（从 mappings.py 内置映射 + events.json 配置合并）
+        """
+        try:
+            from config.mappings import EventMappings
+            
+            mappings = EventMappings()
+            # 获取所有内置映射
+            all_events = {}
+            for event_id, event_name in EventMappings.EVENT_NAME_MAP.items():
+                all_events[event_id] = {
+                    "name": event_name,
+                    "source": "builtin"
+                }
+            
+            # 尝试合并 events.json 配置
+            try:
+                import json
+                from pathlib import Path
+                base_dir = Path(__file__).parent.parent
+                events_file = base_dir / 'events.json'
+                if events_file.exists():
+                    with open(events_file, 'r', encoding='utf-8') as f:
+                        config = json.load(f)
+                    for category in config.get('categories', []):
+                        for event in category.get('events', []):
+                            event_id = event.get('id')
+                            if event_id:
+                                all_events[event_id] = {
+                                    "name": event.get('name', event_id),
+                                    "source": "config"
+                                }
+            except Exception as config_err:
+                logger.debug(f"合并事件配置失败: {config_err}")
+            
+            return jsonify({
+                "status": "success",
+                "total": len(all_events),
+                "mappings": all_events
+            })
+        except Exception as e:
+            logger.error(f"获取事件映射失败: {e}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+
     return app

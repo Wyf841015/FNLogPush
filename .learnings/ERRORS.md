@@ -1,99 +1,98 @@
 # Errors Log
 
-记录命令失败、异常和外部工具错误。
+## [ERR-20260406-001] git-rebase
 
----
-
-## [ERR-20260404-001] MeoW API HTTP 500
-
-**Logged**: 2026-04-04T10:00:00+08:00
+**Logged**: 2026-04-06T00:00:00+08:00
 **Priority**: high
 **Status**: resolved
-**Area**: backend
-
-### Summary
-MeoW API 使用 GET 方式请求返回 500 错误
-
-### Error
-```
-MeoW推送响应: {'status': 500, 'data': None, 'msg': '服务器内部错误'}
-```
-
-### Context
-- 推送渠道：MeoW
-- 请求方式：GET URL 编码
-- 环境：飞牛NAS
-
-### Suggested Fix
-改用 POST JSON 方式：
-```python
-response = requests.post(url, json={'title': title, 'msg': msg})
-```
-
-### Metadata
-- Reproducible: yes
-- Related Files: push_service.py
-
----
-
-## [ERR-20260404-002] GitHub TLS Connection
-
-**Logged**: 2026-04-04T10:20:00+08:00
-**Priority**: medium
-**Status**: workaround
 **Area**: infra
 
 ### Summary
-GitHub 连接频繁出现 TLS 错误
+Git rebase 二进制文件产生冲突
+
+### Error
+```
+Cannot merge binary files: ICON.PNG (HEAD vs. 1618808 (更新应用图标 (v0.7.6)))
+CONFLICT (content): Merge conflict in ICON.PNG
+```
+
+### Context
+- 操作：`git pull gitee master --rebase`
+- 原因：远程和本地都有对二进制文件的修改
+- 二进制文件：ICON.PNG, ICON_128.PNG, ICON_256.PNG 等
+
+### Suggested Fix
+1. 使用 `git rebase --abort` 放弃 rebase
+2. 直接 `git push --force` 推送本地版本
+3. 或在修改二进制文件前先 pull 远程最新版本
+
+### Metadata
+- Reproducible: yes
+- Related Files: ICON*.PNG
+- See Also: LRN-20260406-004
+
+---
+
+## [ERR-20260406-002] GitHub Connection
+
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: high
+**Status**: pending
+**Area**: infra
+
+### Summary
+GitHub 连接超时，无法推送
 
 ### Error
 ```
 fatal: unable to access 'https://github.com/...': GnuTLS recv error (-110): The TLS connection was non-properly terminated.
-fatal: Failed to connect to github.com port 443 after 134xxx ms: Couldn't connect to server
+fatal: Failed to connect to github.com port 443 after 134409 ms: Couldn't connect to server
 ```
 
 ### Context
-- 网络环境可能存在问题
-- 多次重试后有时成功
+- 操作：`git push origin master`
+- 目标：GitHub
+- 多次重试均失败
 
 ### Suggested Fix
-- 多次重试
-- 检查网络连接
-- 等待网络恢复
+1. 检查网络代理设置
+2. 稍后重试
+3. 使用 Gitee 作为替代
 
 ### Metadata
 - Reproducible: intermittent
-- Related Files: N/A
+- Related Files: FNLogPush, FnDepot
+- See Also: LRN-20260406-004
 
 ---
 
-## [ERR-20260404-003] GitHub Authentication
+## [ERR-20260406-003] SkillHub Path
 
-**Logged**: 2026-04-04T09:50:00+08:00
-**Priority**: high
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: medium
 **Status**: resolved
 **Area**: infra
 
 ### Summary
-GitHub token 过期导致推送失败
+SkillHub CLI 安装后命令找不到
 
 ### Error
 ```
-fatal: Authentication failed for 'https://github.com/...'
-remote: Invalid username or token. Password authentication is not supported for Git operations.
+/bin/sh: 1: skillhub: not found
 ```
 
 ### Context
-- token: <旧token> (已过期)
-- 新 token: <新token>
+- 操作：`skillhub install seede-design`
+- 原因：CLI 安装到 `/root/.local/bin` 但不在 PATH 中
 
 ### Suggested Fix
 ```bash
-git remote set-url origin https://ghp_NEW_TOKEN@github.com/repo.git
+export PATH="$PATH:/root/.local/bin"
+skillhub install seede-design
 ```
 
 ### Metadata
-- Reproducible: no (token 已更新)
-- Related Files: N/A
+- Reproducible: yes
+- See Also: LRN-20260406-005
 
 ---

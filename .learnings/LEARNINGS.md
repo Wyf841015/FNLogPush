@@ -1,144 +1,197 @@
 # Learnings Log
 
-记录开发过程中的经验、教训和最佳实践。
+## [LRN-20260406-001] best_practice
 
----
-
-## [LRN-20260404-001] best_practice
-
-**Logged**: 2026-04-04T00:00:00+08:00
+**Logged**: 2026-04-06T00:00:00+08:00
 **Priority**: high
 **Status**: resolved
-**Area**: backend
+**Area**: frontend
 
 ### Summary
-添加新推送渠道时，必须同时更新 push_channels 配置和具体渠道配置
+移动端遮罩层需要同时设置 opacity 和 pointer-events 才能禁用点击穿透
 
 ### Details
-在添加 MeoW 推送渠道时，只添加了 meow 配置项，但没有将其添加到 push_channels 字典中。导致 push_service.push_message() 调用时，meow 渠道不会被执行。
+在为侧边栏遮罩层 `.sidebar-overlay` 设置 `display: none` 时，虽然视觉上隐藏了，但元素仍然能接收点击事件。需要额外设置 `pointer-events: none` 才能禁用点击。
 
 ### Suggested Action
-添加新渠道时，确保：
-1. 在 main.js 的 push_channels 中添加 `meow: checkbox.checked`
-2. 在 base.py 的配置更新检查中添加 `'meow'` 到检测列表
-3. 在 push_service.py 的 configure_from_config 中添加渠道配置加载
-
-### Metadata
-- Source: error
-- Related Files: main.js, base.py, push_service.py
-- Pattern-Key: push-channel.config-sync
-
----
-
-## [LRN-20260404-002] best_practice
-
-**Logged**: 2026-04-04T00:00:00+08:00
-**Priority**: high
-**Status**: resolved
-**Area**: backend
-
-### Summary
-MeoW API 使用 POST JSON 方式更可靠
-
-### Details
-API 文档声称支持 GET/POST，但实际测试发现：
-- GET 方式在某些环境返回 500 错误
-- POST JSON 方式 `{"title": "...", "msg": "..."}` 稳定可靠
-
-### Suggested Action
-优先使用 POST JSON 方式：
-```python
-response = requests.post(url, json={'title': title, 'msg': msg})
-```
-
-### Metadata
-- Source: error
-- Related Files: push_service.py
-
----
-
-## [LRN-20260404-003] knowledge_gap
-
-**Logged**: 2026-04-04T00:00:00+08:00
-**Priority**: medium
-**Status**: pending
-**Area**: backend
-
-### Summary
-自定义标题模板时，消息内容处理逻辑需要调整
-
-### Details
-当用户设置自定义标题时，消息内容应该是完整的原始内容，而不是跳过第一行。使用配置的标题后，整个消息作为内容推送。
-
-### Suggested Action
-```python
-if self.title:
-    title = self.title[:50]
-    msg = content  # 整个消息作为内容
-else:
-    title = lines[0][:50]
-    msg = lines[1] if len(lines) > 1 else ""
+CSS 遮罩层应该同时设置：
+```css
+.sidebar-overlay {
+    opacity: 0;
+    pointer-events: none;  /* 禁用点击 */
+}
+.sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;  /* 启用点击 */
+}
 ```
 
 ### Metadata
 - Source: user_feedback
-- Related Files: push_service.py
+- Related Files: cmd/logmonitor/src/static/css/themes.css
+- Tags: mobile, css, pointer-events
+- Pattern-Key: frontend.overlay.click_through
 
 ---
 
-## [LRN-20260404-004] best_practice
+## [LRN-20260406-002] best_practice
 
-**Logged**: 2026-04-04T00:00:00+08:00
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+JavaScript 中重复定义函数会导致后定义的覆盖先定义的
+
+### Details
+在 main.js 中，`toggleSidebar()` 函数被定义了两次：
+- 第30行：正确的侧边栏切换逻辑
+- 第2150行：旧的 `toggleFabMenu()` 调用
+
+后定义的函数会覆盖先定义的，导致正确的逻辑被覆盖。
+
+### Suggested Action
+1. 删除重复的旧函数定义
+2. 代码审查时注意检查函数重名情况
+3. 使用 ESLint 等工具检测未使用的函数
+
+### Metadata
+- Source: user_feedback
+- Related Files: cmd/logmonitor/src/static/js/main.js
+- Tags: javascript, function-override, debugging
+
+---
+
+## [LRN-20260406-003] correction
+
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+移动端底部导航栏点击事件监听器是多余的
+
+### Details
+最初添加了额外的 JavaScript 事件监听器来同步底部导航的 active 状态，但由于 onclick 已经正确工作，这个监听器导致了行为异常。
+
+### Suggested Action
+移除多余的事件监听器，依赖 HTML onclick 属性：
+```javascript
+// 不需要额外的监听器
+// onclick="switchNavPanel(this, 'status')" 已足够
+```
+
+### Metadata
+- Source: conversation
+- Related Files: cmd/logmonitor/src/templates/index.html
+- Tags: mobile-nav, event-listener
+
+---
+
+## [LRN-20260406-004] best_practice
+
+**Logged**: 2026-04-06T00:00:00+08:00
 **Priority**: medium
 **Status**: resolved
 **Area**: infra
 
 ### Summary
-GitHub/Gitee 推送时需要正确配置 token 和分支
+Git 二进制文件冲突需要手动解决，rebase 方式会产生更多冲突
 
 ### Details
-- token 过期需要更新远程 URL
-- 仓库可能使用 main 分支而非 master
-- 推送到不同分支使用 `git push origin source:target`
+使用 `git pull --rebase` 时，二进制文件（如图标 PNG）无法自动合并，产生冲突。直接 `git push --force` 可以覆盖远程版本。
 
 ### Suggested Action
-```bash
-# 更新 token
-git remote set-url origin https://ghp_TOKEN@github.com/repo.git
-
-# 推送到 main 分支
-git push origin master:main
-```
+1. 图标等二进制文件应一次性更新到位
+2. 避免对二进制文件进行 rebase
+3. 必要时使用 `--force` 推送（需确保本地版本正确）
 
 ### Metadata
 - Source: error
+- Related Files: ICON*.PNG
+- Tags: git, binary-files, force-push
 
 ---
 
-## [LRN-20260404-005] best_practice
+## [LRN-20260406-005] knowledge_gap
 
-**Logged**: 2026-04-04T00:00:00+08:00
-**Priority**: low
-**Status**: pending
-**Area**: config
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
 
 ### Summary
-飞牛NAS FPK 打包时，需要检查 .gitignore 确保不包含调试文件
+SkillHub CLI 安装后需要添加到 PATH 才能使用
 
 ### Details
-打包后发现 __pycache__、.learnings 等目录被包含在包中
+使用 curl 安装 SkillHub CLI 后，命令 `skillhub` 无法直接执行，需要手动添加 `/root/.local/bin` 到 PATH 环境变量。
 
 ### Suggested Action
-确保 .gitignore 包含：
-```
-__pycache__/
-*.pyc
-*.pyo
-.learnings/
+安装后立即验证并添加到 PATH：
+```bash
+export PATH="$PATH:/root/.local/bin"
+skillhub install <skill-name>
 ```
 
 ### Metadata
 - Source: error
-- Related Files: manifest, .gitignore
+- Tags: skillhub, path, installation
+
+---
+
+## [LRN-20260406-006] best_practice
+
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+PIL 生成的图标需要验证是否有实际内容
+
+### Details
+使用 Python PIL 库生成图标后，文件大小正常但显示为空。可能是绘制操作没有正确执行或图层顺序问题。
+
+### Suggested Action
+生成图标后验证内容：
+```python
+from PIL import Image
+img = Image.open('icon.png')
+alpha = img.split()[3]
+non_transparent = sum(1 for p in alpha.getdata() if p > 0)
+print(f'Non-transparent pixels: {non_transparent}')
+```
+像素数应大于 0 才表示有内容。
+
+### Metadata
+- Source: user_feedback
+- Related Files: generate_icon.py
+- Tags: python, pil, image-generation
+- Pattern-Key: image.generation.verify
+
+---
+
+## [LRN-20260406-007] correction
+
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+移动端侧边栏默认隐藏是 CSS 控制的，不是 JS
+
+### Details
+最初怀疑是 JavaScript 问题导致侧边栏无法隐藏/弹出，实际上 CSS 的 `transform: translateX(-100%)` 已经正确控制默认隐藏状态。问题出在重复的函数定义。
+
+### Suggested Action
+排查问题时先确认基础 CSS 是否正确，再检查 JavaScript。
+
+### Metadata
+- Source: conversation
+- Related Files: cmd/logmonitor/src/static/css/themes.css
+- Tags: mobile-sidebar, css-transform
 
 ---

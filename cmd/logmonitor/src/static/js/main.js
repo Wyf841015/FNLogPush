@@ -1,3 +1,34 @@
+// ========== 全局事件配置缓存 ==========
+let eventCategoriesCache = null;
+
+// 从API加载事件配置（带缓存）
+async function loadEventCategoriesFromAPI() {
+    if (eventCategoriesCache) return eventCategoriesCache;
+    
+    try {
+        const response = await fetch('/api/events/config');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.config && data.config.categories) {
+                const categories = {};
+                data.config.categories.forEach(cat => {
+                    categories[cat.name] = cat.events.map(e => ({
+                        id: e.id,
+                        icon: e.icon || 'fa-circle',
+                        color: e.color || '#667eea',
+                        name: e.name || e.id
+                    }));
+                });
+                eventCategoriesCache = categories;
+                return categories;
+            }
+        }
+    } catch (err) {
+        console.warn('从API加载事件配置失败:', err);
+    }
+    return null;
+}
+
 // ========== 模块已分离 ==========
 // api.js - API 请求模块
 // websocket.js - WebSocket 管理模块
@@ -1002,10 +1033,13 @@ function showNewPushNotification() {
 }
 
 // 加载配置
-function loadConfig() {
+async function loadConfig() {
+    // 先从API加载事件配置
+    await loadEventCategoriesFromAPI();
+    
     apiFetch('/api/config')
         .then(response => response.json())
-        .then(config => {
+        .then(async config => {
             currentConfig = config;
 
             // 填充表单
@@ -1128,9 +1162,13 @@ function loadConfig() {
             const eventsContainer = document.getElementById('event-types');
             eventsContainer.innerHTML = '';
 
-            // 所有可能的事件类型，按类别分组
-            const eventCategories = {
-                '登录认证': [
+            // 获取事件类别配置（优先使用API缓存）
+            let eventCategories;
+            if (eventCategoriesCache) {
+                eventCategories = eventCategoriesCache;
+            } else {
+                eventCategories = {
+                    '登录认证': [
                     { id: 'LoginSucc', icon: 'fa-sign-in-alt', color: '#4facfe', name: '登录成功' },
                     { id: 'LoginSucc2FA1', icon: 'fa-shield-alt', color: '#667eea', name: '登录成功(双因素)' },
                     { id: 'LoginFail', icon: 'fa-times-circle', color: '#ff6b6b', name: '登录失败' },
@@ -1297,6 +1335,7 @@ function loadConfig() {
                     { id: 'SHARE_EVENTID_RENAME', icon: 'fa-file-signature', color: '#ffc107', name: '共享文件重命名', protocol: 'SHARE' }
                 ]
             };
+            }
 
             // 按类别生成事件
             Object.keys(eventCategories).forEach(category => {
