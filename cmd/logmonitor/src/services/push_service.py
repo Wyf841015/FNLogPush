@@ -498,7 +498,15 @@ class MeoWPushChannel(PushChannel):
                 result = response.json()
                 logger.info(f"MeoW推送响应[{i+1}/{len(segments)}]: {result}")
                 
-                if result.get('status') != 200:
+                # MeoW API 可能返回多种格式：status=200, code=200, status=0 等
+                success = (
+                    result.get('status') == 200 or 
+                    result.get('code') == 200 or 
+                    result.get('status') == 0 or
+                    result.get('code') == 0 or
+                    result.get('success') == True
+                )
+                if not success:
                     logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]: {result}")
                     all_success = False
             
