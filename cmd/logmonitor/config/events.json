@@ -23,58 +23,61 @@
     },
     {
       "name": "文件操作",
-      "icon": "fa-folder-open",
+      "icon": "fa-file-alt",
       "events": [
-        {"id": "FileUpload", "name": "文件上传", "icon": "fa-upload", "color": "#4facfe"},
-        {"id": "FileDownload", "name": "文件下载", "icon": "fa-download", "color": "#00b09b"},
-        {"id": "FileDelete", "name": "文件删除", "icon": "fa-trash", "color": "#dc3545"},
-        {"id": "FileMove", "name": "文件移动", "icon": "fa-exchange-alt", "color": "#ffc107"},
-        {"id": "FileRename", "name": "文件重命名", "icon": "fa-file-signature", "color": "#667eea"},
-        {"id": "FileCopy", "name": "文件复制", "icon": "fa-copy", "color": "#4facfe"},
-        {"id": "FilePermission", "name": "文件权限变更", "icon": "fa-unlock", "color": "#fd7e14"},
-        {"id": "FileDecrypt", "name": "文件解密", "icon": "fa-key", "color": "#059669"},
-        {"id": "FileEncrypt", "name": "文件加密", "icon": "fa-lock", "color": "#059669"}
+        {"id": "CreateFile", "name": "创建文件", "icon": "fa-file-medical", "color": "#00b09b"},
+        {"id": "DeleteFile", "name": "删除文件", "icon": "fa-file-medical-alt", "color": "#dc3545"},
+        {"id": "CopyFile", "name": "复制文件", "icon": "fa-file-copy", "color": "#4facfe"},
+        {"id": "MoveFile", "name": "移动文件", "icon": "fa-file-export", "color": "#667eea"},
+        {"id": "RenameFile", "name": "重命名文件", "icon": "fa-file-signature", "color": "#e83e8c"},
+        {"id": "ModifyFile", "name": "修改文件", "icon": "fa-file-code", "color": "#ffc107"},
+        {"id": "FileUpload", "name": "文件上传", "icon": "fa-file-upload", "color": "#00b09b"},
+        {"id": "FileDownload", "name": "文件下载", "icon": "fa-file-download", "color": "#667eea"},
+        {"id": "FileAccess", "name": "访问文件", "icon": "fa-folder-open", "color": "#4facfe"},
+        {"id": "FilePermission", "name": "文件权限变更", "icon": "fa-unlock", "color": "#fd7e14"}
       ]
     },
     {
       "name": "应用管理",
-      "icon": "fa-cube",
+      "icon": "fa-rocket",
       "events": [
         {"id": "APP_CRASH", "name": "应用崩溃", "icon": "fa-bomb", "color": "#dc3545"},
         {"id": "APP_UPDATE_FAILED", "name": "应用更新失败", "icon": "fa-exclamation-circle", "color": "#dc3545"},
         {"id": "APP_START_FAILED", "name": "应用启动失败", "icon": "fa-times-circle", "color": "#dc3545"},
         {"id": "LOCAL_APP_RUN_EXCEPTION", "name": "本地应用异常", "icon": "fa-exclamation-triangle", "color": "#ffc107"},
+        {"id": "APP_AUTO_START_FAILED_DOCKER_NOT_AVAILABLE", "name": "自动启动失败(Docker)", "icon": "fa-docker", "color": "#dc3545"},
         {"id": "APP_STARTED", "name": "应用已启动", "icon": "fa-play", "color": "#00b09b"},
         {"id": "APP_STOPPED", "name": "应用已停止", "icon": "fa-stop", "color": "#6c757d"},
         {"id": "APP_UPDATED", "name": "应用已更新", "icon": "fa-sync", "color": "#4facfe"},
         {"id": "APP_INSTALLED", "name": "应用已安装", "icon": "fa-download", "color": "#00b09b"},
         {"id": "APP_AUTO_STARTED", "name": "应用自动启动", "icon": "fa-rocket", "color": "#667eea"},
-        {"id": "APP_UNINSTALLED", "name": "应用已卸载", "icon": "fa-trash", "color": "#dc3545"}
+        {"id": "APP_UNINSTALLED", "name": "应用已卸载", "icon": "fa-trash", "color": "#dc3545"},
+        {"id": "APP_INSTALL_FAILED_DEPENDENCT_AND_CONFLICT", "name": "应用安装失败", "icon": "fa-exclamation-triangle", "color": "#dc3545"}
       ]
     },
     {
       "name": "系统监控",
-      "icon": "fa-chart-line",
+      "icon": "fa-microchip",
       "events": [
         {"id": "CPU_USAGE_ALARM", "name": "CPU使用率告警", "icon": "fa-microchip", "color": "#ffc107"},
-        {"id": "MemoryUsageAlarm", "name": "内存使用率告警", "icon": "fa-memory", "color": "#ffc107"},
-        {"id": "DISK_USAGE_ALARM", "name": "磁盘使用率告警", "icon": "fa-hdd", "color": "#ff6b6b"},
-        {"id": "SYSTEM_SHUTDOWN", "name": "系统关机", "icon": "fa-power-off", "color": "#dc3545"},
-        {"id": "SYSTEM_REBOOT", "name": "系统重启", "icon": "fa-redo", "color": "#4facfe"},
-        {"id": "ServiceNotRunning", "name": "服务未运行", "icon": "fa-exclamation-circle", "color": "#ff6b6b"}
+        {"id": "CPU_USAGE_RESTORED", "name": "CPU使用率恢复", "icon": "fa-check-double", "color": "#4facfe"},
+        {"id": "CPU_TEMPERATURE_ALARM", "name": "CPU温度告警", "icon": "fa-thermometer-full", "color": "#ff6b6b"},
+        {"id": "MemoryUsageAlarm", "name": "内存使用告警", "icon": "fa-memory", "color": "#e83e8c"},
+        {"id": "MEMORY_USAGE_ALARM", "name": "内存使用率告警", "icon": "fa-microchip", "color": "#ff6b6b"},
+        {"id": "DiskUsageAlarm", "name": "磁盘使用告警", "icon": "fa-chart-pie", "color": "#ff9f43"},
+        {"id": "NetworkUsageAlarm", "name": "网络流量告警", "icon": "fa-network-wired", "color": "#667eea"},
+        {"id": "ProcessHighCPU", "name": "进程高CPU占用", "icon": "fa-tasks", "color": "#fd7e14"},
+        {"id": "ProcessHighMemory", "name": "进程高内存占用", "icon": "fa-tasks", "color": "#e83e8c"}
       ]
     },
     {
       "name": "UPS电源",
       "icon": "fa-battery-full",
       "events": [
-        {"id": "UPS_ONLINE", "name": "UPS在线", "icon": "fa-plug", "color": "#00b09b"},
-        {"id": "UPS_OFFLINE", "name": "UPS离线", "icon": "fa-unlink", "color": "#dc3545"},
-        {"id": "UPS_BATTERY_LOW", "name": "UPS电池低", "icon": "fa-battery-quarter", "color": "#ff6b6b"},
-        {"id": "UPS_ON_BATTERY", "name": "UPS电池供电", "icon": "fa-battery-half", "color": "#ffc107"},
-        {"id": "UPS_COMMUNICATION_ERROR", "name": "UPS通讯错误", "icon": "fa-exclamation-triangle", "color": "#dc3545"},
-        {"id": "UPS_SHUTDOWN", "name": "UPS关闭", "icon": "fa-power-off", "color": "#dc3545"},
-        {"id": "UPS_ENABLE", "name": "UPS启用", "icon": "fa-toggle-on", "color": "#00b09b"},
+        {"id": "UPS_ONBATT", "name": "UPS电池供电", "icon": "fa-battery-quarter", "color": "#fd7e14"},
+        {"id": "UPS_ONBATT_LOWBATT", "name": "UPS低电量", "icon": "fa-battery-empty", "color": "#dc3545"},
+        {"id": "UPS_ONLINE", "name": "UPS在线", "icon": "fa-battery-full", "color": "#00b09b"},
+        {"id": "UPS_ENABLE", "name": "UPS启用", "icon": "fa-power-off", "color": "#4facfe"},
         {"id": "UPS_DISABLE", "name": "UPS禁用", "icon": "fa-toggle-off", "color": "#6c757d"}
       ]
     },
@@ -82,12 +85,73 @@
       "name": "磁盘管理",
       "icon": "fa-hdd",
       "events": [
-        {"id": "DISK_HEALTH_ERROR", "name": "磁盘健康错误", "icon": "fa-exclamation-triangle", "color": "#dc3545"},
-        {"id": "DISK_FULL", "name": "磁盘已满", "icon": "fa-hdd", "color": "#ff6b6b"},
-        {"id": "DISK_PLUG_IN", "name": "磁盘插入", "icon": "fa-plug", "color": "#00b09b"},
-        {"id": "DISK_PLUG_OUT", "name": "磁盘拔出", "icon": "fa-eject", "color": "#ffc107"},
-        {"id": "RAID_DEGRADED", "name": "RAID降级", "icon": "fa-exclamation-circle", "color": "#ff6b6b"},
-        {"id": "RAID_REBUILDING", "name": "RAID重建中", "icon": "fa-sync", "color": "#fd7e14"}
+        {"id": "FoundDisk", "name": "发现磁盘", "icon": "fa-hdd", "color": "#00b09b"},
+        {"id": "DiskWakeup", "name": "磁盘唤醒", "icon": "fa-play-circle", "color": "#00b09b"},
+        {"id": "DiskSpindown", "name": "磁盘休眠", "icon": "fa-pause-circle", "color": "#6c757d"},
+        {"id": "DISK_IO_ERR", "name": "磁盘IO错误", "icon": "fa-exclamation-circle", "color": "#ff6b6b"},
+        {"id": "DiskFull", "name": "磁盘空间不足", "icon": "fa-hdd", "color": "#dc3545"},
+        {"id": "DiskCorrupt", "name": "磁盘损坏", "icon": "fa-hdd", "color": "#dc3545"}
+      ]
+    },
+    {
+      "name": "存储管理",
+      "icon": "fa-database",
+      "events": [
+        {"id": "CreateStorage", "name": "创建存储", "icon": "fa-database", "color": "#00b09b"},
+        {"id": "MountStorage", "name": "挂载存储", "icon": "fa-plug", "color": "#00b09b"},
+        {"id": "UnmountStorage", "name": "卸载存储", "icon": "fa-unplug", "color": "#ffc107"},
+        {"id": "DeleteStorage", "name": "删除存储", "icon": "fa-trash", "color": "#dc3545"}
+      ]
+    },
+    {
+      "name": "防火墙",
+      "icon": "fa-shield-alt",
+      "events": [
+        {"id": "FW_ENABLE", "name": "防火墙启用", "icon": "fa-shield-alt", "color": "#00b09b"},
+        {"id": "FW_DISABLE", "name": "防火墙禁用", "icon": "fa-shield-virus", "color": "#6c757d"},
+        {"id": "FW_BLOCK", "name": "防火墙拦截", "icon": "fa-ban", "color": "#dc3545"}
+      ]
+    },
+    {
+      "name": "系统日志",
+      "icon": "fa-clipboard-list",
+      "events": [
+        {"id": "SystemReboot", "name": "系统重启", "icon": "fa-sync", "color": "#ffc107"},
+        {"id": "SystemShutdown", "name": "系统关机", "icon": "fa-power-off", "color": "#6c757d"},
+        {"id": "ServiceRestart", "name": "服务重启", "icon": "fa-redo", "color": "#ffc107"},
+        {"id": "ServiceStop", "name": "服务停止", "icon": "fa-stop", "color": "#fd7e14"},
+        {"id": "ServiceStart", "name": "服务启动", "icon": "fa-play", "color": "#00b09b"},
+        {"id": "ServiceFail", "name": "服务失败", "icon": "fa-exclamation-circle", "color": "#dc3545"}
+      ]
+    },
+    {
+      "name": "用户管理",
+      "icon": "fa-users",
+      "events": [
+        {"id": "UserCreated", "name": "用户创建", "icon": "fa-user-plus", "color": "#00b09b"},
+        {"id": "UserDeleted", "name": "用户删除", "icon": "fa-user-minus", "color": "#dc3545"},
+        {"id": "UserModified", "name": "用户修改", "icon": "fa-user-edit", "color": "#ffc107"},
+        {"id": "UserPasswordChange", "name": "密码修改", "icon": "fa-key", "color": "#667eea"}
+      ]
+    },
+    {
+      "name": "证书管理",
+      "icon": "fa-certificate",
+      "events": [
+        {"id": "CertCreated", "name": "证书创建", "icon": "fa-certificate", "color": "#00b09b"},
+        {"id": "CertRenewed", "name": "证书续期", "icon": "fa-sync", "color": "#4facfe"},
+        {"id": "CertExpiring", "name": "证书即将过期", "icon": "fa-exclamation-triangle", "color": "#ffc107"},
+        {"id": "CertExpired", "name": "证书已过期", "icon": "fa-times-circle", "color": "#dc3545"}
+      ]
+    },
+    {
+      "name": "备份还原",
+      "icon": "fa-undo",
+      "events": [
+        {"id": "BackupCreated", "name": "备份创建", "icon": "fa-save", "color": "#00b09b"},
+        {"id": "BackupRestored", "name": "备份还原", "icon": "fa-undo", "color": "#4facfe"},
+        {"id": "BackupFailed", "name": "备份失败", "icon": "fa-exclamation-circle", "color": "#dc3545"},
+        {"id": "RestoreFailed", "name": "还原失败", "icon": "fa-exclamation-circle", "color": "#dc3545"}
       ]
     }
   ]

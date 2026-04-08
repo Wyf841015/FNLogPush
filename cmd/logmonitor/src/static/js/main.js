@@ -513,15 +513,23 @@ function stopHealthUpdate() {
 }
 
 // 当切换到健康检查面板时自动开始实时更新
-// 当切换到健康检查面板时自动开始实时更新
 function switchFabPanel(btn, target) {
     // 停止之前的所有定时器
     stopHealthUpdate();
     
-    // 切换面板
+    // 切换浮动按钮激活状态
     document.querySelectorAll('.fab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn && btn.classList) btn.classList.add('active');
     
+    // 切换移动端底部导航激活状态
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+    const mobileBtn = document.querySelector(`.mobile-nav-btn[data-target="${target}"]`);
+    if (mobileBtn) mobileBtn.classList.add('active');
+    
+    // 同步侧边栏激活状态
+    syncNavActive(target);
+    
+    // 切换面板
     document.querySelectorAll('.config-panel').forEach(panel => {
         panel.classList.remove('active');
     });
@@ -1343,20 +1351,18 @@ async function loadConfig() {
             }
 
             // 按类别生成事件
+            // 定义颜色数组，循环使用
+            const categoryColors = [
+                '#667eea', '#e83e8c', '#00b09b', '#4facfe', '#ffc107',
+                '#fd7e14', '#17a2b8', '#059669', '#7c3aed', '#6c757d'
+            ];
+            let colorIndex = 0;
+            
             Object.keys(eventCategories).forEach(category => {
                 const categoryEvents = eventCategories[category];
-                const categoryColor = {
-                    '登录认证': '#667eea',
-                    'SSH连接': '#e83e8c',
-                    '文件操作': '#00b09b',
-                    '应用管理': '#4facfe',
-                    '系统监控': '#ffc107',
-                    'UPS电源': '#fd7e14',
-                    '磁盘管理': '#17a2b8',
-                    '存储管理': '#059669',
-                    '防火墙': '#7c3aed',
-                    '共享协议': '#e83e8c'
-                }[category];
+                // 通过取模循环获取颜色
+                const categoryColor = categoryColors[colorIndex % categoryColors.length];
+                colorIndex++;
 
                 // 特殊处理：共享协议按协议类型分组
                 if (category === '共享协议') {
@@ -2163,7 +2169,16 @@ function switchFabPanel(element, target) {
     document.querySelectorAll('.fab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    element.classList.add('active');
+    if (element && element.classList) {
+        element.classList.add('active');
+    }
+    
+    // 同步移动端底部导航激活状态
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const mobileBtn = document.querySelector(`.mobile-nav-btn[data-target="${target}"]`);
+    if (mobileBtn) mobileBtn.classList.add('active');
     
     // 同步侧边栏导航激活状态
     syncNavActive(target);
