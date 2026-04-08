@@ -1,154 +1,171 @@
-# 学习日志
+# 学习记录
 
-## [LRN-20260407-001] best_practice
+## [LRN-20260408-001] best_practice
 
-**Logged**: 2026-04-07T14:30:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: frontend
-
-### Summary
-移动端颜色选择器（input type="color"）无法弹出，需改用预设颜色按钮方案
-
-### Details
-- 移动端浏览器对 `<input type="color">` 支持不一致，部分设备点击无反应
-- 尝试多种方案：label for 触发、透明覆盖、Bootstrap input-group 等均失败
-- 最终采用预设颜色按钮方案：10 个常用颜色，点击直接选择
-
-### Suggested Action
-- 颜色选择优先考虑预设方案，移动端兼容性更好
-- 预设颜色应包含：蓝、绿、红、黄、青、紫、粉、橙、灰、黑
-
-### Metadata
-- Source: user_feedback
-- Related Files: cmd/logmonitor/src/templates/index.html, cmd/logmonitor/src/static/js/events_manager.js
-- Tags: mobile, ui, color-picker, compatibility
-- See Also: LRN-20260407-002
-
----
-## [LRN-20260407-002] best_practice
-
-**Logged**: 2026-04-07T14:35:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: frontend
-
-### Summary
-选择颜色时图标颜色应同步联动，提升用户体验
-
-### Details
-- 添加事件时，图标预览应跟随选择的颜色变化
-- 实现方式：在 selectEventColor 函数中同步更新 event-icon-preview 的 color 样式
-- 编辑事件时也需同步显示事件配置的颜色
-
-### Suggested Action
-- 颜色相关的 UI 组件应考虑联动反馈
-- 选择颜色后实时预览效果，减少用户确认步骤
-
-### Metadata
-- Source: user_feedback
-- Related Files: cmd/logmonitor/src/static/js/events_manager.js
-- Tags: ui, ux, color联动
-- See Also: LRN-20260407-001
-
----
-## [LRN-20260407-003] correction
-
-**Logged**: 2026-04-07T15:00:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: frontend
-
-### Summary
-event.target 在某些浏览器上下文可能获取不到正确元素，应先赋值再使用
-
-### Details
-- code-review 审查发现直接使用 event.target 可能存在浏览器兼容性问题
-- 修正方式：先 `var btn = event.target` 再操作 DOM
-
-### Suggested Action
-- 在事件处理函数中，避免直接链式使用 event.target
-- 先缓存到变量再使用，提高代码健壮性
-
-### Metadata
-- Source: code_review
-- Related Files: cmd/logmonitor/src/static/js/events_manager.js
-- Tags: javascript, browser-compatibility, code-review
-
----
-## [LRN-20260407-004] knowledge_gap
-
-**Logged**: 2026-04-07T15:30:00+08:00
-**Priority**: low
-**Status**: resolved
-**Area**: infra
-
-### Summary
-SkillHub 安装后需配置 PATH 环境变量才能使用
-
-### Details
-- 安装 SkillHub 后执行 `skillhub search` 报 not found
-- 原因：skillhub 安装在 /root/.local/bin/ 但该路径不在 PATH 中
-- 解决：使用 `export PATH=$PATH:/root/.local/bin` 或完整路径执行
-
-### Suggested Action
-- 文档中应说明安装后需要配置 PATH
-- 或使用完整路径调用 skillhub 命令
-
-### Metadata
-- Source: error
-- Related Files: skillhub 安装
-- Tags: skillhub, path, environment
-
----
-## [LRN-20260407-005] knowledge_gap
-
-**Logged**: 2026-04-07T16:00:00+08:00
-**Priority**: medium
+**Logged**: 2026-04-08T18:27:00+08:00
+**Priority**: high
 **Status**: resolved
 **Area**: backend
 
 ### Summary
-Bun 重写 Python Flask 项目的可行性评估
+FPK 打包的 Python 项目中，加密密钥必须在安装时预生成并持久化存储
 
 ### Details
-- 用户询问使用 Bun 重写项目的可行性
-- 核心挑战：psutil 系统监控库无直接替代方案，需要 Rust 扩展
-- 其他功能大部分有 JS 替代：SQLite、bcrypt、socket.io 等
-- 飞牛NAS 平台是否支持 Bun 运行时是最大不确定因素
+推送渠道配置（如 Webhook URL）使用 Fernet AES 加密存储。问题是每次应用重启时，如果加密密钥丢失或位置变化，已加密的配置将无法解密。
+
+原因分析：
+1. 加密密钥最初保存在 `APP_HOME/config/.encrypt_key`
+2. 安装时未预生成密钥
+3. Python 代码依赖 `APP_HOME` 环境变量，但该变量可能不可用
 
 ### Suggested Action
-- 短期保持 Python 后端，聚焦功能迭代
-- 中期可用 Bun 优化前端构建（方案 B）
-- 长期若飞牛NAS 支持 Bun 可评估全栈重写
+修复方案：
+1. **install_callback**: 安装时用 Python 生成密钥并保存到 `${TRIM_PKGVAR}/config/.encrypt_key`
+2. **upgrade_callback**: 升级时保留已有密钥
+3. **crypto.py**: 改进密钥存储逻辑，支持多个备用路径（TRIM_PKGVAR > APP_HOME > ~/.fnlogpush）
 
 ### Metadata
 - Source: user_feedback
-- Tags: bun, flask, rewrite, feasibility
+- Related Files:
+  - cmd/install_callback
+  - cmd/upgrade_callback
+  - cmd/logmonitor/src/utils/crypto.py
+- Tags: encryption, fpk, persistence
 
 ---
-## [LRN-20260407-006] best_practice
 
-**Logged**: 2026-04-07T14:15:00+08:00
+## [LRN-20260408-002] best_practice
+
+**Logged**: 2026-04-08T18:27:00+08:00
 **Priority**: medium
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-移动端表格列表应使用 table-responsive 支持横向滚动
+JavaScript 中存在重复函数定义时，后定义的函数会覆盖先定义的，可能导致意外行为
 
 ### Details
-- 移动端事件列表显示不全，只能看到事件 ID
-- 原因：表格内容超出屏幕宽度但无滚动容器
-- 解决：外层包裹 `<div class="table-responsive">`
+代码中存在两个 `switchFabPanel` 函数：
+- 第 516 行：正确处理了移动端底部导航 active 状态
+- 第 2164 行：缺少移动端导航处理
+
+由于 JavaScript 函数提升，后定义的函数生效，导致移动端导航状态不同步。
 
 ### Suggested Action
-- 移动端长表格务必使用 table-responsive 包裹
-- 考虑使用响应式列隐藏（d-none d-md-table-cell）精简显示
+1. 避免重复函数定义，使用有意义的命名区分
+2. 代码审查时检查是否存在函数重复
+3. 考虑合并重复函数或删除旧版本
 
 ### Metadata
 - Source: user_feedback
-- Related Files: cmd/logmonitor/src/templates/index.html
-- Tags: mobile, responsive, table, ui
+- Related Files:
+  - cmd/logmonitor/src/static/js/main.js
+- Tags: javascript, code-duplication, mobile-nav
+
+---
+
+## [LRN-20260408-003] best_practice
+
+**Logged**: 2026-04-08T23:22:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+第三方 API 状态码判断需要兼容多种响应格式和字段名
+
+### Details
+MeoW 推送 API 返回的状态字段可能是 `status` 或 `code`，而状态码含义：
+- 200: 操作成功
+- 400: 参数错误
+- 500: 服务器错误
+- data=False: 也表示失败
+
+原代码只检查 `result.get('status') != 200`，导致状态判断不准确。
+
+### Suggested Action
+修复方案：
+```python
+status_code = result.get('code') or result.get('status')
+if status_code == 200:
+    if result.get('data') is not False:
+        # 成功
+    else:
+        # 失败 (data=False)
+elif status_code == 400:
+    # 参数错误
+elif status_code == 500:
+    # 服务器错误
+```
+
+### Metadata
+- Source: user_feedback
+- Related Files:
+  - cmd/logmonitor/src/services/push_service.py (MeoWPushChannel.push)
+- Tags: api-integration, error-handling, meow
+
+---
+
+## [LRN-20260408-004] best_practice
+
+**Logged**: 2026-04-08T23:22:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+FPK 应用版本更新需要同步多个仓库和文件
+
+### Details
+发布新版本时需要更新的文件：
+1. **FNLogPush 仓库**:
+   - manifest (version)
+   - README.md (version + changelog)
+   - cmd/install_callback (如有必要)
+   - cmd/upgrade_callback (如有必要)
+
+2. **FnDepot 仓库**:
+   - fnpack.json (version + changelog)
+   - fnlogpush/README.md (version + changelog)
+   - fnlogpush/fnlogpush.fpk (编译后的安装包)
+
+3. **Git 推送**:
+   - GitHub 和 Gitee 都需要推送
+
+### Suggested Action
+建议使用脚本自动化版本更新流程，或创建版本更新清单 checklist。
+
+### Metadata
+- Source: conversation
+- Related Files:
+  - project/log-monitor-fpk/
+  - project/FnDepot/
+- Tags: versioning, release, multi-repo
+
+---
+
+## [LRN-20260408-005] best_practice
+
+**Logged**: 2026-04-08T23:22:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Git push 超时或 GnuTLS 错误时，多次重试通常可以成功
+
+### Details
+网络不稳定时 git push 会失败：
+- GnuTLS recv error (-110)
+- Failed to connect to github.com port 443
+- Timeout
+
+### Suggested Action
+遇到网络错误时，等待几秒后重试，通常 2-3 次可以成功。
+
+### Metadata
+- Source: conversation
+- Related Files:
+- Tags: git, networking, troubleshooting
 
 ---
