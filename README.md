@@ -3,7 +3,7 @@
 > 自动监控飞牛NAS系统日志和备份进度，实时推送至多种渠道
 
 [![Platform](https://img.shields.io/badge/platform-FNOS-blue)](https://www.fnnas.com/)
-[![Version](https://img.shields.io/badge/version-0.8.3-green)](https://gitee.com/wyf1015/FNLogPush)
+[![Version](https://img.shields.io/badge/version-0.8.4-green)](https://gitee.com/wyf1015/FNLogPush)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 ## 功能特性
@@ -105,6 +105,12 @@ FNLogPush/
 - 数据存储在应用目录内
 
 ## 更新日志
+
+### v0.8.4 (2026-04-08)
+- 🐛 **修复 MeoW 推送状态判断问题**
+  - 支持多种响应格式：status/code 字段
+  - 完善状态码处理：200成功/400参数错误/500服务器错误
+  - 增加 data=False 判断为失败的逻辑
 
 ### v0.8.3 (2026-04-08)
 - 🐛 **修复推送渠道重启后无法解密问题**
