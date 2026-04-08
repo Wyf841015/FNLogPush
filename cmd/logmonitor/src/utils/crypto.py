@@ -23,26 +23,32 @@ logger = __import__('logging').getLogger(__name__)
 
 def _get_key_storage_dir() -> Optional[Path]:
     """获取密钥存储目录，尝试多个可能的位置"""
-    # 1. 优先使用 APP_HOME
-    app_home = os.environ.get('APP_HOME', '')
-    if app_home:
-        key_dir = Path(app_home) / 'config'
-        if os.access(str(key_dir.parent), os.W_OK) or os.access(app_home, os.W_OK):
-            return key_dir
-    
-    # 2. 使用 TRIM_PKGVAR
+    # 1. 优先使用 TRIM_PKGVAR（FPK标准变量）
     trim_pkgvar = os.environ.get('TRIM_PKGVAR', '')
     if trim_pkgvar:
         key_dir = Path(trim_pkgvar) / 'config'
-        if os.access(str(key_dir.parent), os.W_OK) or os.access(trim_pkgvar, os.W_OK):
+        try:
+            os.makedirs(key_dir, exist_ok=True)
             return key_dir
+        except Exception as e:
+            logger.debug(f"TRIM_PKGVAR 路径不可用: {e}")
+    
+    # 2. 使用 APP_HOME
+    app_home = os.environ.get('APP_HOME', '')
+    if app_home:
+        key_dir = Path(app_home) / 'config'
+        try:
+            os.makedirs(key_dir, exist_ok=True)
+            return key_dir
+        except Exception as e:
+            logger.debug(f"APP_HOME 路径不可用: {e}")
     
     # 3. 使用应用数据目录（兼容不同平台）
     for base in [os.environ.get('HOME', ''), '/tmp', '.']:
         if base:
             key_dir = Path(base) / '.fnlogpush'
             try:
-                key_dir.mkdir(parents=True, exist_ok=True)
+                os.makedirs(key_dir, exist_ok=True)
                 test_file = key_dir / '.test'
                 test_file.touch()
                 test_file.unlink()
@@ -50,6 +56,37 @@ def _get_key_storage_dir() -> Optional[Path]:
             except Exception:
                 pass
     
+    return None
+
+
+def _get_config_key_direct() -> Optional[str]:
+    """直接从配置文件读取密钥，绕过 APP_HOME 检查"""
+    try:
+        # 尝试多个可能的密钥文件位置
+        locations = []
+        
+        trim_pkgvar = os.environ.get('TRIM_PKGVAR', '')
+        if trim_pkgvar:
+            locations.append(Path(trim_pkgvar) / 'config' / '.encrypt_key')
+        
+        app_home = os.environ.get('APP_HOME', '')
+        if app_home:
+            locations.append(Path(app_home) / 'config' / '.encrypt_key')
+        
+        # 也检查 config.json 同目录
+        for base in [trim_pkgvar, app_home, os.environ.get('HOME', ''), '.']:
+            if base:
+                locations.append(Path(base) / 'config' / '.encrypt_key')
+        
+        for key_file in locations:
+            if key_file.exists():
+                with open(key_file, 'r') as f:
+                    key = f.read().strip()
+                    if key:
+                        logger.debug(f"从 {key_file} 加载加密密钥")
+                        return key
+    except Exception as e:
+        logger.debug(f"直接读取密钥失败: {e}")
     return None
 
 
@@ -78,19 +115,27 @@ class CryptoManager:
         if env_key:
             return self._derive_key(env_key)
         
-        # 2. 从配置文件读取
+        # 2. 从配置文件直接读取（绕过目录检查）
+        config_key = _get_config_key_direct()
+        if config_key:
+            try:
+                return base64.urlsafe_b64decode(config_key)
+            except Exception as e:
+                logger.warning(f"解析密钥失败: {e}")
+        
+        # 3. 从 _load_config_key 读取（备用）
         config_key = self._load_config_key()
         if config_key:
             return base64.urlsafe_b64decode(config_key)
         
-        # 3. 生成新密钥
+        # 4. 生成新密钥
         if HAS_CRYPTO:
             new_key = Fernet.generate_key()
             self._save_config_key(new_key)
             logger.info("已生成并保存新的加密密钥")
             return new_key
         
-        # 4. 降级方案：使用机器特征生成（仅用于混淆，不可恢复）
+        # 5. 降级方案：使用机器特征生成（仅用于混淆，不可恢复）
         logger.warning("cryptography 库未安装，使用简单哈希加密（安全性较低）")
         machine_id = hashlib.sha256(
             f"{os.environ.get('HOSTNAME', 'default')}-{os.environ.get('USER', 'user')}".encode()

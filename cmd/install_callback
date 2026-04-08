@@ -88,6 +88,15 @@ if [ ! -f "${TRIM_PKGVAR}/config/config.json" ]; then
     fi
 fi
 
+# 生成并保存加密密钥（如果不存在）
+if [ ! -f "${TRIM_PKGVAR}/config/.encrypt_key" ]; then
+    ENCRYPT_KEY="$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())' 2>/dev/null || echo "")"
+    if [ -n "${ENCRYPT_KEY}" ]; then
+        echo "${ENCRYPT_KEY}" > "${TRIM_PKGVAR}/config/.encrypt_key"
+        chmod 600 "${TRIM_PKGVAR}/config/.encrypt_key" 2>/dev/null || true
+    fi
+fi
+
 # 处理 events.json 配置（如果不存在则复制）
 DEFAULT_EVENTS_FILE="${APP_CODE_DIR}/config/events.json"
 if [ ! -f "${TRIM_PKGVAR}/config/events.json" ]; then
