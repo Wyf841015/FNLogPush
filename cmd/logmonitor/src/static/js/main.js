@@ -513,49 +513,6 @@ function stopHealthUpdate() {
 }
 
 // 当切换到健康检查面板时自动开始实时更新
-function switchFabPanel(btn, target) {
-    // 停止之前的所有定时器
-    stopHealthUpdate();
-    
-    // 切换浮动按钮激活状态
-    document.querySelectorAll('.fab-btn').forEach(b => b.classList.remove('active'));
-    if (btn && btn.classList) btn.classList.add('active');
-    
-    // 切换移动端底部导航激活状态
-    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
-    const mobileBtn = document.querySelector(`.mobile-nav-btn[data-target="${target}"]`);
-    if (mobileBtn) mobileBtn.classList.add('active');
-    
-    // 同步侧边栏激活状态
-    syncNavActive(target);
-    
-    // 切换面板
-    document.querySelectorAll('.config-panel').forEach(panel => {
-        panel.classList.remove('active');
-    });
-    document.getElementById('panel-' + target).classList.add('active');
-    
-    // 如果切换到数据库面板，自动加载数据库状态
-    if (target === 'dbstatus') {
-        checkDatabaseFull();
-    }
-    
-    // 如果切换到健康检查面板，先加载健康状态，然后开始实时更新
-    if (target === 'health') {
-        // 先加载健康状态数据
-        loadHealthStatus();
-        // 延迟1秒后开始实时更新，确保DOM元素已创建
-        setTimeout(() => {
-            startHealthUpdate();
-        }, 1000);
-    }
-
-    // 如果切换到事件管理面板，加载事件列表
-    if (target === 'events') {
-        refreshEventsList();
-    }
-}
-
 // 在页面加载时显示欢迎通知
 window.addEventListener('load', function() {
     setTimeout(() => {
