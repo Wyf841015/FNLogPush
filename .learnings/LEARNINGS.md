@@ -1,197 +1,154 @@
-# Learnings Log
+# 学习日志
 
-## [LRN-20260406-001] best_practice
+## [LRN-20260407-001] best_practice
 
-**Logged**: 2026-04-06T00:00:00+08:00
-**Priority**: high
-**Status**: resolved
-**Area**: frontend
-
-### Summary
-移动端遮罩层需要同时设置 opacity 和 pointer-events 才能禁用点击穿透
-
-### Details
-在为侧边栏遮罩层 `.sidebar-overlay` 设置 `display: none` 时，虽然视觉上隐藏了，但元素仍然能接收点击事件。需要额外设置 `pointer-events: none` 才能禁用点击。
-
-### Suggested Action
-CSS 遮罩层应该同时设置：
-```css
-.sidebar-overlay {
-    opacity: 0;
-    pointer-events: none;  /* 禁用点击 */
-}
-.sidebar-overlay.active {
-    opacity: 1;
-    pointer-events: auto;  /* 启用点击 */
-}
-```
-
-### Metadata
-- Source: user_feedback
-- Related Files: cmd/logmonitor/src/static/css/themes.css
-- Tags: mobile, css, pointer-events
-- Pattern-Key: frontend.overlay.click_through
-
----
-
-## [LRN-20260406-002] best_practice
-
-**Logged**: 2026-04-06T00:00:00+08:00
-**Priority**: high
-**Status**: resolved
-**Area**: frontend
-
-### Summary
-JavaScript 中重复定义函数会导致后定义的覆盖先定义的
-
-### Details
-在 main.js 中，`toggleSidebar()` 函数被定义了两次：
-- 第30行：正确的侧边栏切换逻辑
-- 第2150行：旧的 `toggleFabMenu()` 调用
-
-后定义的函数会覆盖先定义的，导致正确的逻辑被覆盖。
-
-### Suggested Action
-1. 删除重复的旧函数定义
-2. 代码审查时注意检查函数重名情况
-3. 使用 ESLint 等工具检测未使用的函数
-
-### Metadata
-- Source: user_feedback
-- Related Files: cmd/logmonitor/src/static/js/main.js
-- Tags: javascript, function-override, debugging
-
----
-
-## [LRN-20260406-003] correction
-
-**Logged**: 2026-04-06T00:00:00+08:00
+**Logged**: 2026-04-07T14:30:00+08:00
 **Priority**: medium
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-移动端底部导航栏点击事件监听器是多余的
+移动端颜色选择器（input type="color"）无法弹出，需改用预设颜色按钮方案
 
 ### Details
-最初添加了额外的 JavaScript 事件监听器来同步底部导航的 active 状态，但由于 onclick 已经正确工作，这个监听器导致了行为异常。
+- 移动端浏览器对 `<input type="color">` 支持不一致，部分设备点击无反应
+- 尝试多种方案：label for 触发、透明覆盖、Bootstrap input-group 等均失败
+- 最终采用预设颜色按钮方案：10 个常用颜色，点击直接选择
 
 ### Suggested Action
-移除多余的事件监听器，依赖 HTML onclick 属性：
-```javascript
-// 不需要额外的监听器
-// onclick="switchNavPanel(this, 'status')" 已足够
-```
+- 颜色选择优先考虑预设方案，移动端兼容性更好
+- 预设颜色应包含：蓝、绿、红、黄、青、紫、粉、橙、灰、黑
 
 ### Metadata
-- Source: conversation
-- Related Files: cmd/logmonitor/src/templates/index.html
-- Tags: mobile-nav, event-listener
+- Source: user_feedback
+- Related Files: cmd/logmonitor/src/templates/index.html, cmd/logmonitor/src/static/js/events_manager.js
+- Tags: mobile, ui, color-picker, compatibility
+- See Also: LRN-20260407-002
 
 ---
+## [LRN-20260407-002] best_practice
 
-## [LRN-20260406-004] best_practice
-
-**Logged**: 2026-04-06T00:00:00+08:00
+**Logged**: 2026-04-07T14:35:00+08:00
 **Priority**: medium
-**Status**: resolved
-**Area**: infra
-
-### Summary
-Git 二进制文件冲突需要手动解决，rebase 方式会产生更多冲突
-
-### Details
-使用 `git pull --rebase` 时，二进制文件（如图标 PNG）无法自动合并，产生冲突。直接 `git push --force` 可以覆盖远程版本。
-
-### Suggested Action
-1. 图标等二进制文件应一次性更新到位
-2. 避免对二进制文件进行 rebase
-3. 必要时使用 `--force` 推送（需确保本地版本正确）
-
-### Metadata
-- Source: error
-- Related Files: ICON*.PNG
-- Tags: git, binary-files, force-push
-
----
-
-## [LRN-20260406-005] knowledge_gap
-
-**Logged**: 2026-04-06T00:00:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: infra
-
-### Summary
-SkillHub CLI 安装后需要添加到 PATH 才能使用
-
-### Details
-使用 curl 安装 SkillHub CLI 后，命令 `skillhub` 无法直接执行，需要手动添加 `/root/.local/bin` 到 PATH 环境变量。
-
-### Suggested Action
-安装后立即验证并添加到 PATH：
-```bash
-export PATH="$PATH:/root/.local/bin"
-skillhub install <skill-name>
-```
-
-### Metadata
-- Source: error
-- Tags: skillhub, path, installation
-
----
-
-## [LRN-20260406-006] best_practice
-
-**Logged**: 2026-04-06T00:00:00+08:00
-**Priority**: high
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-PIL 生成的图标需要验证是否有实际内容
+选择颜色时图标颜色应同步联动，提升用户体验
 
 ### Details
-使用 Python PIL 库生成图标后，文件大小正常但显示为空。可能是绘制操作没有正确执行或图层顺序问题。
+- 添加事件时，图标预览应跟随选择的颜色变化
+- 实现方式：在 selectEventColor 函数中同步更新 event-icon-preview 的 color 样式
+- 编辑事件时也需同步显示事件配置的颜色
 
 ### Suggested Action
-生成图标后验证内容：
-```python
-from PIL import Image
-img = Image.open('icon.png')
-alpha = img.split()[3]
-non_transparent = sum(1 for p in alpha.getdata() if p > 0)
-print(f'Non-transparent pixels: {non_transparent}')
-```
-像素数应大于 0 才表示有内容。
+- 颜色相关的 UI 组件应考虑联动反馈
+- 选择颜色后实时预览效果，减少用户确认步骤
 
 ### Metadata
 - Source: user_feedback
-- Related Files: generate_icon.py
-- Tags: python, pil, image-generation
-- Pattern-Key: image.generation.verify
+- Related Files: cmd/logmonitor/src/static/js/events_manager.js
+- Tags: ui, ux, color联动
+- See Also: LRN-20260407-001
 
 ---
+## [LRN-20260407-003] correction
 
-## [LRN-20260406-007] correction
+**Logged**: 2026-04-07T15:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
 
-**Logged**: 2026-04-06T00:00:00+08:00
+### Summary
+event.target 在某些浏览器上下文可能获取不到正确元素，应先赋值再使用
+
+### Details
+- code-review 审查发现直接使用 event.target 可能存在浏览器兼容性问题
+- 修正方式：先 `var btn = event.target` 再操作 DOM
+
+### Suggested Action
+- 在事件处理函数中，避免直接链式使用 event.target
+- 先缓存到变量再使用，提高代码健壮性
+
+### Metadata
+- Source: code_review
+- Related Files: cmd/logmonitor/src/static/js/events_manager.js
+- Tags: javascript, browser-compatibility, code-review
+
+---
+## [LRN-20260407-004] knowledge_gap
+
+**Logged**: 2026-04-07T15:30:00+08:00
 **Priority**: low
 **Status**: resolved
+**Area**: infra
+
+### Summary
+SkillHub 安装后需配置 PATH 环境变量才能使用
+
+### Details
+- 安装 SkillHub 后执行 `skillhub search` 报 not found
+- 原因：skillhub 安装在 /root/.local/bin/ 但该路径不在 PATH 中
+- 解决：使用 `export PATH=$PATH:/root/.local/bin` 或完整路径执行
+
+### Suggested Action
+- 文档中应说明安装后需要配置 PATH
+- 或使用完整路径调用 skillhub 命令
+
+### Metadata
+- Source: error
+- Related Files: skillhub 安装
+- Tags: skillhub, path, environment
+
+---
+## [LRN-20260407-005] knowledge_gap
+
+**Logged**: 2026-04-07T16:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: backend
+
+### Summary
+Bun 重写 Python Flask 项目的可行性评估
+
+### Details
+- 用户询问使用 Bun 重写项目的可行性
+- 核心挑战：psutil 系统监控库无直接替代方案，需要 Rust 扩展
+- 其他功能大部分有 JS 替代：SQLite、bcrypt、socket.io 等
+- 飞牛NAS 平台是否支持 Bun 运行时是最大不确定因素
+
+### Suggested Action
+- 短期保持 Python 后端，聚焦功能迭代
+- 中期可用 Bun 优化前端构建（方案 B）
+- 长期若飞牛NAS 支持 Bun 可评估全栈重写
+
+### Metadata
+- Source: user_feedback
+- Tags: bun, flask, rewrite, feasibility
+
+---
+## [LRN-20260407-006] best_practice
+
+**Logged**: 2026-04-07T14:15:00+08:00
+**Priority**: medium
+**Status**: resolved
 **Area**: frontend
 
 ### Summary
-移动端侧边栏默认隐藏是 CSS 控制的，不是 JS
+移动端表格列表应使用 table-responsive 支持横向滚动
 
 ### Details
-最初怀疑是 JavaScript 问题导致侧边栏无法隐藏/弹出，实际上 CSS 的 `transform: translateX(-100%)` 已经正确控制默认隐藏状态。问题出在重复的函数定义。
+- 移动端事件列表显示不全，只能看到事件 ID
+- 原因：表格内容超出屏幕宽度但无滚动容器
+- 解决：外层包裹 `<div class="table-responsive">`
 
 ### Suggested Action
-排查问题时先确认基础 CSS 是否正确，再检查 JavaScript。
+- 移动端长表格务必使用 table-responsive 包裹
+- 考虑使用响应式列隐藏（d-none d-md-table-cell）精简显示
 
 ### Metadata
-- Source: conversation
-- Related Files: cmd/logmonitor/src/static/css/themes.css
-- Tags: mobile-sidebar, css-transform
+- Source: user_feedback
+- Related Files: cmd/logmonitor/src/templates/index.html
+- Tags: mobile, responsive, table, ui
 
 ---

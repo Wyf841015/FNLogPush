@@ -5,6 +5,7 @@
 负责日志消息的格式化和美化
 """
 import json
+import re
 import logging
 from typing import List, Dict
 from models.log_record import LogRecord
@@ -12,6 +13,187 @@ from config.mappings import EventMappings
 from utils.time_utils import TimeUtils
 
 logger = logging.getLogger(__name__)
+
+
+class MessageSplitter:
+    """消息分段工具类"""
+    
+    # 各渠道消息长度限制
+    CHANNEL_LIMITS = {
+        'wecom': 2048,      # 企业微信 text 类型
+        'dingtalk': 4000,   # 钉钉 text 类型
+        'feishu': 4096,     # 飞书 text 类型
+        'bark': 2000,       # Bark body 字段
+        'pushplus': 5000,   # PushPlus
+        'meow': 2000,       # MeoW msg 字段
+        'webhook': 4000,    # Webhook 默认
+        'default': 2000     # 默认限制
+    }
+    
+    # 日志边界分隔符
+    LOG_SEPARATOR = "─" * 6
+    
+    @classmethod
+    def get_limit(cls, channel: str = 'default') -> int:
+        """获取指定渠道的消息长度限制"""
+        return cls.CHANNEL_LIMITS.get(channel.lower(), cls.CHANNEL_LIMITS['default'])
+    
+    @classmethod
+    def _split_by_lines(cls, content: str, limit: int) -> List[str]:
+        """
+        按行分段，优先在换行处分割
+        
+        Args:
+            content: 原始消息内容
+            limit: 每段最大字符数
+            
+        Returns:
+            分段后的消息列表
+        """
+        lines = content.split('\n')
+        segments = []
+        current = ""
+        
+        for line in lines:
+            test_line = (current + '\n' + line).strip()
+            
+            if len(test_line) <= limit:
+                current = test_line
+            else:
+                if current:
+                    segments.append(current)
+                if len(line) > limit:
+                    chars = []
+                    length = 0
+                    for char in line:
+                        char_len = 3 if ord(char) > 255 else 1
+                        if length + char_len <= limit - 10:
+                            chars.append(char)
+                            length += char_len
+                        else:
+                            chars.append("...")
+                            break
+                    current = "".join(chars)
+                else:
+                    current = line
+        
+        if current:
+            segments.append(current)
+        
+        return segments
+    
+    @classmethod
+    def split_message(cls, content: str, limit: int) -> List[str]:
+        """
+        将消息分段
+        
+        Args:
+            content: 原始消息内容
+            limit: 每段最大字符数
+            
+        Returns:
+            分段后的消息列表
+        """
+        if not content:
+            return []
+        
+        if len(content) <= limit:
+            return [content]
+        
+        return cls._split_by_lines(content, limit)
+    
+    @classmethod
+    def split_for_channel(cls, content: str, channel: str) -> List[str]:
+        """
+        根据渠道限制分段消息
+        
+        Args:
+            content: 原始消息内容
+            channel: 渠道名称
+            
+        Returns:
+            分段后的消息列表
+        """
+        limit = cls.get_limit(channel)
+        return cls.split_message(content, limit)
+    
+    @classmethod
+    def split_by_log_boundary(cls, content: str, channel: str) -> List[str]:
+        """
+        按日志边界分段，保持每条日志的完整性
+        
+        当消息包含多条日志时，按日志边界分割，确保：
+        1. 每条日志内容保持完整
+        2. 单条日志超长时再进行内部截断
+        
+        Args:
+            content: 原始消息内容（可能包含多条日志）
+            channel: 渠道名称
+            
+        Returns:
+            分段后的消息列表
+        """
+        limit = cls.get_limit(channel)
+        
+        if not content:
+            return []
+        
+        # 检查是否包含多条日志（通过分隔符判断）
+        if cls.LOG_SEPARATOR not in content:
+            # 单条日志，直接检查长度
+            if len(content) <= limit:
+                return [content]
+            return cls.split_message(content, limit)
+        
+        # 按日志分隔符分割
+        parts = content.split(cls.LOG_SEPARATOR)
+        
+        result = []
+        current_segment = ""
+        
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            
+            # 如果单条日志就超长
+            if len(part) > limit:
+                # 先检查当前段是否有内容
+                if current_segment:
+                    result.append(current_segment)
+                    current_segment = ""
+                
+                # 对超长日志进行内部截断
+                chunks = cls.split_message(part, limit)
+                result.extend(chunks)
+            else:
+                # 检查加上这一条是否会超限
+                separator = "\n\n" if current_segment else ""
+                test_content = current_segment + separator + part
+                
+                if len(test_content) <= limit:
+                    current_segment = test_content
+                else:
+                    # 保存当前段，开启新段
+                    if current_segment:
+                        result.append(current_segment)
+                    current_segment = part
+        
+        # 添加最后一段
+        if current_segment:
+            result.append(current_segment)
+        
+        # 添加序号前缀
+        if len(result) > 1:
+            final_result = []
+            for i, seg in enumerate(result):
+                # 清理可能存在的旧序号
+                clean = re.sub(r'^\[\d+\]\s*', '', seg)
+                clean = re.sub(r'^\[\d+/\d+\]\s*', '', clean)
+                final_result.append(f"[{i+1}/{len(result)}] {clean}")
+            return final_result
+        
+        return result
 
 
 class MessageFormatter:
@@ -63,11 +245,11 @@ class MessageFormatter:
             message_parts.append(f"👤用户: {log.uname}")
         
         # 添加参数
-        message_parts.append(f"\n --------------")
+        message_parts.append(f"\n{MessageSplitter.LOG_SEPARATOR}")
         if log.parameter:
             message_parts.extend(self._format_parameter(log.parameter))
         
-        message_parts.append(f"\n --------------")
+        message_parts.append(f"\n{MessageSplitter.LOG_SEPARATOR}")
         
         return "\n".join(message_parts)
     
@@ -112,7 +294,7 @@ class MessageFormatter:
             logs: 日志记录列表
             
         Returns:
-            格式化后的消息字符串
+            格式化后的消息字符串，使用统一分隔符连接多条日志
         """
         if not logs:
             return ""
@@ -120,42 +302,26 @@ class MessageFormatter:
         # 格式化每条日志
         messages = [self.format_single_log(log) for log in logs]
         
-        # 构建批量消息头
-        separator = "─" * 6
-        current_time = self.time_utils.get_current_datetime_str()
-        
-        # 统计各级别数量
-        level_counts = {}
-        for log in logs:
-            log_level = self.mappings.get_level_name(log.loglevel)
-            level_counts[log_level] = level_counts.get(log_level, 0) + 1
-        
-        # 构建完整消息
-        if len(logs) == 1:
-            content = f"📢 新日志哨兵\n{messages[0]}"
-        else:
-            stats_text = "，".join([f"{count}{level}" for level, count in level_counts.items()])
-            content = f"📢 批量日志哨兵 ({len(logs)}条)\n"
-            content += f"📊 分布: {stats_text}\n"
-            content += f"{separator}\n"
-            content += "\n\n".join(messages)
-        
-        return content
+        # 使用统一分隔符连接多条日志，便于分段时保持边界
+        return MessageSplitter.LOG_SEPARATOR.join(messages)
     
-    def format_dnd_summary(self, cached_messages: List[str]) -> str:
+    def format_logs_for_display(self, logs: List[LogRecord], title: str = "日志列表") -> Dict[str, str]:
         """
-        格式化免打扰时段消息汇总
+        格式化日志列表用于显示（返回多个片段）
         
         Args:
-            cached_messages: 缓存的消息列表
+            logs: 日志记录列表
+            title: 显示标题
             
         Returns:
-            格式化后的汇总消息
+            包含 'content' 和 'count' 的字典
         """
-        if len(cached_messages) == 1:
-            return f"【免打扰时段消息汇总】\n{cached_messages[0]}"
-        else:
-            content = f"【免打扰时段消息汇总】共 {len(cached_messages)} 条消息\n\n"
-            for i, msg in enumerate(cached_messages, 1):
-                content += f"第{i}条消息\n {msg}\n"
-            return content
+        if not logs:
+            return {"content": "暂无日志", "count": 0}
+        
+        content = self.format_batch_logs(logs)
+        return {
+            "content": content,
+            "count": len(logs),
+            "title": f"{title} ({len(logs)}条)"
+        }
