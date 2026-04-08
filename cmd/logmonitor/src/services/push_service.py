@@ -498,17 +498,26 @@ class MeoWPushChannel(PushChannel):
                 result = response.json()
                 logger.info(f"MeoW推送响应[{i+1}/{len(segments)}]: {result}")
                 
-                # MeoW API 可能返回多种格式：status=200, code=200, status=0 等
-                success = (
-                    result.get('status') == 200 or 
-                    result.get('code') == 200 or 
-                    result.get('status') == 0 or
-                    result.get('code') == 0 or
-                    result.get('success') == True
-                )
-                if not success:
-                    logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]: {result}")
+                # MeoW API 状态码：
+                # 200 - 操作成功
+                # 400 - 参数错误
+                # 500 - 服务器错误
+                status_code = result.get('code') or result.get('status')
+                if status_code == 200:
+                    logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
+                elif status_code == 400:
+                    logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，参数错误，状态码: {status_code}，响应: {result}")
                     all_success = False
+                elif status_code == 500:
+                    logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，服务器错误，状态码: {status_code}，响应: {result}")
+                    all_success = False
+                else:
+                    # 兼容旧格式或其他未知状态
+                    if status_code == 0 or result.get('success') == True:
+                        logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
+                    else:
+                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，未知状态码: {status_code}，响应: {result}")
+                        all_success = False
             
             if all_success and segments:
                 logger.info(f"MeoW推送成功，共{len(segments)}段")
