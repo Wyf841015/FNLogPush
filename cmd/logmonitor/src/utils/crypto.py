@@ -7,6 +7,7 @@
 import os
 import base64
 import hashlib
+from pathlib import Path
 from typing import Optional
 
 try:
@@ -18,6 +19,38 @@ except ImportError:
     HAS_CRYPTO = False
 
 logger = __import__('logging').getLogger(__name__)
+
+
+def _get_key_storage_dir() -> Optional[Path]:
+    """获取密钥存储目录，尝试多个可能的位置"""
+    # 1. 优先使用 APP_HOME
+    app_home = os.environ.get('APP_HOME', '')
+    if app_home:
+        key_dir = Path(app_home) / 'config'
+        if os.access(str(key_dir.parent), os.W_OK) or os.access(app_home, os.W_OK):
+            return key_dir
+    
+    # 2. 使用 TRIM_PKGVAR
+    trim_pkgvar = os.environ.get('TRIM_PKGVAR', '')
+    if trim_pkgvar:
+        key_dir = Path(trim_pkgvar) / 'config'
+        if os.access(str(key_dir.parent), os.W_OK) or os.access(trim_pkgvar, os.W_OK):
+            return key_dir
+    
+    # 3. 使用应用数据目录（兼容不同平台）
+    for base in [os.environ.get('HOME', ''), '/tmp', '.']:
+        if base:
+            key_dir = Path(base) / '.fnlogpush'
+            try:
+                key_dir.mkdir(parents=True, exist_ok=True)
+                test_file = key_dir / '.test'
+                test_file.touch()
+                test_file.unlink()
+                return key_dir
+            except Exception:
+                pass
+    
+    return None
 
 
 class CryptoManager:
@@ -54,7 +87,7 @@ class CryptoManager:
         if HAS_CRYPTO:
             new_key = Fernet.generate_key()
             self._save_config_key(new_key)
-            logger.warning("生成了新的加密密钥，请设置 FNLOGPUSH_ENCRYPT_KEY 环境变量固定")
+            logger.info("已生成并保存新的加密密钥")
             return new_key
         
         # 4. 降级方案：使用机器特征生成（仅用于混淆，不可恢复）
@@ -80,26 +113,28 @@ class CryptoManager:
     def _load_config_key(self) -> Optional[str]:
         """从配置文件加载密钥"""
         try:
-            # 尝试在 APP_HOME 下查找密钥文件
-            app_home = os.environ.get('APP_HOME', '')
-            if app_home:
-                key_file = os.path.join(app_home, 'config', '.encrypt_key')
-                if os.path.exists(key_file):
+            key_dir = _get_key_storage_dir()
+            if key_dir:
+                key_file = key_dir / '.encrypt_key'
+                if key_file.exists():
                     with open(key_file, 'r') as f:
                         return f.read().strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"加载加密密钥失败: {e}")
         return None
     
     def _save_config_key(self, key: bytes):
         """保存密钥到配置文件"""
         try:
-            app_home = os.environ.get('APP_HOME', '')
-            if app_home:
-                key_file = os.path.join(app_home, 'config', '.encrypt_key')
-                os.makedirs(os.path.dirname(key_file), exist_ok=True)
+            key_dir = _get_key_storage_dir()
+            if key_dir:
+                key_file = key_dir / '.encrypt_key'
+                key_dir.mkdir(parents=True, exist_ok=True)
                 with open(key_file, 'w') as f:
                     f.write(base64.urlsafe_b64encode(key).decode())
+                logger.info(f"加密密钥已保存到: {key_file}")
+            else:
+                logger.error("无法找到可写的密钥存储目录")
         except Exception as e:
             logger.error(f"保存加密密钥失败: {e}")
     
