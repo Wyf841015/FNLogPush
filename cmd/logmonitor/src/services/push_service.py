@@ -90,6 +90,16 @@ class WebhookPushChannel(PushChannel):
             if all_success and segments:
                 logger.info(f"Webhook推送成功，共{len(segments)}段")
             return all_success
+            
+        except requests.exceptions.Timeout:
+            logger.error("Webhook推送超时")
+            return False
+        except requests.exceptions.ConnectionError:
+            logger.error("Webhook连接失败")
+            return False
+        except Exception as e:
+            logger.error(f"Webhook推送时出错: {e}")
+            return False
 
 
 class WecomPushChannel(PushChannel):
@@ -145,10 +155,7 @@ class WecomPushChannel(PushChannel):
             if all_success and segments:
                 logger.info(f"企业微信推送成功，共{len(segments)}段")
             return all_success
-            else:
-                logger.error(f"企业微信推送失败，错误码: {result.get('errcode')}, 错误信息: {result.get('errmsg')}")
-                return False
-                
+            
         except Exception as e:
             logger.error(f"企业微信推送时出错: {e}")
             return False
@@ -230,10 +237,7 @@ class DingtalkPushChannel(PushChannel):
             if all_success and segments:
                 logger.info(f"钉钉推送成功，共{len(segments)}段")
             return all_success
-            else:
-                logger.error(f"钉钉推送失败，错误码: {result.get('errcode')}, 错误信息: {result.get('errmsg')}")
-                return False
-                
+            
         except Exception as e:
             logger.error(f"钉钉推送时出错: {e}")
             return False
@@ -292,6 +296,10 @@ class FeishuPushChannel(PushChannel):
             if all_success and segments:
                 logger.info(f"飞书推送成功，共{len(segments)}段")
             return all_success
+            
+        except Exception as e:
+            logger.error(f"飞书推送时出错: {e}")
+            return False
 
 
 class BarkPushChannel(PushChannel):
