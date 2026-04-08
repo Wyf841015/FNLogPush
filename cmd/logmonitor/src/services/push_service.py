@@ -502,22 +502,31 @@ class MeoWPushChannel(PushChannel):
                 # 200 - 操作成功
                 # 400 - 参数错误
                 # 500 - 服务器错误
+                # data: False 表示失败
                 status_code = result.get('code') or result.get('status')
+                is_success = False
+                
                 if status_code == 200:
-                    logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
+                    # code=200 时，还需检查 data 字段
+                    if result.get('data') is not False:
+                        is_success = True
+                        logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
+                    else:
+                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，data=False，响应: {result}")
                 elif status_code == 400:
                     logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，参数错误，状态码: {status_code}，响应: {result}")
-                    all_success = False
                 elif status_code == 500:
                     logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，服务器错误，状态码: {status_code}，响应: {result}")
-                    all_success = False
                 else:
                     # 兼容旧格式或其他未知状态
                     if status_code == 0 or result.get('success') == True:
+                        is_success = True
                         logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
                     else:
                         logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，未知状态码: {status_code}，响应: {result}")
-                        all_success = False
+                
+                if not is_success:
+                    all_success = False
             
             if all_success and segments:
                 logger.info(f"MeoW推送成功，共{len(segments)}段")
