@@ -7,14 +7,15 @@ let lastActivityTime = Date.now();
 // ========== Session 管理函数 ==========
 
 /**
- * 刷新活动时间
+ * 刷新活动时间（使用现有接口）
  */
 async function refreshActivity() {
     try {
-        const response = await apiFetch('/api/auth/refresh-activity', { method: 'POST' });
+        // 使用 /api/auth/status 接口来保持session活跃
+        const response = await apiFetch('/api/auth/status');
         if (!response.ok) {
             console.log('Session已过期，请重新登录');
-            window.location.reload();
+            window.location.href = '/login';
         }
     } catch (e) {
         console.error('刷新活动时间失败:', e);
