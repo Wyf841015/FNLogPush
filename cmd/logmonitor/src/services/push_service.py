@@ -883,7 +883,7 @@ class PushService:
         Returns:
             是否成功加入队列
         """
-        logger.info(f"[DEBUG] PushService.push_message: 收到消息，内容长度={len(content)}，渠道={enabled_channels}")
+        logger.debug(f"PushService.push_message: 收到消息，渠道={list(enabled_channels.keys()) if enabled_channels else 'none'}")
         
         if enabled_channels is None:
             enabled_channels = {name: True for name in self.channels}

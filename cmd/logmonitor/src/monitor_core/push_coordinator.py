@@ -68,7 +68,7 @@ class PushCoordinator:
         if not logs:
             return False
 
-        logger.info(f"[DEBUG] PushCoordinator.push: 收到 {len(logs)} 条日志，IDs: {[log.id for log in logs]}")
+        logger.debug(f"PushCoordinator.push: 收到 {len(logs)} 条日志")
 
         if enabled_channels is None:
             enabled_channels = self.config.get('push_channels', {})
@@ -90,7 +90,7 @@ class PushCoordinator:
             else self.formatter.format_batch_logs(logs)
         )
         
-        logger.info(f"[DEBUG] PushCoordinator.push: 调用 push_service.push_message，内容长度={len(content)}")
+        logger.debug(f"PushCoordinator.push: 调用 push_service.push_message")
         channel_results = self.push_service.push_message(content, enabled_channels)
 
         # 判断是否至少有一个渠道成功
@@ -99,7 +99,7 @@ class PushCoordinator:
         # 记录实际推送的渠道结果
         self._record_history(logs, content, success, last_id, channel_results=channel_results if channel_results else None)
 
-        logger.info(f"[DEBUG] PushCoordinator.push: 推送完成，{len(logs)} 条日志，last_id={last_id}，success={success}")
+        logger.debug(f"PushCoordinator.push: 推送完成，{len(logs)} 条日志，success={success}")
         return success
 
     def push_raw(self, content: str, logs: List[LogRecord],

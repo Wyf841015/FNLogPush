@@ -266,7 +266,7 @@ class LogMonitor:
         new_logs = []  # 提前初始化，避免作用域问题
 
         # DEBUG: 记录检查开始时的状态
-        logger.debug(f"[DEBUG] check_new_logs: last_id={self.last_id}, running={self.running}")
+        logger.debug(f"check_new_logs: last_id={self.last_id}")
 
         try:
             # 构建过滤条件（使用预构建的反向映射优化性能）
@@ -299,7 +299,7 @@ class LogMonitor:
 
             # 处理新日志
             if new_logs:
-                logger.info(f"[DEBUG] 发现 {len(new_logs)} 条新日志，准备处理，IDs: {[log.id for log in new_logs]}")
+                logger.debug(f"发现 {len(new_logs)} 条新日志，准备处理")
                 self.process_logs(new_logs)
                 
                 # 广播新日志事件到WebSocket客户端
@@ -352,7 +352,7 @@ class LogMonitor:
         if not logs:
             return
 
-        logger.debug(f"[DEBUG] process_logs: 收到 {len(logs)} 条日志")
+        logger.debug(f"process_logs: 收到 {len(logs)} 条日志")
 
         # ── 告警聚合与降噪过滤 ────────────────────────────────────────
         # 每条日志先经过 AlertAggregator.feed()：
@@ -365,10 +365,10 @@ class LogMonitor:
                 pass_through.append(log)
 
         if not pass_through:
-            logger.debug(f"[DEBUG] process_logs: 所有日志被聚合/压制，不推送")
+            logger.debug(f"process_logs: 所有日志被聚合/压制，不推送")
             return
 
-        logger.info(f"[DEBUG] process_logs: {len(pass_through)} 条日志需要推送")
+        logger.debug(f"process_logs: {len(pass_through)} 条日志需要推送")
         # 直接推送通过聚合器的日志
         self._push_logs(pass_through)
     
@@ -381,7 +381,7 @@ class LogMonitor:
         """
         if not logs:
             return
-        logger.info(f"[DEBUG] _push_logs: 准备推送 {len(logs)} 条日志，IDs: {[log.id for log in logs]}")
+        logger.debug(f"_push_logs: 准备推送 {len(logs)} 条日志")
         self.push_coordinator.push(logs, last_id=self.last_id)
 
     def _push_aggregated(self, agg_result: "AlertAggregator.FeedResult"):

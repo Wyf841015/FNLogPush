@@ -325,3 +325,25 @@ class MessageFormatter:
             "count": len(logs),
             "title": f"{title} ({len(logs)}条)"
         }
+    
+    def format_dnd_summary(self, cached_messages: List[str]) -> str:
+        """
+        格式化免打扰期间缓存的消息汇总
+        
+        Args:
+            cached_messages: 缓存的消息列表（已格式化的字符串）
+            
+        Returns:
+            格式化后的汇总消息
+        """
+        if not cached_messages:
+            return ""
+        
+        count = len(cached_messages)
+        header = f"📬 【免打扰时段消息汇总】共 {count} 条\n" + "=" * 30 + "\n"
+        
+        # 使用分隔符连接各条消息
+        separator = "\n" + "-" * 30 + "\n"
+        body = separator.join(cached_messages)
+        
+        return header + body
