@@ -169,3 +169,121 @@ Git push 超时或 GnuTLS 错误时，多次重试通常可以成功
 - Tags: git, networking, troubleshooting
 
 ---
+
+## [LRN-20260411-001] correction
+
+**Logged**: 2026-04-11T22:30:00+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+前端拆分模块时，必须使用后端实际存在的 API 接口，不能猜测接口路径
+
+### Details
+进行 main.js 模块化拆分时：
+1. `session.js` 调用 `/api/auth/refresh-activity`（不存在）
+2. `auth.js` 调用 `/api/auth/status`（应该是 `/api/auth/check-session`）
+3. `auth.js` 检查 `data.authenticated`（应该是 `data.logged_in`）
+
+导致登录后页面无限刷新。
+
+### Suggested Action
+1. 拆分前端模块前，先检查后端路由定义
+2. 使用 grep_search 搜索确认 API 接口是否存在
+3. 不要基于猜测编写代码，必须有实际依据
+
+### Metadata
+- Source: user_feedback
+- Related Files:
+  - cmd/logmonitor/src/static/js/auth.js
+  - cmd/logmonitor/src/static/js/session.js
+  - cmd/logmonitor/src/routes/auth_routes.py
+- Tags: frontend, api, module-split, debugging
+
+---
+
+## [LRN-20260411-002] knowledge_gap
+
+**Logged**: 2026-04-04-11T22:30:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+FPK 应用的 manifest 文件名必须保持为 "manifest"，不能被重命名为其他名称
+
+### Details
+git commit 时 manifest 被重命名为 manifest.txt，导致 fnpack 打包失败：
+```
+error: pathspec 'manifest' did not match any file(s) known to git
+```
+
+### Suggested Action
+1. 打包前检查 manifest 文件是否存在
+2. 如果 manifest.txt 存在，手动恢复：
+   ```bash
+   git show HEAD:manifest > manifest
+   ```
+
+### Metadata
+- Source: error
+- Related Files:
+  - project/log-monitor-fpk/manifest
+- Tags: fpk, manifest, packaging
+
+---
+
+## [LRN-20260411-003] best_practice
+
+**Logged**: 2026-04-11T22:30:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+前端代码回退后需要重新打包 FPK，否则用户安装的是旧版本
+
+### Details
+使用 `git reset --hard` 回退代码后，如果没有重新执行 `fnpack build`，用户下载的还是旧的 FPK 文件。
+
+### Suggested Action
+每次代码修改（包括回退）后，都需要重新执行 `fnpack build`。
+
+### Metadata
+- Source: conversation
+- Related Files:
+  - project/log-monitor-fpk/
+- Tags: fpk, git, deployment
+
+---
+
+## [LRN-20260411-004] best_practice
+
+**Logged**: 2026-04-11T22:30:00+08:00
+**Priority**: high
+**Status**: pending
+**Area**: frontend
+
+### Summary
+模块化拆分前端代码时，需要保留完整的函数签名和接口定义
+
+### Details
+main.js 拆分后发现的问题：
+1. 拆分时遗漏了 `window.` 全局导出
+2. 模块间依赖关系没有梳理清楚
+3. 原有代码的函数命名空间冲突
+
+### Suggested Action
+1. 拆分前绘制模块依赖图
+2. 记录所有全局函数及其依赖
+3. 拆分后逐一验证每个模块的导出是否正确
+
+### Metadata
+- Source: user_feedback
+- Related Files:
+  - cmd/logmonitor/src/static/js/main.js
+  - cmd/logmonitor/src/static/js/*.js
+- Tags: frontend, module-split, refactoring
+
+---

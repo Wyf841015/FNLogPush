@@ -30,3 +30,82 @@ fatal: unable to access 'https://github.com/...': Failed to connect to github.co
 - See Also: LRN-20260408-005
 
 ---
+
+## [ERR-20260411-001] fnpack-manifest-missing
+
+**Logged**: 2026-04-11T22:30:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+fnpack 打包失败，找不到 manifest 文件
+
+### Error
+```
+Verifying files...
+error: pathspec 'manifest' did not match any file(s) known to git
+```
+
+### Context
+- git commit 时 manifest 文件被重命名为 manifest.txt
+- fnpack 工具期望的文件名是 "manifest"
+
+### Suggested Fix
+```bash
+git show HEAD:manifest > manifest
+```
+
+### Metadata
+- Reproducible: yes
+- Related Files:
+  - project/log-monitor-fpk/manifest
+- See Also: LRN-20260411-002
+
+---
+
+## [ERR-20260411-002] page-infinite-refresh
+
+**Logged**: 2026-04-11T22:30:00+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+登录后页面无限刷新
+
+### Error
+页面持续刷新，无法正常使用
+
+### Context
+1. session.js 调用不存在的 `/api/auth/refresh-activity`
+2. auth.js 调用错误的 `/api/auth/status`
+3. 响应字段判断错误 `data.authenticated` vs `data.logged_in`
+
+### Suggested Fix
+```javascript
+// auth.js
+function checkSession() {
+    apiFetch('/api/auth/check-session', {
+        credentials: 'same-origin',
+        cache: 'no-store'
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.logged_in === true) {
+                // 已登录，显示用户名
+            } else {
+                window.location.href = '/login';
+            }
+        });
+}
+```
+
+### Metadata
+- Reproducible: yes
+- Related Files:
+  - cmd/logmonitor/src/static/js/auth.js
+  - cmd/logmonitor/src/static/js/session.js
+- See Also: LRN-20260411-001
+
+---
