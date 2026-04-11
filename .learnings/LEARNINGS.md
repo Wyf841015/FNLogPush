@@ -262,7 +262,7 @@ error: pathspec 'manifest' did not match any file(s) known to git
 
 **Logged**: 2026-04-11T22:30:00+08:00
 **Priority**: high
-**Status**: pending
+**Status**: resolved
 **Area**: frontend
 
 ### Summary
@@ -285,5 +285,71 @@ main.js 拆分后发现的问题：
   - cmd/logmonitor/src/static/js/main.js
   - cmd/logmonitor/src/static/js/*.js
 - Tags: frontend, module-split, refactoring
+
+---
+
+## [LRN-20260412-001] best_practice
+
+**Logged**: 2026-04-12T00:10:00+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: backend
+
+### Summary
+代码审查时需要检查所有代码路径，确保安全检查在所有入口点一致
+
+### Details
+`PushCoordinator.push_raw()` 方法跳过了 DND 检查，导致聚合摘要推送绕过免打扰模式。
+
+问题根因：
+- `push()` 方法有 DND 检查：`if should_cache_now(): cache_message()`
+- `push_raw()` 方法没有 DND 检查，直接调用 `push_service.push_message()`
+- `_push_aggregated()` 调用 `push_raw()`，绕过了 DND 限制
+
+### Suggested Action
+1. 任何封装的"快捷方法"都要确保与原始方法有一致的安全检查
+2. 代码审查时检查所有代码路径，特别是封装方法
+3. 使用统一的调用链，避免旁路绕过安全检查
+
+### Metadata
+- Source: user_feedback
+- Related Files:
+  - cmd/logmonitor/src/monitor_core/push_coordinator.py
+  - cmd/logmonitor/src/monitor_core/base.py
+- Tags: dnd, code-review, security, encapsulation
+
+---
+
+## [LRN-20260412-002] best_practice
+
+**Logged**: 2026-04-12T00:10:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Git 推送遇到 non-fast-forward 错误时，使用 rebase 可以保持提交历史整洁
+
+### Details
+远程仓库有新的提交，本地分支落后时，直接 push 会被拒绝：
+```
+! [rejected] master -> master (non-fast-forward)
+```
+
+解决方法：
+```bash
+git pull <remote> <branch> --rebase
+git push <remote> <branch>
+```
+
+### Suggested Action
+1. 推送前先 `git status` 检查是否有未推送的提交
+2. 遇到 non-fast-forward 时使用 `git pull --rebase` 而非 `git merge`
+3. 保持本地和远程同步
+
+### Metadata
+- Source: conversation
+- Related Files:
+- Tags: git, rebase, troubleshooting
 
 ---
