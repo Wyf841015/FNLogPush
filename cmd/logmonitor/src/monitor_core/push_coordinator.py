@@ -118,6 +118,12 @@ class PushCoordinator:
         if enabled_channels is None:
             enabled_channels = self.config.get('push_channels', {})
 
+        # DND 判断：在免打扰时段则缓存，不推送
+        if self.dnd_service.should_cache_now():
+            self.dnd_service.cache_message(content)
+            logger.debug(f"push_raw: 消息已缓存（免打扰时段），content长度={len(content)}")
+            return False
+
         channel_results = self.push_service.push_message(content, enabled_channels)
         success = any(channel_results.values()) if channel_results else False
         self._record_history(logs, content, success, last_id, count, channel_results=channel_results if channel_results else None)
