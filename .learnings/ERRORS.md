@@ -109,3 +109,40 @@ function checkSession() {
 - See Also: LRN-20260411-001
 
 ---
+
+## [ERR-20260412-001] dnd-bypass
+
+**Logged**: 2026-04-12T00:10:00+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: backend
+
+### Summary
+PushCoordinator.push_raw() 方法绕过 DND 免打扰检查
+
+### Error
+免打扰时间段内仍然收到推送消息
+
+### Context
+- `push_raw()` 方法没有调用 `should_cache_now()` 检查
+- `_push_aggregated()` 调用 `push_raw()` 绕过 DND 限制
+- 聚合摘要在免打扰时段仍然会推送
+
+### Suggested Fix
+在 `push_raw()` 方法开头添加 DND 检查：
+```python
+def push_raw(self, content: str, logs: List[LogRecord], ...):
+    if self.dnd_service.should_cache_now():
+        self.dnd_service.cache_message(content)
+        logger.debug(f"push_raw: 消息已缓存（免打扰时段）")
+        return False
+    # 原有推送逻辑...
+```
+
+### Metadata
+- Reproducible: yes
+- Related Files:
+  - cmd/logmonitor/src/monitor_core/push_coordinator.py
+- See Also: LRN-20260412-001
+
+---
