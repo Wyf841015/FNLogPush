@@ -353,3 +353,34 @@ git push <remote> <branch>
 - Tags: git, rebase, troubleshooting
 
 ---
+
+## [LRN-20260412-003] best_practice
+
+**Logged**: 2026-04-12T00:15:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+JSON 格式必须严格遵循规范，缺少逗号或多余逗号都会导致解析失败
+
+### Details
+FnDepot 仓库的 fnpack.json 存在格式错误：
+1. `fnlogpush.history` 对象结束后缺少逗号
+2. `usbrsync.history` 对象中有尾随逗号
+3. 缩进不一致
+
+使用 `python3 -c "import json; json.load(open('fnpack.json'))"` 可以快速验证 JSON 格式。
+
+### Suggested Action
+1. 编辑 JSON 文件后用 Python 验证格式
+2. 注意对象和数组末尾的正确逗号使用
+3. 保持统一的缩进风格
+
+### Metadata
+- Source: error
+- Related Files:
+  - project/FnDepot/fnpack.json
+- Tags: json, format, validation
+
+---
