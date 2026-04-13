@@ -146,3 +146,37 @@ def push_raw(self, content: str, logs: List[LogRecord], ...):
 - See Also: LRN-20260412-001
 
 ---
+
+## [ERR-20260412-002] fnpack-json-format
+
+**Logged**: 2026-04-12T00:15:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+fnpack.json 格式错误导致解析失败
+
+### Error
+```python
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 55 column 5 (char 1827)
+```
+
+### Context
+- FnDepot 仓库的 fnpack.json
+- `fnlogpush.history` 结束后缺少逗号
+- `usbrsync.history` 有尾随逗号
+
+### Suggested Fix
+使用 Python 验证 JSON：
+```bash
+python3 -c "import json; json.load(open('fnpack.json'))"
+```
+
+### Metadata
+- Reproducible: yes
+- Related Files:
+  - project/FnDepot/fnpack.json
+- See Also: LRN-20260412-003
+
+---
