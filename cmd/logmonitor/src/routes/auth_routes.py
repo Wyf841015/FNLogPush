@@ -91,6 +91,29 @@ def register_auth_routes(app: Flask):
             session['last_activity'] = time.time()
             return jsonify({
                 'logged_in': True,
+                'username': session.get('user')
+            })
+        else:
+            return jsonify({
+                'logged_in': False,
+                'username': None
+            })
+
+    @app.route('/api/auth/status', methods=['GET'])
+    @api_error_handler
+    def auth_status():
+        """获取认证状态（保持session活跃）"""
+        if 'user' in session:
+            session['last_activity'] = time.time()
+            return jsonify({
+                'authenticated': True,
+                'username': session.get('user')
+            })
+        else:
+            return jsonify({
+                'authenticated': False
+            })sonify({
+                'logged_in': True,
                 'username': session['user']
             })
         return jsonify({
