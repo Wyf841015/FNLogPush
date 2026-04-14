@@ -7,6 +7,21 @@ let lastActivityTime = Date.now();
 // ========== Session 管理函数 ==========
 
 /**
+ * 用户登出
+ */
+async function logout() {
+    try {
+        await apiFetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+        console.error('登出请求失败:', e);
+    }
+    // 清除本地存储
+    localStorage.clear();
+    // 重定向到登录页
+    window.location.href = '/login';
+}
+
+/**
  * 刷新活动时间（使用现有接口）
  */
 async function refreshActivity() {
@@ -215,3 +230,4 @@ window.startSessionCheck = startSessionCheck;
 window.NotificationManager = NotificationManager;
 window.testNotification = testNotification;
 window.testPushNotification = testPushNotification;
+window.logout = logout;
