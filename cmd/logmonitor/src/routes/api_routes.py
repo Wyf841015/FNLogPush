@@ -258,6 +258,21 @@ def register_api_routes(app: Flask):
             logger.error(f"获取活跃聚合组失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @app.route('/api/agg/stats', methods=['GET'])
+    @api_error_handler
+    def agg_stats():
+        """告警聚合统计（兼容前端调用）"""
+        try:
+            from monitor_core import get_monitor
+            monitor = get_monitor()
+            if not monitor or not hasattr(monitor, 'alert_aggregator'):
+                return jsonify({"success": False, "error": "告警聚合器未初始化"})
+            stats = monitor.alert_aggregator.get_stats()
+            return jsonify({"success": True, "stats": stats})
+        except Exception as e:
+            logger.error(f"获取聚合统计失败: {e}", exc_info=True)
+            return jsonify({"success": False, "error": str(e)})
+
     def _find_events_json():
         """查找 events.json 文件的多个可能位置（与 config.json 逻辑一致）"""
         import os

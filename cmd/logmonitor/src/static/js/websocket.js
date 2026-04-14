@@ -147,3 +147,8 @@ class WebSocketManager {
 
 // 全局 WebSocket 管理器
 const wsManager = new WebSocketManager();
+
+// 导出初始化函数供 main.js 调用
+function initWebSocket() {
+    wsManager.connect();
+}
