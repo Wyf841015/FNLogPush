@@ -69,15 +69,18 @@ function toggleSidebarCollapse() {
  * @param {string} target - 目标面板ID
  */
 function switchNavPanel(element, target) {
-    if (!element || !target) return;
+    if (!target) return;
+    
+    // 添加 panel- 前缀（如果还没有）
+    const panelId = target.startsWith('panel-') ? target : 'panel-' + target;
     
     // 移除所有面板的active状态
-    document.querySelectorAll('.nav-panel').forEach(panel => {
+    document.querySelectorAll('.config-panel').forEach(panel => {
         panel.classList.remove('active');
     });
     
     // 激活目标面板
-    const targetPanel = document.getElementById(target);
+    const targetPanel = document.getElementById(panelId);
     if (targetPanel) {
         targetPanel.classList.add('active');
     }
