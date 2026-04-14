@@ -48,13 +48,16 @@ function switchFabPanel(element, target) {
 }
 
 function switchConfigPanel(element, target) {
-    if (!element || !target) return;
+    if (!target) return;
+    
+    // 添加 panel- 前缀（如果还没有）
+    const panelId = target.startsWith('panel-') ? target : 'panel-' + target;
     
     // 移除所有面板的 active
     document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
     
     // 激活目标面板
-    const panel = document.getElementById(target);
+    const panel = document.getElementById(panelId);
     if (panel) panel.classList.add('active');
     
     // 更新侧边栏导航

@@ -146,16 +146,6 @@ function showHistoryDetail(historyId) {
 
 function refreshHistory() { loadHistory(); }
 
-function checkDatabaseFull() {
-    const checkbox = document.getElementById('checkDatabaseFull');
-    if (!checkbox) return;
-    const checked = checkbox.checked;
-    if (checked) {
-        const msg = '⚠️ 检测到数据库已满！建议：\n1. 清理历史记录\n2. 减小保留天数\n3. 检查数据库文件大小';
-        NotificationManager.warning('数据库告警', msg.replace(/\n/g, '<br>'));
-    }
-}
-
 function checkDatabase() { loadHealthStatus(); }
 
 // ========== 日期筛选 ==========
@@ -210,7 +200,6 @@ window.showHistoryDetail = showHistoryDetail;
 window.updatePaginationControls = updatePaginationControls;
 window.prevPage = prevPage;
 window.nextPage = nextPage;
-window.checkDatabaseFull = checkDatabaseFull;
 window.checkDatabase = checkDatabase;
 window.onHistoryDateFilter = onHistoryDateFilter;
 window.clearHistoryDateFilter = clearHistoryDateFilter;
