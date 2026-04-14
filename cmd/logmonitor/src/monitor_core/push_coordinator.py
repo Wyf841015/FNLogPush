@@ -104,7 +104,7 @@ class PushCoordinator:
 
     def push_raw(self, content: str, logs: List[LogRecord],
                  last_id: int, enabled_channels: Optional[Dict] = None,
-                 count: Optional[int] = None) -> bool:
+                 count: Optional[int] = None) -> Dict[str, bool]:
         """
         推送已格式化的消息（跳过内部格式化，供 DND 汇总等场景使用）。
 
@@ -114,6 +114,9 @@ class PushCoordinator:
             last_id:          当前最大日志 ID
             enabled_channels: 推送渠道开关
             count:            日志数量（可选，如果未提供则使用 len(logs)）
+
+        Returns:
+            渠道推送结果字典 {"wecom": True, "dingtalk": False}
         """
         if enabled_channels is None:
             enabled_channels = self.config.get('push_channels', {})
@@ -122,12 +125,12 @@ class PushCoordinator:
         if self.dnd_service.should_cache_now():
             self.dnd_service.cache_message(content)
             logger.debug(f"push_raw: 消息已缓存（免打扰时段），content长度={len(content)}")
-            return False
+            return {}  # 返回空字典表示未实际推送
 
         channel_results = self.push_service.push_message(content, enabled_channels)
         success = any(channel_results.values()) if channel_results else False
         self._record_history(logs, content, success, last_id, count, channel_results=channel_results if channel_results else None)
-        return success
+        return channel_results
 
     def build_preview(self, logs: List[LogRecord]) -> str:
         """构建推送历史预览字符串"""

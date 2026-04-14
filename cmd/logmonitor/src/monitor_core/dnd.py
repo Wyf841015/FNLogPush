@@ -56,26 +56,36 @@ class DNDHandler:
 
             if push_coordinator is not None:
                 # 优先走协调器（统一历史记录格式）
-                push_coordinator.push_raw(summary, logs=[], last_id=last_id, count=len(cached_messages))
+                channel_results = push_coordinator.push_raw(summary, logs=[], last_id=last_id, count=len(cached_messages))
+                # 只有实际推送成功（有至少一个渠道成功）才清空缓存
+                success = channel_results and any(channel_results.values())
+                if not success:
+                    logger.error("DND缓存推送失败，保留缓存待下次重试")
+                    return  # 不清空缓存，以便下次重试
             else:
                 # 兜底：直接调用 push_service（不记录历史）
                 from config.manager import ConfigManager
                 config_manager = ConfigManager()
                 enabled_channels = config_manager.config.get('push_channels', {})
-                success = push_service.push_message(summary, enabled_channels)
+                channel_results = push_service.push_message(summary, enabled_channels)
+                success = channel_results and any(channel_results.values())
 
-                from models.push_history import PushHistory
-                history = PushHistory(
-                    timestamp=self.time_utils.get_current_datetime_str(),
-                    content=summary,
-                    preview=summary,
-                    success=success,
-                    count=len(cached_messages),
-                    last_id=last_id
-                )
-                history_service.add_history(history)
+                if success:
+                    from models.push_history import PushHistory
+                    history = PushHistory(
+                        timestamp=self.time_utils.get_current_datetime_str(),
+                        content=summary,
+                        preview=summary,
+                        success=success,
+                        count=len(cached_messages),
+                        last_id=last_id
+                    )
+                    history_service.add_history(history)
+                else:
+                    logger.error("DND缓存推送失败，保留缓存待下次重试")
+                    return  # 不清空缓存
 
-            # 清空缓存
+            # 推送成功，清空缓存
             self.dnd_service.clear_cache()
             logger.info(f"成功推送免打扰缓存的 {len(cached_messages)} 条消息")
 
