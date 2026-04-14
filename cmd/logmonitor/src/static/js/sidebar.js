@@ -88,8 +88,38 @@ function switchNavPanel(element, target) {
     // 更新导航active状态
     syncNavActive(target);
     
+    // 根据目标面板加载数据
+    loadPanelData(target);
+    
     // 移动端关闭侧边栏
     closeSidebar();
+}
+
+/**
+ * 加载面板数据
+ * @param {string} target - 目标面板ID
+ */
+function loadPanelData(target) {
+    switch (target) {
+        case 'history':
+            if (typeof loadHistory === 'function') loadHistory();
+            break;
+        case 'basic':
+            if (typeof loadBasicConfig === 'function') loadBasicConfig();
+            break;
+        case 'push':
+            if (typeof loadPushConfig === 'function') loadPushConfig();
+            break;
+        case 'backup':
+            if (typeof loadBackupConfig === 'function') loadBackupConfig();
+            break;
+        case 'health':
+            if (typeof loadHealthStatus === 'function') loadHealthStatus();
+            break;
+        case 'events':
+            if (typeof refreshEventsList === 'function') refreshEventsList();
+            break;
+    }
 }
 
 /**

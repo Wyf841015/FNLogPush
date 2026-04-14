@@ -20,6 +20,108 @@ function controlMonitor(action) {
     });
 }
 
+// ========== 配置加载函数 ==========
+
+async function loadBasicConfig() {
+    try {
+        const response = await apiFetch('/api/config');
+        const data = await response.json();
+        
+        if (data.error) {
+            console.log('加载基础配置失败:', data.error);
+            return;
+        }
+        
+        // 设置事件选择
+        if (data.event_ids) {
+            data.event_ids.forEach(id => {
+                const cb = document.querySelector(`input[name="event_ids"][value="${id}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
+        
+        // 设置日志级别
+        if (data.selected_levels) {
+            data.selected_levels.forEach(level => {
+                const cb = document.querySelector(`input[name="levels"][value="${level}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
+        
+        // 设置其他配置
+        if (document.getElementById('check_interval')) {
+            document.getElementById('check_interval').value = data.check_interval || 5;
+        }
+        if (document.getElementById('history_size')) {
+            document.getElementById('history_size').value = data.history_size || 100;
+        }
+        if (document.getElementById('database_path')) {
+            document.getElementById('database_path').value = data.database_path || '';
+        }
+    } catch (e) {
+        console.error('加载基础配置失败:', e);
+    }
+}
+
+async function loadPushConfig() {
+    try {
+        const response = await apiFetch('/api/config');
+        const data = await response.json();
+        
+        if (data.error) return;
+        
+        // 设置推送通道开关
+        if (data.push_channels) {
+            Object.entries(data.push_channels).forEach(([channel, enabled]) => {
+                const cb = document.querySelector(`.push-channel-enabled[data-channel="${channel}"]`);
+                if (cb) cb.checked = enabled;
+            });
+        }
+        
+        // 设置各通道配置
+        document.querySelectorAll('.channel-config').forEach(input => {
+            const channel = input.dataset.channel;
+            const key = input.dataset.key;
+            if (data[channel] && data[channel][key]) {
+                input.value = data[channel][key];
+            }
+        });
+    } catch (e) {
+        console.error('加载推送配置失败:', e);
+    }
+}
+
+async function loadBackupConfig() {
+    try {
+        const [configRes, backupRes] = await Promise.all([
+            apiFetch('/api/config'),
+            apiFetch('/api/backup/status')
+        ]);
+        
+        const data = await configRes.json();
+        const backupData = await backupRes.json();
+        
+        if (!data.error) {
+            if (document.getElementById('backup_db_path')) {
+                document.getElementById('backup_db_path').value = data.backup_db_path || '';
+            }
+            if (document.getElementById('backup_check_interval')) {
+                document.getElementById('backup_check_interval').value = data.backup_check_interval || 60;
+            }
+        }
+        
+        // 更新备份数据库状态
+        const backupIndicator = document.getElementById('backup-db-status-indicator');
+        if (backupIndicator) {
+            const status = backupData.db_available ? '已连接' : '未连接';
+            backupIndicator.className = backupData.db_available ? 'badge badge-online' : 'badge bg-secondary';
+            backupIndicator.textContent = status;
+        }
+    } catch (e) {
+        console.error('加载备份配置失败:', e);
+    }
+}
+
 // ========== 配置保存函数 ==========
 
 async function saveBasicConfig() {
