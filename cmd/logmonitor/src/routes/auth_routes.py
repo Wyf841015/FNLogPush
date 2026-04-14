@@ -114,6 +114,15 @@ def register_auth_routes(app: Flask):
                 'authenticated': False
             })
 
+    @app.route('/api/auth/refresh-activity', methods=['POST'])
+    @api_error_handler
+    def refresh_activity():
+        """刷新活动时间（用于前端保持登录状态）"""
+        if 'user' in session:
+            session['last_activity'] = time.time()
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': '未登录'}), 401
+
     @app.route('/api/auth/change-password', methods=['POST'])
     @login_required
     @api_error_handler
