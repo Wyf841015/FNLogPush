@@ -24,7 +24,7 @@ function onHistorySearch(kw) {
 
 function highlightKeyword(text, kw) {
     if (!kw || kw.trim() === '') return text;
-    const escaped = kw.replace(/[.*+?^${}()|[\]\]/g, '\$&');
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(`(${escaped})`, 'gi');
     return text.replace(re, '<mark class="kw-highlight">$1</mark>');
 }
