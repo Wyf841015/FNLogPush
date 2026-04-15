@@ -425,4 +425,100 @@ done
 - Related Files:
   - project/log-monitor-fpk/cmd/logmonitor/src/static/js/*.js
 - Tags: code-quality, syntax-check, node
+
+---
+
+## [LRN-20260416-001] best_practice
+
+**Logged**: 2026-04-16T14:30:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+定时任务执行时遇到工具不可用问题，需要检查 tool call 格式
+
+### Details
+执行定时新闻推送任务时，工具调用失败：
+```
+FunctionNotFoundError: Cannot find the function named execute_shell_command
+```
+
+原因可能是工具名称写错或工具加载问题。重新发送消息后工具恢复正常。
+
+### Suggested Action
+1. 遇到工具不可用时重新发送请求
+2. 确认工具名称拼写正确
+3. 检查 agent 配置是否正确加载工具
+
+### Metadata
+- Source: error
+- Related Files:
+- Tags: cron, tool, agent
+
+---
+
+## [LRN-20260416-002] best_practice
+
+**Logged**: 2026-04-16T14:35:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+第三方 API 调用需要查看文档确定正确的接口格式
+
+### Details
+推送军事新闻到方糖 API 时遇到问题：
+1. 直接 GET 请求 URL 路径格式失败（404 Not Found）
+2. 尝试 /send 接口需要 channelId 参数，但填错昵称导致 IP 被封禁
+3. 最终使用 /push 接口 POST JSON 格式成功
+
+### Suggested Action
+1. 不确定 API 格式时先查看文档
+2. 测试不同接口尝试时注意频率限制
+3. 优先使用 POST + JSON 格式，比 URL 参数更安全
+
+### Metadata
+- Source: error
+- Related Files:
+- Tags: api, http, troubleshooting, third-party
+
+---
+
+## [LRN-20260416-003] best_practice
+
+**Logged**: 2026-04-16T14:40:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Git rebase 遇到冲突时可以使用 --theirs 或 --ours 选择版本
+
+### Details
+执行 `git pull --rebase` 时遇到冲突：
+```
+error: Pulling is not possible because you have unmerged files.
+Unmerged paths: both modified: .learnings/LEARNINGS.md
+```
+
+解决方法：
+```bash
+git checkout --theirs .learnings/LEARNINGS.md  # 使用远程版本
+git add .learnings/LEARNINGS.md
+git commit -m "message"
+git rebase --continue
+```
+
+### Suggested Action
+1. Rebase 冲突时快速解决：使用 --theirs 接受远程版本
+2. 如果需要保留本地修改，手动编辑文件解决冲突
+3. 解决后记得 `git add` 标记已解决
+
+### Metadata
+- Source: error
+- Related Files:
+  - project/log-monitor-fpk/.learnings/LEARNINGS.md
+- Tags: git, rebase, conflict-resolution
  
