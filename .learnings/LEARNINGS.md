@@ -66,7 +66,7 @@ JavaScript 中存在重复函数定义时，后定义的函数会覆盖先定义
 
 ## [LRN-20260408-003] best_practice
 
-**Logged**: 2026-04-08T23:22:00+08:00
+**Logged**: 2026-04-08T18:27:00+08:00
 **Priority**: high
 **Status**: resolved
 **Area**: backend
@@ -170,217 +170,259 @@ Git push 超时或 GnuTLS 错误时，多次重试通常可以成功
 
 ---
 
-## [LRN-20260411-001] correction
+## [LRN-20260415-001] best_practice
 
-**Logged**: 2026-04-11T22:30:00+08:00
-**Priority**: critical
-**Status**: resolved
-**Area**: frontend
-
-### Summary
-前端拆分模块时，必须使用后端实际存在的 API 接口，不能猜测接口路径
-
-### Details
-进行 main.js 模块化拆分时：
-1. `session.js` 调用 `/api/auth/refresh-activity`（不存在）
-2. `auth.js` 调用 `/api/auth/status`（应该是 `/api/auth/check-session`）
-3. `auth.js` 检查 `data.authenticated`（应该是 `data.logged_in`）
-
-导致登录后页面无限刷新。
-
-### Suggested Action
-1. 拆分前端模块前，先检查后端路由定义
-2. 使用 grep_search 搜索确认 API 接口是否存在
-3. 不要基于猜测编写代码，必须有实际依据
-
-### Metadata
-- Source: user_feedback
-- Related Files:
-  - cmd/logmonitor/src/static/js/auth.js
-  - cmd/logmonitor/src/static/js/session.js
-  - cmd/logmonitor/src/routes/auth_routes.py
-- Tags: frontend, api, module-split, debugging
-
----
-
-## [LRN-20260411-002] knowledge_gap
-
-**Logged**: 2026-04-04-11T22:30:00+08:00
+**Logged**: 2026-04-15T00:00:00+08:00
 **Priority**: high
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-FPK 应用的 manifest 文件名必须保持为 "manifest"，不能被重命名为其他名称
+Heredoc 向 JavaScript 文件追加内容时，花括号会被 shell 解析导致语法错误
 
 ### Details
-git commit 时 manifest 被重命名为 manifest.txt，导致 fnpack 打包失败：
+尝试使用 `cat >> main.js << EOF` 追加代码时，shell 将 `{}` 解释为子 shell，导致语法错误：
 ```
-error: pathspec 'manifest' did not match any file(s) known to git
+Syntax error: "}" unexpected
 ```
 
 ### Suggested Action
-1. 打包前检查 manifest 文件是否存在
-2. 如果 manifest.txt 存在，手动恢复：
-   ```bash
-   git show HEAD:manifest > manifest
-   ```
+追加代码到 JS 文件时使用以下方法之一：
+1. 使用 `write_file` 写入临时文件，然后用 `cat` 合并
+2. 使用 Python 写入文件
+3. 避免 heredoc，改用 echo 逐行追加
 
 ### Metadata
 - Source: error
 - Related Files:
-  - project/log-monitor-fpk/manifest
-- Tags: fpk, manifest, packaging
+  - project/log-monitor-fpk/cmd/logmonitor/src/static/js/main.js
+- Tags: shell, javascript, heredoc, syntax-error
+- See Also: LRN-20260408-002
 
 ---
 
-## [LRN-20260411-003] best_practice
+## [LRN-20260415-002] best_practice
 
-**Logged**: 2026-04-11T22:30:00+08:00
+**Logged**: 2026-04-15T00:00:00+08:00
 **Priority**: medium
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-前端代码回退后需要重新打包 FPK，否则用户安装的是旧版本
+从参考项目同步代码时必须使用绝对路径，相对路径可能因 cwd 不同而失败
 
 ### Details
-使用 `git reset --hard` 回退代码后，如果没有重新执行 `fnpack build`，用户下载的还是旧的 FPK 文件。
+执行 `cp project/log-monitor-fpk1/.../main.js` 失败，但 `cp /app/working/workspaces/default/project/log-monitor-fpk1/.../main.js` 成功。
+
+原因：工作目录可能不是预期的位置，相对路径解析错误。
 
 ### Suggested Action
-每次代码修改（包括回退）后，都需要重新执行 `fnpack build`。
+同步参考项目代码时使用绝对路径：
+```bash
+cp /app/working/workspaces/default/project/log-monitor-fpk1/cmd/logmonitor/src/static/js/main.js cmd/logmonitor/src/static/js/main.js
+```
 
 ### Metadata
-- Source: conversation
+- Source: error
 - Related Files:
   - project/log-monitor-fpk/
-- Tags: fpk, git, deployment
+- Tags: shell, path, file-copy
 
 ---
 
-## [LRN-20260411-004] best_practice
+## [LRN-20260415-003] best_practice
 
-**Logged**: 2026-04-11T22:30:00+08:00
+**Logged**: 2026-04-15T00:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+模块化 JS 架构与 HTML onclick 兼容性问题：函数必须导出到 window 对象
+
+### Details
+HTML 中的 `onclick="functionName()"` 需要函数存在于全局作用域。模块化 JS 使用 ES6 `import/export` 或 IIFE 封装时，函数默认不在 window 上。
+
+解决方案：
+```javascript
+// 模块内定义
+function myFunction() { ... }
+
+// 导出到全局
+window.myFunction = myFunction;
+```
+
+### Suggested Action
+1. 所有被 HTML onclick 调用的函数必须 `window.xxx = xxx`
+2. 开发时检查 HTML 调用的函数是否都在 window 上
+3. 写 Python 脚本自动检查 HTML onClick 函数定义
+
+### Metadata
+- Source: conversation
+- Related Files:
+  - project/log-monitor-fpk/cmd/logmonitor/src/templates/index.html
+- Tags: javascript, window-export, onclick
+
+---
+
+## [LRN-20260415-004] best_practice
+
+**Logged**: 2026-04-15T00:00:00+08:00
 **Priority**: high
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-模块化拆分前端代码时，需要保留完整的函数签名和接口定义
+面板切换时必须调用数据加载函数，否则 UI 无数据刷新无反应
 
 ### Details
-main.js 拆分后发现的问题：
-1. 拆分时遗漏了 `window.` 全局导出
-2. 模块间依赖关系没有梳理清楚
-3. 原有代码的函数命名空间冲突
+修复菜单无反应问题时发现，`switchNavPanel` 函数只切换了面板显示，但未加载数据。用户点击菜单后看到空白面板，以为功能坏了。
+
+原因：`loadPanelData()` 函数存在但未被调用。
 
 ### Suggested Action
-1. 拆分前绘制模块依赖图
-2. 记录所有全局函数及其依赖
-3. 拆分后逐一验证每个模块的导出是否正确
-
-### Metadata
-- Source: user_feedback
-- Related Files:
-  - cmd/logmonitor/src/static/js/main.js
-  - cmd/logmonitor/src/static/js/*.js
-- Tags: frontend, module-split, refactoring
-
----
-
-## [LRN-20260412-001] best_practice
-
-**Logged**: 2026-04-12T00:10:00+08:00
-**Priority**: critical
-**Status**: resolved
-**Area**: backend
-
-### Summary
-代码审查时需要检查所有代码路径，确保安全检查在所有入口点一致
-
-### Details
-`PushCoordinator.push_raw()` 方法跳过了 DND 检查，导致聚合摘要推送绕过免打扰模式。
-
-问题根因：
-- `push()` 方法有 DND 检查：`if should_cache_now(): cache_message()`
-- `push_raw()` 方法没有 DND 检查，直接调用 `push_service.push_message()`
-- `_push_aggregated()` 调用 `push_raw()`，绕过了 DND 限制
-
-### Suggested Action
-1. 任何封装的"快捷方法"都要确保与原始方法有一致的安全检查
-2. 代码审查时检查所有代码路径，特别是封装方法
-3. 使用统一的调用链，避免旁路绕过安全检查
-
-### Metadata
-- Source: user_feedback
-- Related Files:
-  - cmd/logmonitor/src/monitor_core/push_coordinator.py
-  - cmd/logmonitor/src/monitor_core/base.py
-- Tags: dnd, code-review, security, encapsulation
-
----
-
-## [LRN-20260412-002] best_practice
-
-**Logged**: 2026-04-12T00:10:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: infra
-
-### Summary
-Git 推送遇到 non-fast-forward 错误时，使用 rebase 可以保持提交历史整洁
-
-### Details
-远程仓库有新的提交，本地分支落后时，直接 push 会被拒绝：
-```
-! [rejected] master -> master (non-fast-forward)
-```
-
-解决方法：
-```bash
-git pull <remote> <branch> --rebase
-git push <remote> <branch>
-```
-
-### Suggested Action
-1. 推送前先 `git status` 检查是否有未推送的提交
-2. 遇到 non-fast-forward 时使用 `git pull --rebase` 而非 `git merge`
-3. 保持本地和远程同步
-
-### Metadata
-- Source: conversation
-- Related Files:
-- Tags: git, rebase, troubleshooting
-
----
-
-## [LRN-20260412-003] best_practice
-
-**Logged**: 2026-04-12T00:15:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: infra
-
-### Summary
-JSON 格式必须严格遵循规范，缺少逗号或多余逗号都会导致解析失败
-
-### Details
-FnDepot 仓库的 fnpack.json 存在格式错误：
-1. `fnlogpush.history` 对象结束后缺少逗号
-2. `usbrsync.history` 对象中有尾随逗号
-3. 缩进不一致
-
-使用 `python3 -c "import json; json.load(open('fnpack.json'))"` 可以快速验证 JSON 格式。
-
-### Suggested Action
-1. 编辑 JSON 文件后用 Python 验证格式
-2. 注意对象和数组末尾的正确逗号使用
-3. 保持统一的缩进风格
+1. `switchNavPanel` 函数切换面板时应调用 `loadPanelData(panelId)`
+2. 每个面板数据加载函数需要注册到映射表
+3. 添加数据加载状态指示（loading spinner）
 
 ### Metadata
 - Source: error
 - Related Files:
-  - project/FnDepot/fnpack.json
-- Tags: json, format, validation
+  - project/log-monitor-fpk/cmd/logmonitor/src/static/js/main.js
+- Tags: ui-ux, panel-switch, data-loading
 
 ---
+
+## [LRN-20260415-005] best_practice
+
+**Logged**: 2026-04-15T00:00:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+页面无限刷新问题：缺少 API 接口时前端轮询会陷入错误处理死循环
+
+### Details
+页面加载后不断刷新，F12 发现：
+1. `/api/auth/status` 返回 404 → 触发刷新
+2. `/api/agg/stats` 返回 404 → 触发刷新
+
+错误处理代码在接口失败时触发页面刷新，但接口不存在导致无限循环。
+
+### Suggested Action
+1. 前端轮询要有退避策略（指数退避）
+2. 接口 404 时停止轮询，提示用户而非自动刷新
+3. 确保后端实现了所有前端调用的接口
+
+### Metadata
+- Source: error
+- Related Files:
+  - project/log-monitor-fpk/cmd/logmonitor/src/static/js/main.js
+- Tags: api, polling, infinite-loop, refresh
+
+---
+
+## [LRN-20260415-006] best_practice
+
+**Logged**: 2026-04-15T00:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+JavaScript 正则表达式中字符串拼接时 `$&` 需要正确转义
+
+### Details
+在 `replace()` 回调中构建正则表达式时：
+```javascript
+// 错误：\$& 会被解析
+pattern = new RegExp('\\b' + key.replace(/[.*+?^${}()|[\]\\]/g, '\$&') + '\\b');
+
+// 正确：直接用 $&
+pattern = new RegExp('\\b' + key.replace(/[.*+?^${}()|[\]\\]/g, '$&') + '\\b');
+```
+
+`\$&` 在 JavaScript 字符串中不是有效转义序列。
+
+### Suggested Action
+1. 记住 `$&` 在 replace 回调中是特殊字符，代表匹配内容
+2. 在普通字符串拼接中不需要转义
+3. 使用 `node --check` 验证 JS 语法
+
+### Metadata
+- Source: error
+- Related Files:
+  - project/log-monitor-fpk/cmd/logmonitor/src/static/js/history.js
+- Tags: javascript, regex, string-escape
+
+---
+
+## [LRN-20260415-007] best_practice
+
+**Logged**: 2026-04-15T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+模块化 vs 单文件架构选择：参考项目使用 134KB 单文件 main.js
+
+### Details
+对比参考项目与当前项目的 JS 架构：
+
+| 维度 | 参考项目 | 当前项目 |
+|------|----------|----------|
+| 文件数 | 1 个 main.js (134KB) | 16 个模块化 JS |
+| 维护性 | 差 | 好 |
+| 功能完整性 | 完整 | 需同步 |
+
+参考项目虽然文件大，但功能完整，函数间调用无障碍。
+
+### Suggested Action
+对于中小型项目，可考虑：
+1. 模块化开发便于维护
+2. 构建时合并压缩
+3. 或直接同步参考项目完整代码
+
+### Metadata
+- Source: conversation
+- Related Files:
+  - project/log-monitor-fpk1/cmd/logmonitor/src/static/js/main.js
+- Tags: architecture, code-organization, frontend
+
+---
+
+## [LRN-20260415-008] best_practice
+
+**Logged**: 2026-04-15T00:00:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+全面 JS 语法检查后打包，确保所有代码无语法错误
+
+### Details
+使用 `node --check` 批量检查所有 JS 文件：
+```bash
+for f in cmd/logmonitor/src/static/js/*.js; do
+    node --check "$f" || echo "❌ $f"
+done
+```
+
+发现问题：
+- main.js 语法错误（意外的文件末尾）
+- bootstrap.bundle.min.js 和 socket.io.min.js 是压缩文件，node 检查会报错
+
+### Suggested Action
+1. 批量检查命令加入 Makefile 或 npm script
+2. 排除 .min.js 文件
+3. 语法检查通过后再打包
+
+### Metadata
+- Source: conversation
+- Related Files:
+  - project/log-monitor-fpk/cmd/logmonitor/src/static/js/*.js
+- Tags: code-quality, syntax-check, node
+ 
