@@ -521,4 +521,88 @@ git rebase --continue
 - Related Files:
   - project/log-monitor-fpk/.learnings/LEARNINGS.md
 - Tags: git, rebase, conflict-resolution
+
+---
+
+## [LRN-20260417-001] best_practice
+
+**Logged**: 2026-04-17T10:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+使用 copaw cron list 查看定时任务时需确保工具正常加载
+
+### Details
+定时任务管理是常见的运维操作，需要能够正常执行 copaw 命令查看任务列表。
+
+### Suggested Action
+1. 定时任务存储在 CoPaw 系统中
+2. 使用 `copaw cron list --agent-id default` 查看所有任务
+3. 任务信息包含：ID、名称、时间表、推送渠道、执行内容
+
+### Metadata
+- Source: conversation
+- Related Files:
+- Tags: cron, task-scheduling, copaw
+
+---
+
+## [LRN-20260417-002] best_practice
+
+**Logged**: 2026-04-17T10:15:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+新闻推送任务需要先抓取内容再调用推送 API
+
+### Details
+完整的新闻推送流程：
+1. 使用 browser_use 打开新闻源页面
+2. 使用 snapshot 提取新闻标题和摘要
+3. 格式化消息内容（markdown 格式）
+4. 调用第三方推送 API 发送
+
+### Suggested Action
+1. 选择权威的新闻源（观察者网、澎湃新闻等）
+2. 提取关键信息：标题、来源、简要内容
+3. 格式化推送到目标渠道
+
+### Metadata
+- Source: conversation
+- Related Files:
+- Tags: news, browser, scraping, push
+
+---
+
+## [LRN-20260417-003] best_practice
+
+**Logged**: 2026-04-17T10:30:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Git commit 和 push 需要分步执行，确保每步成功后再继续
+
+### Details
+Git 操作最佳实践：
+1. 先 `git add` 暂存文件
+2. `git commit -m "message"` 提交
+3. `git push <remote> <branch>` 推送到远程
+
+如果 push 失败（non-fast-forward），需要先 pull 再 push。
+
+### Suggested Action
+1. 每次修改后及时 commit
+2. commit message 要清晰描述修改内容
+3. 推送失败时使用 `git pull --rebase` 而非 `git merge`
+
+### Metadata
+- Source: conversation
+- Related Files:
+- Tags: git, commit, push, workflow
  
