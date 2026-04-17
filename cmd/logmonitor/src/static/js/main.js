@@ -175,88 +175,7 @@ function startSessionCheck() {
 // 动态设置版权年份
 document.getElementById('copyright-year').textContent = new Date().getFullYear();
 
-// 通知管理功能
-const NotificationManager = {
-    container: document.getElementById('notification-container'),
-    
-    // 显示通知
-    showNotification(title, message, type = 'info', duration = 5000) {
-        if (!this.container) return;
-        
-        // 创建通知元素
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        
-        // 设置通知内容
-        notification.innerHTML = `
-            <div class="notification-header">
-                <div class="notification-title">${title}</div>
-                <button class="notification-close" onclick="NotificationManager.closeNotification(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="notification-message">${message}</div>
-            <div class="notification-time">${this.getCurrentTime()}</div>
-        `;
-        
-        // 添加到容器
-        this.container.appendChild(notification);
-        
-        // 自动关闭
-        if (duration > 0) {
-            setTimeout(() => {
-                this.closeNotification(notification);
-            }, duration);
-        }
-    },
-    
-    // 关闭通知
-    closeNotification(element) {
-        let notification;
-        if (element.tagName === 'BUTTON') {
-            notification = element.closest('.notification');
-        } else {
-            notification = element;
-        }
-        
-        if (notification) {
-            notification.classList.add('fade-out');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }
-    },
-    
-    // 获取当前时间
-    getCurrentTime() {
-        const now = new Date();
-        return now.toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    },
-    
-    // 显示成功通知
-    success(title, message, duration) {
-        this.showNotification(title, message, 'success', duration);
-    },
-    
-    // 显示错误通知
-    error(title, message, duration) {
-        this.showNotification(title, message, 'error', duration);
-    },
-    
-    // 显示警告通知
-    warning(title, message, duration) {
-        this.showNotification(title, message, 'warning', duration);
-    },
-    
-    // 显示信息通知
-    info(title, message, duration) {
-        this.showNotification(title, message, 'info', duration);
-    }
-};
+// 注意：NotificationManager 已在 globals.js 中定义
 
 // 测试通知功能
 function testNotification() {
@@ -272,8 +191,7 @@ function testNotification() {
     }, 3000);
 }
 
-// 健康检查更新定时器
-let healthUpdateInterval = null;
+// 注意：healthUpdateInterval 已在 globals.js 中定义
 
 // 加载系统健康状态
 function loadHealthStatus() {
@@ -505,92 +423,9 @@ window.addEventListener('load', function() {
 console.log('=== 页面加载完成 ===');
 console.log('Font Awesome 已加载:', document.querySelector('link[href*="font-awesome"]') !== null);
 
-// 记录最后的历史记录索引，用于检测新增（全局变量）
-let lastHistoryIndex = null;
+// 注意：lastHistoryIndex 已在 globals.js 中定义
 
-// 主题管理
-const ThemeManager = {
-    // 主题列表（6个精选主题）
-    themes: [
-        'default', 'dark', 'ocean', 'green', 'sunset', 'cyber'
-    ],
-
-    // 主题名称映射
-    themeNames: {
-        'default': '暗夜紫',
-        'dark':    '深色模式',
-        'ocean':   '深海蓝',
-        'green':   '清新绿',
-        'sunset':  '暮色橙',
-        'cyber':   '科技感霓虹'
-    },
-    
-    // 获取当前主题
-    getCurrentTheme() {
-        return localStorage.getItem('currentTheme') || 'default';
-    },
-    
-    // 设置主题
-    setTheme(themeName) {
-        // 移除所有主题类
-        this.themes.forEach(theme => {
-            document.body.classList.remove(`theme-${theme}`);
-        });
-        
-        // 添加新主题类
-        if (themeName !== 'default') {
-            document.body.classList.add(`theme-${themeName}`);
-        }
-
-        // 保存到本地存储
-        localStorage.setItem('currentTheme', themeName);
-
-        // 更新主题单选框的选中状态
-        this.updateThemeRadioButtons(themeName);
-
-        console.log(`主题已切换为: ${this.themeNames[themeName]}`);
-    },
-
-    // 更新主题单选框的选中状态
-    updateThemeRadioButtons(themeName) {
-        const radioButton = document.querySelector(`input[name="theme"][value="${themeName}"]`);
-        if (radioButton) {
-            radioButton.checked = true;
-        }
-    },
-
-    // 初始化主题
-    initTheme() {
-        let currentTheme = this.getCurrentTheme();
-        
-        // 检查系统深色模式设置（如果没有手动设置过主题）
-        if (currentTheme === 'default') {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (prefersDark) {
-                currentTheme = 'dark';
-            }
-        }
-        
-        this.setTheme(currentTheme);
-
-        // 绑定主题切换事件（单选框）
-        document.querySelectorAll('input[name="theme"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const theme = e.target.value;
-                this.setTheme(theme);
-            });
-        });
-        
-        // 监听系统主题变化
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            // 只有在使用默认主题时才响应系统变化
-            if (this.getCurrentTheme() === 'default') {
-                const newTheme = e.matches ? 'dark' : 'default';
-                this.setTheme(newTheme);
-            }
-        });
-    }
-};
+// 注意：ThemeManager 已在 globals.js 中定义
 
 // 在页面上显示调试信息
 document.addEventListener('DOMContentLoaded', function() {
@@ -1436,8 +1271,10 @@ async function loadConfig() {
         });
 }
 
+// 注意：_historySearchTimer, historyKeyword, historyCurrentPage, historyPageSize, historyTotal 
+// 已在 globals.js 中定义
+
 // 关键词搜索：更新 historyKeyword 并重新渲染历史列表（防抖 300ms）
-let _historySearchTimer = null;
 function onHistorySearch(kw) {
     historyKeyword = kw.trim();
     clearTimeout(_historySearchTimer);
@@ -1445,12 +1282,6 @@ function onHistorySearch(kw) {
 }
 
 // 加载推送历史
-// historyKeyword 用于关键词高亮（由搜索框驱动）
-let historyKeyword = '';
-// 分页状态
-let historyCurrentPage = 1;  // 当前页码（从1开始）
-const historyPageSize = 20;  // 每页显示数量
-let historyTotal = 0;  // 总记录数
 
 /**
  * 把文本中的 keyword 用 .kw-highlight span 包裹，用于推送历史预览高亮。
@@ -2690,9 +2521,7 @@ function loadAggStats() {
         .catch(err => console.warn('加载告警聚合统计失败:', err));
 }
 
-// ========== 自动刷新功能 ==========
-let autoRefreshInterval = null;
-const DEFAULT_REFRESH_INTERVAL = 10000; // 10秒
+// 注意：autoRefreshInterval, DEFAULT_REFRESH_INTERVAL 已在 globals.js 中定义
 
 function toggleAutoRefresh(enabled) {
     if (enabled) {
@@ -2738,11 +2567,7 @@ function initAutoRefresh() {
     }
 }
 
-// ========== 历史记录日期筛选功能 ==========
-let historyDateFilter = {
-    startDate: null,
-    endDate: null
-};
+// 注意：historyDateFilter 已在 globals.js 中定义
 
 function onHistoryDateFilter() {
     const startDate = document.getElementById('history-date-start')?.value;

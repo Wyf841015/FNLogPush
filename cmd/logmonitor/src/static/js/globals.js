@@ -44,23 +44,10 @@ const DEFAULT_REFRESH_INTERVAL = 10000;
 
 // ========== 管理器 ==========
 const NotificationManager = {
-    container: null,
-    
-    getContainer() {
-        if (!this.container) {
-            this.container = document.getElementById('notification-container');
-        }
-        return this.container;
-    },
-    
-    getCurrentTime() {
-        const now = new Date();
-        return now.toLocaleTimeString('zh-CN', { hour12: false });
-    },
+    container: document.getElementById('notification-container'),
     
     showNotification(title, message, type = 'info', duration = 5000) {
-        const container = this.getContainer();
-        if (!container) return;
+        if (!this.container) return;
         
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
@@ -76,7 +63,7 @@ const NotificationManager = {
             <div class="notification-time">${this.getCurrentTime()}</div>
         `;
         
-        container.appendChild(notification);
+        this.container.appendChild(notification);
         
         if (duration > 0) {
             setTimeout(() => {
@@ -86,11 +73,28 @@ const NotificationManager = {
     },
     
     closeNotification(element) {
-        const notification = element.closest ? element.closest('.notification') : element;
-        if (notification) {
-            notification.classList.add('closing');
-            setTimeout(() => notification.remove(), 300);
+        let notification;
+        if (element.tagName === 'BUTTON') {
+            notification = element.closest('.notification');
+        } else {
+            notification = element;
         }
+        
+        if (notification) {
+            notification.classList.add('fade-out');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }
+    },
+    
+    getCurrentTime() {
+        const now = new Date();
+        return now.toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
     },
     
     success(title, message, duration) {
