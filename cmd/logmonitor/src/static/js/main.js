@@ -1019,9 +1019,9 @@ async function loadConfig() {
             console.log('配置加载成功:', config);
             currentConfig = config;
 
-            // 填充表单
-            document.getElementById('database-path').value = config.database_path;
-            document.getElementById('check-interval-input').value = config.check_interval;
+            // 填充表单（添加空值保护）
+            document.getElementById('database-path').value = config.database_path || '';
+            document.getElementById('check-interval-input').value = config.check_interval || 5;
             document.getElementById('webhook-url').value = config.webhook_url || '';
             // 保持 password 类型，用眼睛按钮切换可见性（URL 中常含 token 参数）
 

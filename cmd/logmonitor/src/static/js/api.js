@@ -95,3 +95,10 @@ function throttle(func, limit) {
         }
     };
 }
+
+// ========== 导出到全局 ==========
+window.apiFetch = apiFetch;
+window.apiFetchCached = apiFetchCached;
+window.apiCache = apiCache;
+window.debounce = debounce;
+window.throttle = throttle;
