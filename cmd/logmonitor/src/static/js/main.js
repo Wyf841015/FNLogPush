@@ -1006,6 +1006,7 @@ function showNewPushNotification() {
 
 // 加载配置
 async function loadConfig() {
+    console.log("[loadConfig] 开始加载配置...");
     // 先从API加载事件配置
     await loadEventCategoriesFromAPI();
     
@@ -1449,6 +1450,9 @@ async function loadConfig() {
                     eventsContainer.innerHTML += categoryHTML;
                 }
             });
+        })
+        .catch(error => {
+            console.error('[loadConfig] 加载配置时发生错误:', error);
         });
 }
 
