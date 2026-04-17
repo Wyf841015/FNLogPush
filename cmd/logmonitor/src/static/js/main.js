@@ -1008,8 +1008,15 @@ async function loadConfig() {
     await loadEventCategoriesFromAPI();
     
     apiFetch('/api/config')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.error('加载配置失败:', response.status, response.statusText);
+                throw new Error('加载配置失败: ' + response.status);
+            }
+            return response.json();
+        })
         .then(async config => {
+            console.log('配置加载成功:', config);
             currentConfig = config;
 
             // 填充表单
@@ -2858,3 +2865,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initAutoRefresh();
     initHistoryDateFilter();
 });
+// ========== 导出到全局 ==========
+window.loadConfig = loadConfig;
+window.loadStatus = loadStatus;
+window.loadHistory = loadHistory;
+window.loadAggStats = loadAggStats;
+window.checkDatabase = checkDatabase;
