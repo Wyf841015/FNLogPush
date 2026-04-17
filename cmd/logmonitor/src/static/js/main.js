@@ -1,6 +1,6 @@
 // ========== 全局状态 ==========
-let currentConfig = {};
-let eventCategoriesCache = null;
+// 注意：全局变量已在 globals.js 中定义，此文件引用使用
+// currentConfig, eventCategoriesCache 等已通过 window 导出
 
 // 从API加载事件配置（带缓存）
 async function loadEventCategoriesFromAPI() {
@@ -36,28 +36,10 @@ async function loadEventCategoriesFromAPI() {
 // components.js - UI 组件模块
 
 // ========== 常量定义 ==========
-const CONSTANTS = {
-    // 状态常量
-    DB_STATUS: {
-        CONNECTED: '已连接',
-        FAILED: '连接失败',
-        DISCONNECTED: '未连接'
-    },
-    // 刷新间隔（毫秒）
-    REFRESH_INTERVAL: {
-        HEALTH: 15000,
-        AUTO: 30000,
-        SESSION: 60000
-    },
-    // Session 超时（秒）
-    SESSION_TIMEOUT: 300,
-    // 通知持续时间（毫秒）
-    NOTIFICATION_DURATION: 5000
-};
+// 注意：CONSTANTS 已在 globals.js 中定义
 
 // ========== 现代侧边栏导航 ==========
-let sidebarOpen = false;
-let sidebarCollapsed = false;
+// 注意：sidebarOpen, sidebarCollapsed 已在 globals.js 中定义
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebarContainer');
@@ -139,9 +121,7 @@ function syncNavActive(target) {
 // 此文件中的 apiFetch 已由 api.js 提供
 
 // ========== Session 超时管理（5分钟无操作退出） ==========
-let sessionCheckInterval = null;
-let activityRefreshInterval = null;
-let lastActivityTime = Date.now();
+// 注意：sessionCheckInterval, activityRefreshInterval, lastActivityTime 已在 globals.js 中定义
 
 // 刷新活动时间
 async function refreshActivity() {
