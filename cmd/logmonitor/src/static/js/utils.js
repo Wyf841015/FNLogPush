@@ -1,35 +1,7 @@
 // ========== utils.js - 工具函数模块 ==========
 
-// ========== 全局事件配置缓存 ==========
-let eventCategoriesCache = null;
-
-// 从API加载事件配置（带缓存）
-async function loadEventCategoriesFromAPI() {
-    if (eventCategoriesCache) return eventCategoriesCache;
-    
-    try {
-        const response = await fetch('/api/events/config');
-        if (response.ok) {
-            const data = await response.json();
-            if (data.config && data.config.categories) {
-                const categories = {};
-                data.config.categories.forEach(cat => {
-                    categories[cat.name] = cat.events.map(e => ({
-                        id: e.id,
-                        icon: e.icon || 'fa-circle',
-                        color: e.color || '#667eea',
-                        name: e.name || e.id
-                    }));
-                });
-                eventCategoriesCache = categories;
-                return categories;
-            }
-        }
-    } catch (err) {
-        console.warn('从API加载事件配置失败:', err);
-    }
-    return null;
-}
+// 注意：eventCategoriesCache 和 loadEventCategoriesFromAPI 
+// 已在 main.js 中定义，避免重复声明冲突
 
 // ========== 常量定义 ==========
 const CONSTANTS = {
@@ -206,7 +178,7 @@ function throttle(func, limit) {
 }
 
 // 导出到全局
-window.loadEventCategoriesFromAPI = loadEventCategoriesFromAPI;
+// loadEventCategoriesFromAPI 已在 main.js 中定义
 window.CONSTANTS = CONSTANTS;
 window.formatRelativeTime = formatRelativeTime;
 window.escapeHtml = escapeHtml;
