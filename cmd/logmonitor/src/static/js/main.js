@@ -1111,8 +1111,8 @@ async function loadConfig() {
                 '严重错误': { icon: 'fa-fire', color: '#dc3545' }
             };
 
-            config.log_levels.forEach(level => {
-                const isChecked = config.selected_levels.includes(level);
+            (config.log_levels || []).forEach(level => {
+                const isChecked = (config.selected_levels || []).includes(level);
                 const iconInfo = levelIcons[level] || { icon: 'fa-circle', color: '#667eea' };
 
                 const checkboxHTML = `
@@ -1380,8 +1380,9 @@ async function loadConfig() {
                                 </div>
                                 <div class="category-events d-flex flex-wrap gap-2 event-category-body" style="padding: 12px; border-radius: 0 0 10px 10px; border: 2px solid ${protocolColor}20; border-top: none;">
                                     ${protocolEvents.map(event => {
-                                        const isSelected = config.selected_events && config.selected_events.includes(event.id);
-                                        const isChecked = isSelected;
+                                        const eventList = config.selected_events;
+                                        const isSelected = eventList && eventList.length > 0 && eventList.includes(event.id);
+                                        const isChecked = eventList && eventList.length > 0 ? isSelected : true;
                                         return `
                                             <div class="event-checkbox event-checkbox-item" style="padding: 6px 12px; border-radius: 12px; border: 2px solid ${event.color}30; transition: all 0.2s ease; cursor: pointer;">
                                                 <input class="form-check-input category-${category}-${protocol}" type="checkbox"
@@ -1418,8 +1419,9 @@ async function loadConfig() {
                             </div>
                             <div class="category-events d-flex flex-wrap gap-2 event-category-body" style="padding: 12px; border-radius: 0 0 10px 10px; border: 2px solid ${categoryColor}20; border-top: none;">
                                 ${categoryEvents.map(event => {
-                                    const isSelected = config.selected_events && config.selected_events.includes(event.id);
-                                    const isChecked = isSelected;
+                                    const eventList = config.selected_events;
+                                    const isSelected = eventList && eventList.length > 0 && eventList.includes(event.id);
+                                    const isChecked = eventList && eventList.length > 0 ? isSelected : true;
                                     return `
                                         <div class="event-checkbox event-checkbox-item" style="padding: 6px 12px; border-radius: 12px; border: 2px solid ${event.color}30; transition: all 0.2s ease; cursor: pointer;">
                                             <input class="form-check-input category-${category}" type="checkbox"
