@@ -2076,41 +2076,9 @@ function controlMonitor(action) {
 
 // ========== 浮动按钮菜单和面板切换函数 ==========
 
-// 切换浮动按钮菜单收缩/展开
-function toggleFabMenu() {
-    const fabMenu = document.getElementById('fabMenu');
-    const mainBtnIcon = fabMenu.querySelector('.fab-main i');
-
-    fabMenu.classList.toggle('active');
-
-    // 根据菜单状态切换图标
-    if (fabMenu.classList.contains('active')) {
-        mainBtnIcon.classList.remove('fa-bars');
-        mainBtnIcon.classList.add('fa-times');
-        fabMenu.querySelector('.fab-main').setAttribute('title', '收起菜单');
-    } else {
-        mainBtnIcon.classList.remove('fa-times');
-        mainBtnIcon.classList.add('fa-bars');
-        fabMenu.querySelector('.fab-main').setAttribute('title', '展开菜单');
-    }
-}
-
-// 显示/隐藏用户菜单
-function showUserMenu() {
-    const menu = document.getElementById('userMenuPopup');
-    menu.classList.toggle('active');
-}
-
-function hideUserMenu() {
-    const menu = document.getElementById('userMenuPopup');
-    menu.classList.remove('active');
-}
-
-// 切换可展开操作菜单
-function toggleExpandableMenu() {
-    const menu = document.getElementById('expandableMenu');
-    menu.classList.toggle('active');
-}
+// 注：toggleFabMenu, showUserMenu, hideUserMenu, toggleExpandableMenu 
+// 已在 fab.js 中定义并导出到 window（带空值保护）
+// 此处不再重复定义
 
 // 点击外部关闭弹窗菜单
 document.addEventListener('click', function(e) {
