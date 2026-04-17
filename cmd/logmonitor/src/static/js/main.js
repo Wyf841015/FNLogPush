@@ -1,4 +1,5 @@
-// ========== 全局事件配置缓存 ==========
+// ========== 全局状态 ==========
+let currentConfig = {};
 let eventCategoriesCache = null;
 
 // 从API加载事件配置（带缓存）
@@ -615,7 +616,8 @@ const ThemeManager = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== DOMContentLoaded 事件触发 ===');
 
-    let currentConfig = {};
+    // 注意：currentConfig 已在上方全局声明
+    // let currentConfig = {};  // 已移除，避免作用域冲突
 
     // 启动session定时检查
     startSessionCheck();
