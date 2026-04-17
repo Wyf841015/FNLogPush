@@ -1,8 +1,8 @@
 // ========== session.js - Session管理和通知模块 ==========
 
-// ========== Session 状态 ==========
-let sessionCheckInterval = null;
-let lastActivityTime = Date.now();
+// 注意：以下变量已在 main.js 中定义，此处引用
+// let sessionCheckInterval = null;
+// let lastActivityTime = Date.now();
 
 // ========== Session 管理函数 ==========
 
@@ -78,102 +78,7 @@ function startSessionCheck() {
 }
 
 // ========== 通知管理器 ==========
-
-const NotificationManager = {
-    container: null,
-    
-    /**
-     * 获取容器
-     */
-    getContainer() {
-        if (!this.container) {
-            this.container = document.getElementById('notification-container');
-        }
-        return this.container;
-    },
-    
-    /**
-     * 获取当前时间字符串
-     */
-    getCurrentTime() {
-        const now = new Date();
-        return now.toLocaleTimeString('zh-CN', { hour12: false });
-    },
-    
-    /**
-     * 显示通知
-     * @param {string} title - 标题
-     * @param {string} message - 消息内容
-     * @param {string} type - 类型 (success/error/warning/info)
-     * @param {number} duration - 显示时长（毫秒）
-     */
-    showNotification(title, message, type = 'info', duration = 5000) {
-        const container = this.getContainer();
-        if (!container) return;
-        
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        
-        notification.innerHTML = `
-            <div class="notification-header">
-                <div class="notification-title">${title}</div>
-                <button class="notification-close" onclick="NotificationManager.closeNotification(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="notification-message">${message}</div>
-            <div class="notification-time">${this.getCurrentTime()}</div>
-        `;
-        
-        container.appendChild(notification);
-        
-        if (duration > 0) {
-            setTimeout(() => {
-                this.closeNotification(notification);
-            }, duration);
-        }
-    },
-    
-    /**
-     * 关闭通知
-     * @param {HTMLElement} element - 通知元素或其关闭按钮
-     */
-    closeNotification(element) {
-        const notification = element.closest ? element.closest('.notification') : element;
-        if (notification) {
-            notification.classList.add('closing');
-            setTimeout(() => notification.remove(), 300);
-        }
-    },
-    
-    /**
-     * 成功通知
-     */
-    success(title, message, duration) {
-        this.showNotification(title, message, 'success', duration);
-    },
-    
-    /**
-     * 错误通知
-     */
-    error(title, message, duration) {
-        this.showNotification(title, message, 'error', duration);
-    },
-    
-    /**
-     * 警告通知
-     */
-    warning(title, message, duration) {
-        this.showNotification(title, message, 'warning', duration);
-    },
-    
-    /**
-     * 信息通知
-     */
-    info(title, message, duration) {
-        this.showNotification(title, message, 'info', duration);
-    }
-};
+// 注意：NotificationManager 已在 main.js 中定义，避免重复声明冲突
 
 /**
  * 测试浏览器通知权限

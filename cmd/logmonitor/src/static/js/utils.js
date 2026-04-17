@@ -1,27 +1,9 @@
 // ========== utils.js - 工具函数模块 ==========
 
-// 注意：eventCategoriesCache 和 loadEventCategoriesFromAPI 
-// 已在 main.js 中定义，避免重复声明冲突
-
-// ========== 常量定义 ==========
-const CONSTANTS = {
-    // 状态常量
-    DB_STATUS: {
-        CONNECTED: '已连接',
-        FAILED: '连接失败',
-        DISCONNECTED: '未连接'
-    },
-    // 刷新间隔（毫秒）
-    REFRESH_INTERVAL: {
-        HEALTH: 15000,
-        AUTO: 30000,
-        SESSION: 60000
-    },
-    // Session 超时（秒）
-    SESSION_TIMEOUT: 300,
-    // 通知持续时间（毫秒）
-    NOTIFICATION_DURATION: 5000
-};
+// 注意：以下内容已在 main.js 中定义，避免重复声明冲突
+// - eventCategoriesCache
+// - loadEventCategoriesFromAPI
+// - CONSTANTS
 
 // ========== 通用工具函数 ==========
 

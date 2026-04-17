@@ -1,7 +1,6 @@
 // ========== health.js - 健康状态监控模块 ==========
 
-// ========== 健康状态轮询 ==========
-let healthUpdateInterval = null;
+// 注意：healthUpdateInterval 已在 main.js 中定义，避免重复声明冲突
 
 /**
  * 加载健康状态
