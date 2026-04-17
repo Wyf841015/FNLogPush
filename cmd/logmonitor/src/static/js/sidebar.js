@@ -1,8 +1,6 @@
 // ========== sidebar.js - 侧边栏导航模块 ==========
 
-// ========== 状态变量 ==========
-let sidebarOpen = false;
-let sidebarCollapsed = false;
+// 注意：sidebarOpen 和 sidebarCollapsed 已在 main.js 中定义，避免重复
 
 // ========== 侧边栏切换 ==========
 

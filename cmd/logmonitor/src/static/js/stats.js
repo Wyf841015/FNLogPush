@@ -57,9 +57,8 @@ function loadAggStats() {
 }
 
 // ========== 自动刷新 ==========
-
-let autoRefreshInterval = null;
-const DEFAULT_REFRESH_INTERVAL = 10000;
+// 注意：autoRefreshInterval 和 DEFAULT_REFRESH_INTERVAL 
+// 已在 main.js 中定义，避免重复声明冲突
 
 function toggleAutoRefresh(enabled) {
     if (enabled) {

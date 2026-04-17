@@ -1,18 +1,13 @@
 // ========== history.js - 历史记录模块 ==========
 
-// ========== 全局状态 ==========
-let lastHistoryIndex = null;
-let _historySearchTimer = null;
-let historyKeyword = '';
-let historyCurrentPage = 1;
-const historyPageSize = 20;
-let historyTotal = 0;
-
-// ========== 日期筛选 ==========
-let historyDateFilter = {
-    startDate: '',
-    endDate: ''
-};
+// 注意：以下变量已在 main.js 中定义，避免重复声明冲突
+// - lastHistoryIndex
+// - _historySearchTimer
+// - historyKeyword
+// - historyCurrentPage
+// - historyPageSize
+// - historyTotal
+// - historyDateFilter
 
 // ========== 历史搜索 ==========
 
