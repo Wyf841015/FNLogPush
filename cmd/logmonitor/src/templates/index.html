@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <!-- Socket.IO Client -->
     <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <!-- 全局变量（必须第一个加载） -->
+    <script src="{{ url_for('static', filename='js/globals.js') }}"></script>
     <!-- 基础工具模块 -->
     <script src="{{ url_for('static', filename='js/api.js') }}"></script>
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
