@@ -1381,7 +1381,7 @@ async function loadConfig() {
                                 <div class="category-events d-flex flex-wrap gap-2 event-category-body" style="padding: 12px; border-radius: 0 0 10px 10px; border: 2px solid ${protocolColor}20; border-top: none;">
                                     ${protocolEvents.map(event => {
                                         const isSelected = config.selected_events && config.selected_events.includes(event.id);
-                                        const isChecked = !isSelected;
+                                        const isChecked = isSelected;
                                         return `
                                             <div class="event-checkbox event-checkbox-item" style="padding: 6px 12px; border-radius: 12px; border: 2px solid ${event.color}30; transition: all 0.2s ease; cursor: pointer;">
                                                 <input class="form-check-input category-${category}-${protocol}" type="checkbox"
@@ -1419,7 +1419,7 @@ async function loadConfig() {
                             <div class="category-events d-flex flex-wrap gap-2 event-category-body" style="padding: 12px; border-radius: 0 0 10px 10px; border: 2px solid ${categoryColor}20; border-top: none;">
                                 ${categoryEvents.map(event => {
                                     const isSelected = config.selected_events && config.selected_events.includes(event.id);
-                                    const isChecked = !isSelected;
+                                    const isChecked = isSelected;
                                     return `
                                         <div class="event-checkbox event-checkbox-item" style="padding: 6px 12px; border-radius: 12px; border: 2px solid ${event.color}30; transition: all 0.2s ease; cursor: pointer;">
                                             <input class="form-check-input category-${category}" type="checkbox"
@@ -2296,7 +2296,7 @@ function saveBasicConfig() {
         selected_levels: selectedLevels,
         selected_events: selectedEvents,
         log_levels: currentConfig.log_levels || ["调试", "普通", "警告", "错误", "严重错误"],
-        event_ids: currentConfig.event_ids || []
+        event_ids: selectedEvents
     };
 
     // 获取现有配置，保留其他设置
@@ -2432,7 +2432,7 @@ function saveFilterConfig() {
         selected_levels: selectedLevels,
         selected_events: selectedEvents,
         log_levels: currentConfig.log_levels || ["调试", "普通", "警告", "错误", "严重错误"],
-        event_ids: currentConfig.event_ids || []
+        event_ids: selectedEvents
     };
 
     apiFetch('/api/config')
