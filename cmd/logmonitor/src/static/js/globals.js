@@ -44,10 +44,20 @@ const DEFAULT_REFRESH_INTERVAL = 10000;
 
 // ========== 管理器 ==========
 const NotificationManager = {
-    container: document.getElementById('notification-container'),
+    _container: null,
+    
+    get container() {
+        if (!this._container) {
+            this._container = document.getElementById('notification-container');
+        }
+        return this._container;
+    },
     
     showNotification(title, message, type = 'info', duration = 5000) {
-        if (!this.container) return;
+        if (!this.container) {
+            console.warn('NotificationManager: 通知容器不存在');
+            return;
+        }
         
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
