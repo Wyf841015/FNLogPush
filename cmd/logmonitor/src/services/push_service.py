@@ -533,6 +533,16 @@ class MeoWPushChannel(PushChannel):
                     else:
                         logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，未知状态码: {status_code}，原始值: {raw_status}，响应: {result}")
                 
+                # 特殊处理 IP 限速：返回成功避免重复推送
+                if not is_success:
+                    error_msg = result.get('msg', '').lower()
+                    if '限速' in error_msg or 'rate limit' in error_msg or 'rate_limit' in error_msg:
+                        logger.warning(f"MeoW推送遭遇IP限速[{i+1}/{len(segments)}]，部分成功({i}段)，为避免重复推送返回成功")
+                        # 计算成功段数
+                        successful_segments = i  # 之前成功的段数
+                        # 返回成功，但记录警告（由调用方决定如何处理）
+                        return True  # 不再重试，避免重复推送成功的消息
+                
                 if not is_success:
                     all_success = False
             

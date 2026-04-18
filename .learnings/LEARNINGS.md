@@ -139,3 +139,56 @@ for f in *.js; do node --check "$f" && echo "OK $f" || echo "FAIL $f"; done
 ### Metadata
 - Source: workflow
 - Tags: javascript, syntax-check, build
+
+---
+
+## [LRN-20260418-005] best_practice
+
+**Logged**: 2026-04-18T14:00:00+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: backend
+
+### Summary
+API 状态码可能是字符串类型，需要显式转换为整数比较
+
+### Details
+在修复 MeoW 推送问题时发现，API 返回的状态码可能是字符串类型（如 `"200"`），而 Python 中 `"200" == 200` 返回 `False`，导致状态码判断逻辑失败。
+
+**问题代码：**
+```python
+status_code = result.get('code') or result.get('status')
+if status_code == 200:  # "200" != 200，始终为 False！
+    is_success = True
+```
+
+**后果：**
+- 系统误判推送失败
+- DND 免打扰缓存不被清空
+- 消息被重复推送
+
+### Suggested Action
+1. 从 API 获取状态码后，强制转换为整数：
+```python
+raw_status = result.get('code') or result.get('status')
+try:
+    status_code = int(raw_status) if raw_status is not None else None
+except (ValueError, TypeError):
+    status_code = raw_status
+```
+
+2. 记录原始值用于调试：
+```python
+logger.error(f"未知状态码: {status_code}，原始值: {raw_status}")
+```
+
+3. 通用原则：任何从外部来源（JSON、配置文件、环境变量）获取的数值，都应显式类型转换
+
+### Metadata
+- Source: error
+- Related Files: push_service.py (MeoWPushChannel)
+- Tags: python, api, type-conversion, bug
+- Pattern-Key: api.status_code_string_type
+- Recurrence-Count: 1
+- First-Seen: 2026-04-18
+- Last-Seen: 2026-04-18
