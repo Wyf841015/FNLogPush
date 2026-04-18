@@ -765,7 +765,7 @@ class DatabaseService:
 
         Args:
             known_event_ids: 已知的事件ID列表
-            limit: 返回记录数量限制
+            limit: 返回记录数量限制（仅限制新事件数量，不限制全量查询）
 
         Returns:
             新出现的事件ID列表
@@ -774,24 +774,35 @@ class DatabaseService:
         cache_key = self._generate_cache_key('get_new_event_ids', tuple(sorted_known_ids), limit)
         cached_result = self._get_cache(cache_key)
         if cached_result is not None:
+            logger.info(f"[新事件] 命中缓存，返回 {len(cached_result)} 个新事件ID")
             return cached_result
         
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                safe_limit = min(limit, 1000)
+                # 先获取所有不重复的 eventId（不限制数量，确保获取完整列表）
                 cursor.execute("""
                     SELECT DISTINCT eventId
                     FROM log
                     WHERE eventId IS NOT NULL AND eventId != ''
-                    LIMIT ?
-                """, (safe_limit,))
+                """)
                 rows = cursor.fetchall()
                 all_event_ids = set(row[0] for row in rows)
+                
                 known_ids = set(known_event_ids)
                 new_event_ids = sorted(list(all_event_ids - known_ids))
-                self._set_cache(cache_key, new_event_ids)
-                return new_event_ids
+                
+                # 只限制返回数量
+                result = new_event_ids[:limit]
+                
+                # 调试日志
+                logger.info(f"[新事件] 数据库中共有 {len(all_event_ids)} 个不同事件ID")
+                logger.info(f"[新事件] 已知事件ID数量: {len(known_ids)}")
+                logger.info(f"[新事件] 发现新事件ID数量: {len(new_event_ids)}")
+                logger.info(f"[新事件] 返回前 {len(result)} 个新事件: {result}")
+                
+                self._set_cache(cache_key, result)
+                return result
         except sqlite3.Error as e:
             logger.error(f"获取新事件ID时数据库错误: {e}")
             raise DatabaseError(f"获取新事件ID失败: {e}")
