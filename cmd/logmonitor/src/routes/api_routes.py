@@ -8,11 +8,13 @@ import logging
 import os
 import platform
 import sys
+from typing import List
 
 import psutil
 from flask import Flask, jsonify
 
 from utils import api_error_handler
+from utils.events_helper import get_all_configured_event_ids
 
 logger = logging.getLogger(__name__)
 
@@ -293,9 +295,19 @@ def register_api_routes(app: Flask):
         possible_paths.append(Path(__file__).parent.parent / 'events.json')    # src/events.json
         possible_paths.append(Path(__file__).parent.parent / 'config' / 'events.json')  # src/config/events.json
         
+        # 记录所有检查的路径
         for path in possible_paths:
+            abs_path = path.resolve()
             if path.exists():
+                logger.info(f"[事件] 读取事件配置文件: {abs_path}")
                 return path
+            else:
+                logger.debug(f"[事件] 检查路径不存在: {abs_path}")
+        
+        # 所有路径都不存在，记录警告
+        logger.warning(f"[事件] 事件配置文件不存在，已检查以下路径:")
+        for path in possible_paths:
+            logger.warning(f"[事件]   - {path.resolve()}")
         return None
 
     @app.route('/api/events/config', methods=['GET'])
@@ -334,35 +346,40 @@ def register_api_routes(app: Flask):
         from pathlib import Path
         
         app_home = os.environ.get('APP_HOME')
-        logger.info(f"_get_events_file_path: APP_HOME={app_home}")
         
         if app_home:
             path = Path(app_home) / 'config' / 'events.json'
-            logger.info(f"_get_events_file_path: 检查 {path}, exists={path.exists()}")
+            abs_path = path.resolve()
+            logger.info(f"[事件] 获取事件配置文件路径: {abs_path}, exists={path.exists()}")
             if path.exists() or True:  # 允许返回不存在的路径
                 return path
         
         # fallback 到源码目录
         src_path = _find_events_json()
-        logger.info(f"_get_events_file_path: fallback 到 {src_path}")
+        if src_path:
+            logger.info(f"[事件] fallback 到源码目录: {src_path.resolve()}")
+        else:
+            logger.warning(f"[事件] 未找到事件配置文件")
         return src_path
 
     def _load_events_config():
         """加载事件配置"""
         import json
         events_file = _get_events_file_path()
-        logger.info(f"_load_events_config: 文件路径={events_file}")
+        abs_events_path = events_file.resolve() if events_file else None
+        logger.info(f"[事件] 读取事件配置文件: {abs_events_path}")
         
         if events_file and events_file.exists():
             try:
                 with open(events_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
-                logger.info(f"_load_events_config: 成功加载 {len(config.get('categories', []))} 个分类")
+                logger.info(f"[事件] 成功加载 {len(config.get('categories', []))} 个分类")
                 return config
             except Exception as e:
-                logger.error(f"加载事件配置失败: {e}")
+                logger.error(f"[事件] 加载事件配置失败: {e}")
         
         # 返回默认结构
+        logger.warning(f"[事件] 使用默认事件配置（配置文件不存在或加载失败）")
         return {"version": "1.0.0", "categories": []}
 
     def _save_events_config(config):
@@ -371,10 +388,13 @@ def register_api_routes(app: Flask):
         events_file = _get_events_file_path()
         
         if events_file:
+            abs_events_path = events_file.resolve()
             events_file.parent.mkdir(parents=True, exist_ok=True)
             with open(events_file, 'w', encoding='utf-8') as f:
                 json.dump(config, f, ensure_ascii=False, indent=4)
+            logger.info(f"[事件] 保存事件配置到: {abs_events_path}")
             return True
+        logger.warning(f"[事件] 保存事件配置失败：未找到配置文件路径")
         return False
 
     @app.route('/api/events/list', methods=['GET'])

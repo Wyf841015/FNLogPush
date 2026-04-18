@@ -10,6 +10,7 @@ import logging
 from monitor_core import get_monitor
 from utils import api_error_handler
 from utils.auth import login_required  # 统一出口，不再各自定义
+from utils.events_helper import get_all_configured_event_ids
 
 logger = logging.getLogger(__name__)
 
@@ -238,7 +239,13 @@ def register_monitor_routes(app: Flask):
             recent_records = monitor.db_service.get_recent_logs(5)
             event_stats = monitor.db_service.get_event_id_statistics()
             all_event_ids = monitor.db_service.get_event_id_list()
-            known_event_ids = monitor.config.get('event_ids', [])
+            
+            # 重要：使用 events.json 中所有已定义的事件作为"已知事件"标准
+            # 而不是仅使用 config.json 中选中的 event_ids
+            known_event_ids = get_all_configured_event_ids()
+            
+            # 调试日志
+            logger.info(f"[新事件] 事件配置文件中共 {len(known_event_ids)} 个定义事件")
             new_event_ids = monitor.db_service.get_new_event_ids(known_event_ids)
 
             return jsonify({
