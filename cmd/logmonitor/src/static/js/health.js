@@ -1,6 +1,15 @@
 // ========== health.js - 健康状态监控模块 ==========
 
-// 注意：healthUpdateInterval 已在 main.js 中定义，避免重复声明冲突
+/**
+ * 格式化字节数
+ */
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 /**
  * 加载健康状态
@@ -14,7 +23,7 @@ function loadHealthStatus() {
     apiFetch('/api/health')
         .then(response => response.json())
         .then(data => {
-            updateHealthStatusData(data);
+            updateHealthStatusData(data, true);
         })
         .catch(error => {
             content.innerHTML = `<div class="alert alert-danger">加载失败: ${error.message}</div>`;
@@ -24,17 +33,49 @@ function loadHealthStatus() {
 /**
  * 更新健康状态数据
  * @param {Object} data - 健康状态数据
+ * @param {boolean} fullRender - 是否完整渲染（true=完整渲染含按钮，false=仅更新数据）
  */
-function updateHealthStatusData(data) {
+function updateHealthStatusData(data, fullRender = false) {
     const content = document.getElementById('health-status-content');
     if (!content) return;
     
+    // 如果是实时更新且不是完整渲染，只更新部分数据
+    if (!fullRender && content.innerHTML.includes('health-badge-')) {
+        // 实时更新时只更新数据部分
+        if (data.cpu) {
+            const cpuUsageElement = document.getElementById('cpu-usage');
+            if (cpuUsageElement) cpuUsageElement.textContent = data.cpu.cpu_percent;
+        }
+        if (data.memory) {
+            const memoryUsageElement = document.getElementById('memory-usage');
+            const memoryPercentElement = document.getElementById('memory-percent');
+            if (memoryUsageElement) memoryUsageElement.textContent = (data.memory.used / 1024 / 1024 / 1024).toFixed(2);
+            if (memoryPercentElement) memoryPercentElement.textContent = data.memory.percent;
+        }
+        if (data.disk) {
+            const diskUsageElement = document.getElementById('disk-usage');
+            if (diskUsageElement) diskUsageElement.textContent = data.disk.percent;
+        }
+        if (data.network) {
+            const networkElement = document.getElementById('network-stats');
+            if (networkElement) networkElement.textContent = `↑${formatBytes(data.network.bytes_sent)} ↓${formatBytes(data.network.bytes_recv)}`;
+        }
+        if (data.process) {
+            const processMemoryElement = document.getElementById('process-memory');
+            const processCpuElement = document.getElementById('process-cpu');
+            if (processMemoryElement) processMemoryElement.textContent = data.process.memory_percent.toFixed(2);
+            if (processCpuElement) processCpuElement.textContent = data.process.cpu_percent.toFixed(2);
+        }
+        return;
+    }
+    
+    // 完整渲染（含按钮）
     if (data.status === 'healthy') {
         let html = `
             <div class="health-alert-success">
                 <h6 class="mb-3">系统健康状态: <span class="badge health-badge-success"><i class="fas fa-check-circle me-1"></i>健康</span></h6>
                 <div class="mb-2">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="startHealthUpdate()">
+                    <button class="btn btn-sm btn-success" onclick="startHealthUpdate()">
                         <i class="fas fa-play me-1"></i>开始实时更新
                     </button>
                     <button class="btn btn-sm btn-outline-secondary ms-2" onclick="stopHealthUpdate()">
@@ -174,11 +215,18 @@ function startHealthUpdate() {
     }
     
     // 设置WebSocket健康状态回调
-    if (wsManager && wsManager.onHealthStatus === null) {
+    if (wsManager) {
+        // 总是设置回调（覆盖之前的）
         wsManager.onHealthStatus = (data) => {
-            updateHealthStatusData(data);
+            updateHealthStatusData(data);  // 不传 fullRender，默认 false
         };
         console.log('已注册WebSocket健康状态监听器');
+        
+        // 如果 WebSocket 已连接，显示在线状态
+        if (wsManager.connected) {
+            const statusEl = document.getElementById('ws-health-status');
+            if (statusEl) statusEl.textContent = '实时在线';
+        }
     }
     
     // 保留备用轮询（如果WebSocket断开时自动切换）
@@ -188,7 +236,7 @@ function startHealthUpdate() {
         }
     }, (window.CONSTANTS?.REFRESH_INTERVAL?.HEALTH) || 15000);
     
-    NotificationManager.info('实时更新', '已开始实时更新系统状态（WebSocket推送）');
+    NotificationManager.success('实时更新', '已开始实时更新系统状态');
 }
 
 /**
@@ -203,7 +251,6 @@ function stopHealthUpdate() {
 }
 
 // ========== 导出到全局 ==========
-window.healthUpdateInterval = healthUpdateInterval;
 window.loadHealthStatus = loadHealthStatus;
 window.updateHealthStatusData = updateHealthStatusData;
 window.updateHealthStatus = updateHealthStatus;
