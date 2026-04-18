@@ -51,8 +51,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-from flask import Flask
+from flask import Flask, session, request
 from flask_socketio import SocketIO
+import time
 
 # 初始化SocketIO
 socketio = SocketIO()
@@ -67,19 +68,41 @@ def create_app():
                 template_folder=str(template_dir),
                 static_folder=str(static_dir))
 
-    # Secret Key - 使用固定的密钥，确保session持久化
+    # Secret Key - 优先使用环境变量，生成安全的随机密钥
     secret_key = os.environ.get('SECRET_KEY')
     if not secret_key:
-        # 使用固定的密钥，确保重启后session仍然有效
-        secret_key = 'fnlogpush-secret-key-2024'
+        # 优先尝试从配置文件读取
+        config_secret = None
+        try:
+            config_path = os.environ.get('APP_HOME', str(CODE_DIR))
+            config_file = Path(config_path) / 'config' / 'config.json'
+            if config_file.exists():
+                import json
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+                    config_secret = config_data.get('app_secret_key')
+        except Exception:
+            pass
+        
+        if config_secret:
+            secret_key = config_secret
+            logger.info("从配置文件加载 Secret Key")
+        else:
+            # 生成安全的随机密钥（仅首次启动使用）
+            import secrets
+            secret_key = secrets.token_hex(32)
+            logger.warning("使用随机生成的 Secret Key，请通过 SECRET_KEY 环境变量或配置文件固定")
     app.secret_key = secret_key
 
     # Session 配置 - 确保 cookie 正确工作
+    # Session 超时配置常量
+    from utils.constants import TimeConstants
+    
     app.config['SESSION_COOKIE_NAME'] = 'fnlogpush_session'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SECURE'] = False  # 允许 HTTP
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 允许正常导航
-    app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7  # 7天
+    app.config['PERMANENT_SESSION_LIFETIME'] = TimeConstants.SESSION_LIFETIME
     app.config['SESSION_REFRESH_EACH_REQUEST'] = True  # 每次请求刷新session过期时间
     
     app.config['JSON_AS_ASCII'] = False
@@ -87,6 +110,40 @@ def create_app():
 
     # 初始化SocketIO
     socketio.init_app(app, cors_allowed_origins='*', async_mode='threading')
+
+    SESSION_TIMEOUT = TimeConstants.SESSION_TIMEOUT
+
+    @app.before_request
+    def check_session_timeout():
+        """检查 session 超时"""
+        # 跳过静态文件、登录相关的 API 和健康检查
+        skip_paths = ['/static/', '/api/auth/login', '/api/auth/check-setup', '/api/auth/check-session', 
+                      '/api/health', '/socket.io/', '/favicon.ico']
+        if any(request.path.startswith(p) for p in skip_paths):
+            return None
+        
+        if 'user' in session:
+            # 检查是否有登录时间
+            login_time = session.get('login_time')
+            last_activity = session.get('last_activity')
+            current_time = time.time()
+            
+            # 更新最后活动时间
+            session['last_activity'] = current_time
+            
+            # 检查是否超时（5分钟无操作）
+            if last_activity:
+                if current_time - last_activity > SESSION_TIMEOUT:
+                    # session 超时，清除并返回超时提示
+                    session.clear()
+                    from flask import jsonify
+                    return jsonify({'error': 'session_timeout', 'message': '登录已过期，请重新登录'}), 401
+            
+            # 如果没有登录时间或活动时间，设置初始值
+            if not login_time:
+                session['login_time'] = current_time
+            if not last_activity:
+                session['last_activity'] = current_time
 
     # 注册所有路由
     from routes import register_all_routes
@@ -172,6 +229,17 @@ def main():
             shutil.copy(src_config, config_file)
             logger.info(f"配置文件已复制到: {config_file}")
 
+    # 处理 events.json 配置（如果不存在则复制，与 config.json 逻辑一致）
+    events_file = config_dir / 'events.json'
+    if not events_file.exists():
+        src_events = SRC_DIR / 'config' / 'events.json'
+        if not src_events.exists():
+            src_events = SRC_DIR / 'events.json'
+        if src_events.exists():
+            import shutil
+            shutil.copy(src_events, events_file)
+            logger.info(f"事件配置文件已复制到: {events_file}")
+
     # 设置工作目录为APP_HOME，确保相对路径配置正确
     os.chdir(APP_HOME)
     logger.info(f"工作目录: {os.getcwd()}")
@@ -201,6 +269,36 @@ def main():
 
     logger.info(f"✓ Web服务地址: http://{host}:{port}")
     logger.info("✓ WebSocket支持已启用")
+    
+    # 启动健康状态推送线程（WebSocket推送替代轮询）
+    import threading
+    
+    def health_push_loop():
+        """后台线程：定期推送健康状态到WebSocket"""
+        import time
+        from routes.api_routes import get_health_data
+        from websocket_manager import get_websocket_manager
+        
+        ws_manager = get_websocket_manager()
+        push_interval = 15  # 每15秒推送一次
+        
+        while True:
+            try:
+                time.sleep(push_interval)
+                
+                # 获取健康数据
+                health_data = get_health_data()
+                
+                # 通过WebSocket推送
+                ws_manager.broadcast_health_status(health_data)
+                
+            except Exception as e:
+                logger.error(f"健康状态推送失败: {e}")
+    
+    health_thread = threading.Thread(target=health_push_loop, daemon=True)
+    health_thread.start()
+    logger.info("✓ 健康状态WebSocket推送已启动（每15秒）")
+    
     logger.info("=" * 50)
 
     socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)

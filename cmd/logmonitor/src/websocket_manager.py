@@ -119,6 +119,23 @@ class WebSocketManager:
         """获取所有连接的客户端列表"""
         with self.lock:
             return list(self.connections.keys())
+    
+    def broadcast_health_status(self, health_data: dict):
+        """广播健康状态到所有客户端（仅推送给订阅者）"""
+        try:
+            # 定义健康状态事件名称
+            event_name = 'health_status'
+            
+            # 如果有订阅者，只推送给订阅者
+            if event_name in self.subscriptions and self.subscriptions[event_name]:
+                self.broadcast_to_subscribers(event_name, health_data)
+                logger.debug(f"健康状态已推送给 {len(self.subscriptions[event_name])} 个订阅者")
+            elif self.connections:
+                # 如果没有订阅者但有连接，也广播（兼容旧客户端）
+                self.broadcast(event_name, health_data)
+                logger.debug(f"健康状态已广播给 {len(self.connections)} 个客户端")
+        except Exception as e:
+            logger.error(f"广播健康状态失败: {e}")
 
 
 # 全局WebSocket管理器实例

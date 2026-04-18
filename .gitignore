@@ -4,8 +4,8 @@ __pycache__/
 *.db
 *.db3
 
-# FPK
-*.fpk
+# FPK - 仅忽略临时测试包，保留fnlogpush.fpk
+# *.fpk
 
 # Logs
 *.log

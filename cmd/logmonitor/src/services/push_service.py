@@ -20,6 +20,7 @@ import os
 import json
 from typing import Dict, Any, Optional, List, Tuple
 from abc import ABC, abstractmethod
+from utils.message_formatter import MessageSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +50,10 @@ class WebhookPushChannel(PushChannel):
         初始化Webhook推送渠道
         
         Args:
-            webhook_url: Webhook URL
+            webhook_url: Webhook URL，支持 {content} 占位符或 JSON body 模式
         """
         self.webhook_url = webhook_url
+        self._use_post = '{content}' not in webhook_url  # 无占位符时使用 POST
     
     def push(self, content: str) -> bool:
         """推送消息到Webhook"""
@@ -60,21 +62,41 @@ class WebhookPushChannel(PushChannel):
                 logger.warning("Webhook URL未配置")
                 return False
             
-            # URL编码内容
-            encoded_content = urllib.parse.quote(content)
-            url = self.webhook_url.replace('{content}', encoded_content)
+            # 检查消息长度，超长则分段
+            segments = MessageSplitter.split_by_log_boundary(content, 'webhook')
             
-            logger.debug(f"Webhook推送URL: {url[:100]}...")
-            
-            response = requests.get(url, timeout=10)
-            
-            if response.status_code == 200:
-                logger.info(f"Webhook推送成功，响应: {response.text[:100]}...")
-                return True
-            else:
-                logger.error(f"Webhook推送失败，状态码: {response.status_code}, 响应: {response.text}")
-                return False
+            # 逐段推送
+            all_success = True
+            for i, segment in enumerate(segments):
+                if self._use_post:
+                    payload = {"content": segment}
+                    response = requests.post(
+                        self.webhook_url,
+                        json=payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    logger.debug(f"Webhook POST推送[{i+1}/{len(segments)}]: {self.webhook_url[:50]}...")
+                else:
+                    encoded_content = urllib.parse.quote(segment)
+                    url = self.webhook_url.replace('{content}', encoded_content)
+                    response = requests.get(url, timeout=10)
+                    logger.debug(f"Webhook GET推送[{i+1}/{len(segments)}]: {url[:50]}...")
                 
+                if response.status_code not in (200, 201):
+                    logger.error(f"Webhook推送失败[{i+1}/{len(segments)}]，状态码: {response.status_code}, 响应: {response.text[:200]}")
+                    all_success = False
+            
+            if all_success and segments:
+                logger.info(f"Webhook推送成功，共{len(segments)}段")
+            return all_success
+            
+        except requests.exceptions.Timeout:
+            logger.error("Webhook推送超时")
+            return False
+        except requests.exceptions.ConnectionError:
+            logger.error("Webhook连接失败")
+            return False
         except Exception as e:
             logger.error(f"Webhook推送时出错: {e}")
             return False
@@ -105,31 +127,35 @@ class WecomPushChannel(PushChannel):
                 logger.warning("企业微信Webhook URL未配置")
                 return False
             
-            # 构建企业微信消息格式
-            message = {
-                "msgtype": "text",
-                "text": {
-                    "content": content
+            # 检查消息长度，超长则分段（保持日志边界完整性）
+            segments = MessageSplitter.split_by_log_boundary(content, 'wecom')
+            
+            # 逐段推送
+            all_success = True
+            for i, segment in enumerate(segments):
+                message = {
+                    "msgtype": "text",
+                    "text": {
+                        "content": segment
+                    }
                 }
-            }
-            
-            # 发送请求
-            response = requests.post(
-                self.webhook_url,
-                json=message,
-                headers={'Content-Type': 'application/json'},
-                timeout=10
-            )
-            
-            # 解析响应
-            result = response.json()
-            if result.get('errcode') == 0:
-                logger.info("企业微信推送成功")
-                return True
-            else:
-                logger.error(f"企业微信推送失败，错误码: {result.get('errcode')}, 错误信息: {result.get('errmsg')}")
-                return False
                 
+                response = requests.post(
+                    self.webhook_url,
+                    json=message,
+                    headers={'Content-Type': 'application/json'},
+                    timeout=10
+                )
+                
+                result = response.json()
+                if result.get('errcode') != 0:
+                    logger.error(f"企业微信推送失败[{i+1}/{len(segments)}]，错误码: {result.get('errcode')}, 错误信息: {result.get('errmsg')}")
+                    all_success = False
+            
+            if all_success and segments:
+                logger.info(f"企业微信推送成功，共{len(segments)}段")
+            return all_success
+            
         except Exception as e:
             logger.error(f"企业微信推送时出错: {e}")
             return False
@@ -178,36 +204,40 @@ class DingtalkPushChannel(PushChannel):
             
             # 生成签名
             timestamp = str(int(time.time() * 1000))
-            url = self.webhook_url
+            base_url = self.webhook_url
             if self.secret:
                 sign = self._generate_sign(timestamp)
-                url = f"{self.webhook_url}&timestamp={timestamp}&sign={sign}"
+                base_url = f"{self.webhook_url}&timestamp={timestamp}&sign={sign}"
             
-            # 构建钉钉消息格式
-            message = {
-                "msgtype": "text",
-                "text": {
-                    "content": content
+            # 检查消息长度，超长则分段（保持日志边界完整性）
+            segments = MessageSplitter.split_by_log_boundary(content, 'dingtalk')
+            
+            # 逐段推送
+            all_success = True
+            for i, segment in enumerate(segments):
+                message = {
+                    "msgtype": "text",
+                    "text": {
+                        "content": segment
+                    }
                 }
-            }
-            
-            # 发送请求
-            response = requests.post(
-                url,
-                json=message,
-                headers={'Content-Type': 'application/json'},
-                timeout=10
-            )
-            
-            # 解析响应
-            result = response.json()
-            if result.get('errcode') == 0:
-                logger.info("钉钉推送成功")
-                return True
-            else:
-                logger.error(f"钉钉推送失败，错误码: {result.get('errcode')}, 错误信息: {result.get('errmsg')}")
-                return False
                 
+                response = requests.post(
+                    base_url,
+                    json=message,
+                    headers={'Content-Type': 'application/json'},
+                    timeout=10
+                )
+                
+                result = response.json()
+                if result.get('errcode') != 0:
+                    logger.error(f"钉钉推送失败[{i+1}/{len(segments)}]，错误码: {result.get('errcode')}, 错误信息: {result.get('errmsg')}")
+                    all_success = False
+            
+            if all_success and segments:
+                logger.info(f"钉钉推送成功，共{len(segments)}段")
+            return all_success
+            
         except Exception as e:
             logger.error(f"钉钉推送时出错: {e}")
             return False
@@ -238,31 +268,35 @@ class FeishuPushChannel(PushChannel):
                 logger.warning("飞书Webhook URL未配置")
                 return False
             
-            # 构建飞书消息格式
-            message = {
-                "msg_type": "text",
-                "content": {
-                    "text": content
+            # 检查消息长度，超长则分段（保持日志边界完整性）
+            segments = MessageSplitter.split_by_log_boundary(content, 'feishu')
+            
+            # 逐段推送
+            all_success = True
+            for i, segment in enumerate(segments):
+                message = {
+                    "msg_type": "text",
+                    "content": {
+                        "text": segment
+                    }
                 }
-            }
-            
-            # 发送请求
-            response = requests.post(
-                self.webhook_url,
-                json=message,
-                headers={'Content-Type': 'application/json'},
-                timeout=10
-            )
-            
-            # 解析响应
-            result = response.json()
-            if result.get('code') == 0:
-                logger.info("飞书推送成功")
-                return True
-            else:
-                logger.error(f"飞书推送失败，错误码: {result.get('code')}, 错误信息: {result.get('msg')}")
-                return False
                 
+                response = requests.post(
+                    self.webhook_url,
+                    json=message,
+                    headers={'Content-Type': 'application/json'},
+                    timeout=10
+                )
+                
+                result = response.json()
+                if result.get('code') != 0:
+                    logger.error(f"飞书推送失败[{i+1}/{len(segments)}]，错误码: {result.get('code')}, 错误信息: {result.get('msg')}")
+                    all_success = False
+            
+            if all_success and segments:
+                logger.info(f"飞书推送成功，共{len(segments)}段")
+            return all_success
+            
         except Exception as e:
             logger.error(f"飞书推送时出错: {e}")
             return False
@@ -298,28 +332,32 @@ class BarkPushChannel(PushChannel):
             # 提取标题和内容
             lines = content.split('\n', 1)
             title = lines[0][:20] if lines else "通知"
+            
+            # 检查消息长度，超长则分段
             body = lines[1] if len(lines) > 1 else content
+            segments = MessageSplitter.split_by_log_boundary(body, 'bark')
             
-            # 构建Bark请求
-            url = f"{self.server}/push"
-            params = {
-                "device_key": self.device_key,
-                "title": title,
-                "body": body,
-                "sound": "default"
-            }
+            # 逐段推送
+            all_success = True
+            for i, segment in enumerate(segments):
+                url = f"{self.server}/push"
+                params = {
+                    "device_key": self.device_key,
+                    "title": f"{title} [{i+1}/{len(segments)}]" if len(segments) > 1 else title,
+                    "body": segment,
+                    "sound": "default"
+                }
+                
+                response = requests.post(url, json=params, timeout=10)
+                result = response.json()
+                
+                if result.get('code') != 200:
+                    logger.error(f"Bark推送失败[{i+1}/{len(segments)}]，错误: {result}")
+                    all_success = False
             
-            # 发送请求
-            response = requests.post(url, json=params, timeout=10)
-            
-            # 解析响应
-            result = response.json()
-            if result.get('code') == 200:
-                logger.info("Bark推送成功")
-                return True
-            else:
-                logger.error(f"Bark推送失败，错误: {result}")
-                return False
+            if all_success and segments:
+                logger.info(f"Bark推送成功，共{len(segments)}段")
+            return all_success
                 
         except Exception as e:
             logger.error(f"Bark推送时出错: {e}")
@@ -353,37 +391,167 @@ class PushPlusPushChannel(PushChannel):
                 logger.warning("PushPlus Token未配置")
                 return False
             
-            # 构建PushPlus消息数据
-            data = {
-                "token": self.token,
-                "title": "FNLogPush通知",
-                "content": content.replace('\n', '<br>'),
-                "template": "html"
-            }
+            # 检查消息长度，超长则分段
+            segments = MessageSplitter.split_by_log_boundary(content, 'pushplus')
             
-            # 如果有群组则添加
-            if self.topic:
-                data["topic"] = self.topic
+            # 逐段推送
+            all_success = True
+            for i, segment in enumerate(segments):
+                data = {
+                    "token": self.token,
+                    "title": f"FNLogPush通知 [{i+1}/{len(segments)}]" if len(segments) > 1 else "FNLogPush通知",
+                    "content": segment.replace('\n', '<br>'),
+                    "template": "html"
+                }
+                
+                if self.topic:
+                    data["topic"] = self.topic
+                
+                response = requests.post(
+                    "https://www.pushplus.plus/send",
+                    json=data,
+                    headers={'Content-Type': 'application/json'},
+                    timeout=10
+                )
+                
+                result = response.json()
+                if result.get('code') != 200:
+                    logger.error(f"PushPlus推送失败[{i+1}/{len(segments)}]，错误: {result.get('msg')}")
+                    all_success = False
             
-            # 发送请求
-            response = requests.post(
-                "https://www.pushplus.plus/send",
-                json=data,
-                headers={'Content-Type': 'application/json'},
-                timeout=10
-            )
-            
-            # 解析响应
-            result = response.json()
-            if result.get('code') == 200:
-                logger.info("PushPlus推送成功")
-                return True
-            else:
-                logger.error(f"PushPlus推送失败，错误: {result.get('msg')}")
-                return False
+            if all_success and segments:
+                logger.info(f"PushPlus推送成功，共{len(segments)}段")
+            return all_success
                 
         except Exception as e:
             logger.error(f"PushPlus推送时出错: {e}")
+            return False
+
+
+class MeoWPushChannel(PushChannel):
+    """MeoW推送渠道"""
+    
+    def __init__(self, nickname: str, enabled: bool = True, title: str = "", msgtype: str = ""):
+        """
+        初始化MeoW推送渠道
+        
+        Args:
+            nickname: MeoW用户昵称
+            enabled: 是否启用
+            title: 标题模板
+            msgtype: 消息类型 (text/html/markdown)
+        """
+        self.nickname = nickname
+        self.enabled = enabled
+        self.title = title
+        self.msgtype = msgtype
+        self.api_url = "https://api.chuckfang.com"
+    
+    def push(self, content: str) -> bool:
+        """推送消息到MeoW"""
+        try:
+            if not self.enabled:
+                logger.warning("MeoW推送未启用")
+                return False
+            
+            if not self.nickname:
+                logger.warning("MeoW昵称未配置")
+                return False
+            
+            # 提取标题和内容
+            lines = content.split('\n', 1)
+            
+            # 使用配置的标题或默认值
+            if self.title:
+                title = self.title[:50]
+                msg = lines[1] if len(lines) > 1 else lines[0]
+            else:
+                title = lines[0][:50] if lines else "日志哨兵"
+                msg = lines[1] if len(lines) > 1 else ""
+            
+            # 检查消息长度，超长则分段
+            segments = MessageSplitter.split_by_log_boundary(msg, 'meow')
+            
+            # 逐段推送
+            all_success = True
+            for i, segment in enumerate(segments):
+                url = f"{self.api_url}/{self.nickname}"
+                params = []
+                if self.msgtype:
+                    params.append(f"msgType={self.msgtype}")
+                
+                if params:
+                    url = f"{url}?{'&'.join(params)}"
+                
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+                payload = {
+                    'title': f"{title} [{i+1}/{len(segments)}]" if len(segments) > 1 else title,
+                    'msg': segment
+                }
+                
+                logger.info(f"MeoW推送请求[{i+1}/{len(segments)}]: {url}, payload={payload}")
+                response = requests.post(url, json=payload, headers=headers, timeout=10)
+                result = response.json()
+                logger.info(f"MeoW推送响应[{i+1}/{len(segments)}]: {result}")
+                
+                # MeoW API 状态码：
+                # 200 - 操作成功
+                # 400 - 参数错误
+                # 500 - 服务器错误
+                # data: False 表示失败
+                # 注意：API 可能返回字符串类型的状态码（如 "200"），需要转换
+                raw_status = result.get('code') or result.get('status')
+                try:
+                    status_code = int(raw_status) if raw_status is not None else None
+                except (ValueError, TypeError):
+                    status_code = raw_status
+                
+                is_success = False
+                
+                if status_code == 200:
+                    # code=200 时，还需检查 data 字段
+                    # data 不存在或为 True/null/其他非 False 值都视为成功
+                    data = result.get('data')
+                    if data is False:
+                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，data=False，响应: {result}")
+                    else:
+                        is_success = True
+                        logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
+                elif status_code == 400:
+                    logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，参数错误，状态码: {status_code}，响应: {result}")
+                elif status_code == 500:
+                    logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，服务器错误，状态码: {status_code}，响应: {result}")
+                else:
+                    # 兼容旧格式或其他未知状态
+                    if status_code == 0 or result.get('success') == True:
+                        is_success = True
+                        logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，兼容旧格式，原始状态码: {raw_status}")
+                    else:
+                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，未知状态码: {status_code}，原始值: {raw_status}，响应: {result}")
+                
+                # 特殊处理 IP 限速：返回成功避免重复推送
+                if not is_success:
+                    error_msg = result.get('msg', '').lower()
+                    if '限速' in error_msg or 'rate limit' in error_msg or 'rate_limit' in error_msg:
+                        logger.warning(f"MeoW推送遭遇IP限速[{i+1}/{len(segments)}]，部分成功({i}段)，为避免重复推送返回成功")
+                        # 计算成功段数
+                        successful_segments = i  # 之前成功的段数
+                        # 返回成功，但记录警告（由调用方决定如何处理）
+                        return True  # 不再重试，避免重复推送成功的消息
+                
+                if not is_success:
+                    all_success = False
+            
+            if all_success and segments:
+                logger.info(f"MeoW推送成功，共{len(segments)}段")
+            return all_success
+                
+        except Exception as e:
+            logger.error(f"MeoW推送时出错: {e}")
             return False
 
 
@@ -733,7 +901,7 @@ class PushService:
         Returns:
             是否成功加入队列
         """
-        logger.info(f"[DEBUG] PushService.push_message: 收到消息，内容长度={len(content)}，渠道={enabled_channels}")
+        logger.debug(f"PushService.push_message: 收到消息，渠道={list(enabled_channels.keys()) if enabled_channels else 'none'}")
         
         if enabled_channels is None:
             enabled_channels = {name: True for name in self.channels}
@@ -983,6 +1151,20 @@ class PushService:
                 self.channels['pushplus'].token = token
                 self.channels['pushplus'].topic = topic
                 self.channels['pushplus'].enabled = True
+        
+        # 配置MeoW渠道
+        meow_config = config.get('meow', {})
+        if meow_config.get('enabled', False) and meow_config.get('nickname'):
+            nickname = meow_config['nickname']
+            title = meow_config.get('title', '')
+            msgtype = meow_config.get('msgtype', '')
+            if 'meow' not in self.channels:
+                self.register_channel('meow', MeoWPushChannel(nickname, True, title, msgtype))
+            else:
+                self.channels['meow'].nickname = nickname
+                self.channels['meow'].title = title
+                self.channels['meow'].msgtype = msgtype
+                self.channels['meow'].enabled = True
         
         # 更新重试参数（支持配置覆盖）
         if 'push_retry' in config:

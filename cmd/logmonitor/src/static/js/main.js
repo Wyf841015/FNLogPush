@@ -1,115 +1,181 @@
+// ========== 全局状态 ==========
+// 注意：全局变量已在 globals.js 中定义，此文件引用使用
+// currentConfig, eventCategoriesCache 等已通过 window 导出
+
+// 从API加载事件配置（带缓存）
+async function loadEventCategoriesFromAPI() {
+    if (eventCategoriesCache) return eventCategoriesCache;
+    
+    try {
+        const response = await fetch('/api/events/config');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.config && data.config.categories) {
+                const categories = {};
+                data.config.categories.forEach(cat => {
+                    categories[cat.name] = cat.events.map(e => ({
+                        id: e.id,
+                        icon: e.icon || 'fa-circle',
+                        color: e.color || '#667eea',
+                        name: e.name || e.id
+                    }));
+                });
+                eventCategoriesCache = categories;
+                return categories;
+            }
+        }
+    } catch (err) {
+        console.warn('从API加载事件配置失败:', err);
+    }
+    return null;
+}
+
 // ========== 模块已分离 ==========
 // api.js - API 请求模块
 // websocket.js - WebSocket 管理模块
 // components.js - UI 组件模块
 
+// ========== 常量定义 ==========
+// 注意：CONSTANTS 已在 globals.js 中定义
+
+// ========== 现代侧边栏导航 ==========
+// 注意：sidebarOpen, sidebarCollapsed 已在 globals.js 中定义
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebarContainer');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('mobileMenuToggle');
+    
+    sidebarOpen = !sidebarOpen;
+    
+    if (sidebarOpen) {
+        sidebar.classList.add('mobile-open');
+        overlay.classList.add('active');
+        toggle.innerHTML = '<i class="fas fa-times"></i>';
+        document.body.style.overflow = 'hidden';
+    } else {
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+        toggle.innerHTML = '<i class="fas fa-bars"></i>';
+        document.body.style.overflow = '';
+    }
+}
+
+function closeSidebar() {
+    if (sidebarOpen) {
+        toggleSidebar();
+    }
+}
+
+// 侧边栏收缩/展开
+function toggleSidebarCollapse() {
+    const sidebar = document.getElementById('sidebarContainer');
+    const mainWrapper = document.getElementById('mainWrapper');
+    
+    sidebarCollapsed = !sidebarCollapsed;
+    
+    if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        if (mainWrapper) mainWrapper.classList.add('sidebar-collapsed');
+    } else {
+        sidebar.classList.remove('collapsed');
+        if (mainWrapper) mainWrapper.classList.remove('sidebar-collapsed');
+    }
+}
+
+// 侧边栏菜单切换（移动端点击后自动关闭）
+function switchNavPanel(element, target) {
+    // 关闭侧边栏（移动端）
+    closeSidebar();
+    
+    // 查找对应的浮动按钮并触发
+    const fabBtn = document.querySelector(`.fab-btn[data-target="${target}"]`);
+    if (fabBtn) {
+        switchFabPanel(fabBtn, target);
+    } else {
+        // 如果没有浮动按钮，直接切换面板
+        switchFabPanel(element, target);
+    }
+}
+
+// 同步侧边栏和浮动菜单的激活状态
+function syncNavActive(target) {
+    // 同步侧边栏
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.target === target) {
+            item.classList.add('active');
+        }
+    });
+    
+    // 同步浮动按钮（如果可见）
+    document.querySelectorAll('.fab-btn[data-target]').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.target === target) {
+            btn.classList.add('active');
+        }
+    });
+}
+
 // 统一Fetch函数（使用 api.js 中的实现）
 // 此文件中的 apiFetch 已由 api.js 提供
 
-// ========== 定时检查session有效性 ==========
-let sessionCheckInterval = null;
+// ========== Session 超时管理（5分钟无操作退出） ==========
+// 注意：sessionCheckInterval, activityRefreshInterval, lastActivityTime 已在 globals.js 中定义
 
+// 刷新活动时间
+async function refreshActivity() {
+    try {
+        const response = await apiFetch('/api/auth/refresh-activity', { method: 'POST' });
+        if (!response.ok) {
+            console.log('Session已过期，请重新登录');
+            window.location.reload();
+        }
+    } catch (e) {
+        console.error('刷新活动时间失败:', e);
+    }
+}
+
+// 检测用户活动
+function setupActivityDetection() {
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    
+    activityEvents.forEach(event => {
+        document.addEventListener(event, () => {
+            lastActivityTime = Date.now();
+        }, { passive: true });
+    });
+}
+
+// 启动定时检查（每分钟检查一次，5分钟无操作则退出）
 function startSessionCheck() {
     if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+    
+    // 启动活动检测
+    setupActivityDetection();
+    
+    // 每分钟检查一次无操作时间
     sessionCheckInterval = setInterval(async () => {
+        const idleTime = (Date.now() - lastActivityTime) / 1000; // 秒
+        if (idleTime > 300) { // 5分钟无操作
+            console.log('无操作超过5分钟，退出登录');
+            window.location.href = '/logout';
+            return;
+        }
+        
+        // 有操作时刷新活动时间
         try {
-            const response = await apiFetch('/api/auth/check-session');
-            const data = await response.json();
-            if (!data.logged_in) {
-                console.log('Session已过期，刷新页面');
-                window.location.reload();
-            }
+            await refreshActivity();
         } catch (e) {
             console.error('Session检查失败:', e);
         }
-    }, 5 * 60 * 1000);
+    }, 60 * 1000); // 每分钟检查
 }
 
 // 动态设置版权年份
 document.getElementById('copyright-year').textContent = new Date().getFullYear();
 
-// 通知管理功能
-const NotificationManager = {
-    container: document.getElementById('notification-container'),
-    
-    // 显示通知
-    showNotification(title, message, type = 'info', duration = 5000) {
-        if (!this.container) return;
-        
-        // 创建通知元素
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        
-        // 设置通知内容
-        notification.innerHTML = `
-            <div class="notification-header">
-                <div class="notification-title">${title}</div>
-                <button class="notification-close" onclick="NotificationManager.closeNotification(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="notification-message">${message}</div>
-            <div class="notification-time">${this.getCurrentTime()}</div>
-        `;
-        
-        // 添加到容器
-        this.container.appendChild(notification);
-        
-        // 自动关闭
-        if (duration > 0) {
-            setTimeout(() => {
-                this.closeNotification(notification);
-            }, duration);
-        }
-    },
-    
-    // 关闭通知
-    closeNotification(element) {
-        let notification;
-        if (element.tagName === 'BUTTON') {
-            notification = element.closest('.notification');
-        } else {
-            notification = element;
-        }
-        
-        if (notification) {
-            notification.classList.add('fade-out');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }
-    },
-    
-    // 获取当前时间
-    getCurrentTime() {
-        const now = new Date();
-        return now.toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    },
-    
-    // 显示成功通知
-    success(title, message, duration) {
-        this.showNotification(title, message, 'success', duration);
-    },
-    
-    // 显示错误通知
-    error(title, message, duration) {
-        this.showNotification(title, message, 'error', duration);
-    },
-    
-    // 显示警告通知
-    warning(title, message, duration) {
-        this.showNotification(title, message, 'warning', duration);
-    },
-    
-    // 显示信息通知
-    info(title, message, duration) {
-        this.showNotification(title, message, 'info', duration);
-    }
-};
+// 注意：NotificationManager 已在 globals.js 中定义
 
 // 测试通知功能
 function testNotification() {
@@ -125,8 +191,7 @@ function testNotification() {
     }, 3000);
 }
 
-// 健康检查更新定时器
-let healthUpdateInterval = null;
+// 注意：healthUpdateInterval 已在 globals.js 中定义
 
 // 加载系统健康状态
 function loadHealthStatus() {
@@ -138,8 +203,8 @@ function loadHealthStatus() {
         .then(data => {
             if (data.status === 'healthy') {
                 let html = `
-                    <div class="alert alert-success">
-                        <h6 class="mb-3">系统健康状态: <span class="badge bg-success" aria-label="系统健康状态：健康"><i class="fas fa-check-circle me-1" aria-hidden="true"></i>健康</span></h6>
+                    <div class="health-alert-success">
+                        <h6 class="mb-3">系统健康状态: <span class="badge health-badge-success" aria-label="系统健康状态：健康"><i class="fas fa-check-circle me-1" aria-hidden="true"></i>健康</span></h6>
                         <div class="mb-2">
                             <button class="btn btn-sm btn-outline-secondary" onclick="startHealthUpdate()">
                                 <i class="fas fa-play me-1"></i>开始实时更新
@@ -154,7 +219,7 @@ function loadHealthStatus() {
                 if (data.system) {
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-info text-white">系统信息</div>
+                            <div class="card-header health-card-system">系统信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">系统: ${data.system.system} ${data.system.release}</li>
@@ -170,7 +235,7 @@ function loadHealthStatus() {
                 if (data.cpu) {
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-primary text-white">CPU信息</div>
+                            <div class="card-header health-card-cpu">CPU信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">物理核心: ${data.cpu.physical_cores}</li>
@@ -190,7 +255,7 @@ function loadHealthStatus() {
                     
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-success text-white">内存信息</div>
+                            <div class="card-header health-card-memory">内存信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">总内存: ${totalMem} GB</li>
@@ -210,7 +275,7 @@ function loadHealthStatus() {
                     
                     html += `
                         <div class="card mb-3">
-                            <div class="card-header bg-warning text-dark">磁盘信息</div>
+                            <div class="card-header health-card-disk">磁盘信息</div>
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item">总空间: ${totalDisk} GB</li>
@@ -244,8 +309,8 @@ function loadHealthStatus() {
                 NotificationManager.success('健康检查', '系统状态正常');
             } else {
                 content.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h6>系统健康状态: <span class="badge bg-danger" aria-label="系统健康状态：异常"><i class="fas fa-exclamation-circle me-1" aria-hidden="true"></i>异常</span></h6>
+                    <div class="health-alert-danger">
+                        <h6>系统健康状态: <span class="badge health-badge-danger" aria-label="系统健康状态：异常"><i class="fas fa-exclamation-circle me-1" aria-hidden="true"></i>异常</span></h6>
                         <p>错误信息: ${data.error}</p>
                     </div>
                 `;
@@ -255,7 +320,7 @@ function loadHealthStatus() {
         .catch(error => {
             console.error('健康检查失败:', error);
             content.innerHTML = `
-                <div class="alert alert-danger">
+                <div class="health-alert-danger">
                     <h6>健康检查失败</h6>
                     <p>无法连接到健康检查服务</p>
                 </div>
@@ -264,95 +329,13 @@ function loadHealthStatus() {
         });
 }
 
-// 实时更新健康状态
-function updateHealthStatus() {
-    apiFetch('/api/health')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'healthy') {
-                // 更新CPU使用率
-                if (data.cpu) {
-                    const cpuUsageElement = document.getElementById('cpu-usage');
-                    if (cpuUsageElement) {
-                        cpuUsageElement.textContent = data.cpu.cpu_percent;
-                    }
-                }
-                
-                // 更新内存使用率
-                if (data.memory) {
-                    const memoryUsageElement = document.getElementById('memory-usage');
-                    const memoryPercentElement = document.getElementById('memory-percent');
-                    if (memoryUsageElement && memoryPercentElement) {
-                        const usedMem = (data.memory.used / 1024 / 1024 / 1024).toFixed(2);
-                        memoryUsageElement.textContent = usedMem;
-                        memoryPercentElement.textContent = data.memory.percent;
-                    }
-                }
-                
-                // 更新进程使用率
-                if (data.process) {
-                    const processMemoryElement = document.getElementById('process-memory');
-                    const processCpuElement = document.getElementById('process-cpu');
-                    if (processMemoryElement && processCpuElement) {
-                        processMemoryElement.textContent = data.process.memory_percent.toFixed(2);
-                        processCpuElement.textContent = data.process.cpu_percent.toFixed(2);
-                    }
-                }
-            }
-        })
-        .catch(error => {
-            console.error('更新健康状态失败:', error);
-        });
-}
+// ========== 健康状态更新（WebSocket推送 + 备用轮询） ==========
 
-// 开始实时更新
-function startHealthUpdate() {
-    if (healthUpdateInterval) {
-        clearInterval(healthUpdateInterval);
-    }
-    healthUpdateInterval = setInterval(updateHealthStatus, 15000); // 每15秒更新一次
-    NotificationManager.info('实时更新', '已开始实时更新系统状态');
-}
-
-// 停止实时更新
-function stopHealthUpdate() {
-    if (healthUpdateInterval) {
-        clearInterval(healthUpdateInterval);
-        healthUpdateInterval = null;
-        NotificationManager.info('实时更新', '已停止实时更新系统状态');
-    }
-}
+// 更新健康状态UI（供轮询和WebSocket共用）
+// 注意：健康检查相关函数已在 health.js 中定义
+// updateHealthStatusData, updateHealthStatus, startHealthUpdate, stopHealthUpdate
 
 // 当切换到健康检查面板时自动开始实时更新
-function switchFabPanel(btn, target) {
-    // 停止之前的所有定时器
-    stopHealthUpdate();
-    
-    // 切换面板
-    document.querySelectorAll('.fab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    document.querySelectorAll('.config-panel').forEach(panel => {
-        panel.classList.remove('active');
-    });
-    document.getElementById('panel-' + target).classList.add('active');
-    
-    // 如果切换到数据库面板，自动加载数据库状态
-    if (target === 'dbstatus') {
-        checkDatabaseFull();
-    }
-    
-    // 如果切换到健康检查面板，先加载健康状态，然后开始实时更新
-    if (target === 'health') {
-        // 先加载健康状态数据
-        loadHealthStatus();
-        // 延迟1秒后开始实时更新，确保DOM元素已创建
-        setTimeout(() => {
-            startHealthUpdate();
-        }, 1000);
-    }
-}
-
 // 在页面加载时显示欢迎通知
 window.addEventListener('load', function() {
     setTimeout(() => {
@@ -364,97 +347,16 @@ window.addEventListener('load', function() {
 console.log('=== 页面加载完成 ===');
 console.log('Font Awesome 已加载:', document.querySelector('link[href*="font-awesome"]') !== null);
 
-// 记录最后的历史记录索引，用于检测新增（全局变量）
-let lastHistoryIndex = null;
+// 注意：lastHistoryIndex 已在 globals.js 中定义
 
-// 主题管理
-const ThemeManager = {
-    // 主题列表（5个精选主题）
-    themes: [
-        'default', 'dark', 'ocean', 'green', 'sunset'
-    ],
-
-    // 主题名称映射
-    themeNames: {
-        'default': '暗夜紫',
-        'dark':    '深色模式',
-        'ocean':   '深海蓝',
-        'green':   '清新绿',
-        'sunset':  '暮色橙'
-    },
-    
-    // 获取当前主题
-    getCurrentTheme() {
-        return localStorage.getItem('currentTheme') || 'default';
-    },
-    
-    // 设置主题
-    setTheme(themeName) {
-        // 移除所有主题类
-        this.themes.forEach(theme => {
-            document.body.classList.remove(`theme-${theme}`);
-        });
-        
-        // 添加新主题类
-        if (themeName !== 'default') {
-            document.body.classList.add(`theme-${themeName}`);
-        }
-
-        // 保存到本地存储
-        localStorage.setItem('currentTheme', themeName);
-
-        // 更新主题单选框的选中状态
-        this.updateThemeRadioButtons(themeName);
-
-        console.log(`主题已切换为: ${this.themeNames[themeName]}`);
-    },
-
-    // 更新主题单选框的选中状态
-    updateThemeRadioButtons(themeName) {
-        const radioButton = document.querySelector(`input[name="theme"][value="${themeName}"]`);
-        if (radioButton) {
-            radioButton.checked = true;
-        }
-    },
-
-    // 初始化主题
-    initTheme() {
-        let currentTheme = this.getCurrentTheme();
-        
-        // 检查系统深色模式设置（如果没有手动设置过主题）
-        if (currentTheme === 'default') {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (prefersDark) {
-                currentTheme = 'dark';
-            }
-        }
-        
-        this.setTheme(currentTheme);
-
-        // 绑定主题切换事件（单选框）
-        document.querySelectorAll('input[name="theme"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const theme = e.target.value;
-                this.setTheme(theme);
-            });
-        });
-        
-        // 监听系统主题变化
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            // 只有在使用默认主题时才响应系统变化
-            if (this.getCurrentTheme() === 'default') {
-                const newTheme = e.matches ? 'dark' : 'default';
-                this.setTheme(newTheme);
-            }
-        });
-    }
-};
+// 注意：ThemeManager 已在 globals.js 中定义
 
 // 在页面上显示调试信息
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== DOMContentLoaded 事件触发 ===');
 
-    let currentConfig = {};
+    // 注意：currentConfig 已在上方全局声明
+    // let currentConfig = {};  // 已移除，避免作用域冲突
 
     // 启动session定时检查
     startSessionCheck();
@@ -515,11 +417,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (navBrand) navBrand.appendChild(statusEl);
         }
         statusEl.textContent = connected ? '实时在线' : '实时离线';
-        statusEl.className = connected ? 'badge bg-success ms-2' : 'badge bg-danger ms-2';
+        statusEl.className = connected ? 'badge badge-online health-badge-success ms-2' : 'badge health-badge-danger ms-2';
     }
 
     // 页面加载时初始化
     console.log('开始执行初始化...');
+    
+    // 获取页面加载进度条和骨架屏
+    const pageLoader = document.getElementById('pageLoader');
+    const skeletonLoader = document.getElementById('skeleton-loader');
+    const realContent = document.getElementById('real-content');
+    
+    // 显示骨架屏，隐藏真实内容
+    if (skeletonLoader && realContent) {
+        skeletonLoader.style.display = 'block';
+        realContent.style.display = 'none';
+    }
     
     // 统一初始化：同时获取所有状态
     Promise.all([
@@ -528,13 +441,33 @@ document.addEventListener('DOMContentLoaded', function() {
         checkDatabase() // 包含日志数据库、备份数据库状态的统一获取
     ]).then(() => {
         loadHistory();
+        // 数据加载完成后完成过渡
+        finishLoading();
+    }).catch(() => {
+        // 出错也要完成过渡
+        finishLoading();
     });
+    
+    // 加载完成过渡函数
+    function finishLoading() {
+        // 隐藏进度条
+        if (pageLoader) {
+            pageLoader.style.opacity = '0';
+            setTimeout(() => pageLoader.remove(), 300);
+        }
+        
+        // 切换骨架屏到真实内容
+        if (skeletonLoader && realContent) {
+            skeletonLoader.style.display = 'none';
+            realContent.style.display = 'block';
+        }
+    }
     
     // 每15秒更新状态（loadStatus内部已包含备份状态获取）
     setInterval(() => {
         loadStatus();
         checkDatabase(); // 定期刷新数据库面板
-    }, 15000);
+    }, CONSTANTS.REFRESH_INTERVAL.HEALTH);
 
     // 监听推送历史 Tab 切换，自动加载数据
     const historyTabEl = document.getElementById('history-tab');
@@ -608,12 +541,12 @@ function loadStatus() {
 
             // 更新数据库状态指示器
             const dbStatusIndicator = document.getElementById('db-status-indicator');
-            const connectionStatus = data.db_connection_status || '未连接';
+            const connectionStatus = data.db_connection_status || CONSTANTS.DB_STATUS.DISCONNECTED;
 
             // 根据连接状态设置样式和文字
-            if (connectionStatus === '已连接') {
+            if (connectionStatus === CONSTANTS.DB_STATUS.CONNECTED) {
                 dbStatusIndicator.className = 'badge badge-online';
-            } else if (connectionStatus === '连接失败') {
+            } else if (connectionStatus === CONSTANTS.DB_STATUS.FAILED) {
                 dbStatusIndicator.className = 'badge badge-offline';
             } else {
                 dbStatusIndicator.className = 'badge bg-secondary';
@@ -623,7 +556,7 @@ function loadStatus() {
 
             // 更新备份数据库状态指示器（实时检查）
             const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
-            const backupDbStatus = backupData.db_available ? '已连接' : '未连接';
+            const backupDbStatus = backupData.db_available ? CONSTANTS.DB_STATUS.CONNECTED : CONSTANTS.DB_STATUS.DISCONNECTED;
 
             if (backupData.db_available) {
                 backupDbStatusIndicator.className = 'badge badge-online';
@@ -650,7 +583,7 @@ function loadStatus() {
             }
 
             // 如果连接状态是"连接失败",记录警告并显示通知
-            if (connectionStatus === '连接失败') {
+            if (connectionStatus === CONSTANTS.DB_STATUS.FAILED) {
                 console.warn('数据库连接失败,请检查数据库配置');
                 NotificationManager.warning('数据库连接失败', '请检查数据库配置和路径');
             }
@@ -692,7 +625,7 @@ function loadBackupDbStatus() {
         .then(r => r.json())
         .then(data => {
             const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
-            const backupDbStatus = data.db_available ? '已连接' : '未连接';
+            const backupDbStatus = data.db_available ? CONSTANTS.DB_STATUS.CONNECTED : CONSTANTS.DB_STATUS.DISCONNECTED;
 
             if (data.db_available) {
                 backupDbStatusIndicator.className = 'badge badge-online';
@@ -721,7 +654,7 @@ function loadBackupDbStatus() {
         .catch(error => {
             const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
             backupDbStatusIndicator.className = 'badge badge-offline';
-            backupDbStatusIndicator.textContent = '未连接';
+            backupDbStatusIndicator.textContent = CONSTANTS.DB_STATUS.DISCONNECTED;
             backupDbStatusIndicator.setAttribute('aria-label', '备份数据库：未连接');
         });
 }
@@ -767,13 +700,14 @@ function showNewPushNotification() {
         ocean:   { bg: 'rgba(16,185,129,0.18)',  border: 'rgba(16,185,129,0.45)',  color: '#d1fae5' },
         green:   { bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.35)',  color: '#065f46' },
         sunset:  { bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.35)',  color: '#064e3b' },
+        cyber:   { bg: 'rgba(0,255,255,0.18)',   border: 'rgba(0,255,255,0.45)',  color: '#00ffff' },
     };
 
     const colors = themeColors[currentTheme] || themeColors.default;
     // 使用 background 简写属性而非 background-color，避免被 CSS 的 background 简写覆盖
     const extraStyle = `background:${colors.bg} !important; border-color:${colors.border} !important; color:${colors.color} !important;`;
 
-    const darkThemes = ['dark', 'ocean'];
+    const darkThemes = ['dark', 'ocean', 'cyber'];
     const isDark = darkThemes.includes(currentTheme);
     const closeBtnStyle = isDark ? 'filter:invert(1) grayscale(100%) brightness(200%);' : '';
 
@@ -810,15 +744,26 @@ function showNewPushNotification() {
 }
 
 // 加载配置
-function loadConfig() {
+async function loadConfig() {
+    console.log("[loadConfig] 开始加载配置...");
+    // 先从API加载事件配置
+    await loadEventCategoriesFromAPI();
+    
     apiFetch('/api/config')
-        .then(response => response.json())
-        .then(config => {
+        .then(response => {
+            if (!response.ok) {
+                console.error('加载配置失败:', response.status, response.statusText);
+                throw new Error('加载配置失败: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(async config => {
+            console.log('配置加载成功:', config);
             currentConfig = config;
 
-            // 填充表单
-            document.getElementById('database-path').value = config.database_path;
-            document.getElementById('check-interval-input').value = config.check_interval;
+            // 填充表单（添加空值保护）
+            document.getElementById('database-path').value = config.database_path || '';
+            document.getElementById('check-interval-input').value = config.check_interval || 5;
             document.getElementById('webhook-url').value = config.webhook_url || '';
             // 保持 password 类型，用眼睛按钮切换可见性（URL 中常含 token 参数）
 
@@ -830,6 +775,7 @@ function loadConfig() {
             document.getElementById('push-feishu-enabled').checked = pushChannels.feishu || false;
             document.getElementById('push-bark-enabled').checked = pushChannels.bark || false;
             document.getElementById('push-pushplus-enabled').checked = pushChannels.pushplus || false;
+            document.getElementById('push-meow-enabled').checked = pushChannels.meow || false;
 
             // 填充企业微信配置
             const wecomConfig = config.wecom || {};
@@ -854,6 +800,13 @@ function loadConfig() {
             const pushplusConfig = config.pushplus || {};
             document.getElementById('pushplus-token').value = pushplusConfig.token || '';
             document.getElementById('pushplus-topic').value = pushplusConfig.topic || '';
+
+            // 填充MeoW设置
+            const meowConfig = config.meow || {};
+            document.getElementById('push-meow-enabled').checked = meowConfig.enabled || false;
+            document.getElementById('meow-nickname').value = meowConfig.nickname || '';
+            document.getElementById('meow-title').value = meowConfig.title || '';
+            document.getElementById('meow-msgtype').value = meowConfig.msgtype || '';
 
             // 填充免打扰设置
             const dndConfig = config.do_not_disturb || {};
@@ -907,8 +860,8 @@ function loadConfig() {
                 '严重错误': { icon: 'fa-fire', color: '#dc3545' }
             };
 
-            config.log_levels.forEach(level => {
-                const isChecked = config.selected_levels.includes(level);
+            (config.log_levels || []).forEach(level => {
+                const isChecked = (config.selected_levels || []).includes(level);
                 const iconInfo = levelIcons[level] || { icon: 'fa-circle', color: '#667eea' };
 
                 const checkboxHTML = `
@@ -928,9 +881,13 @@ function loadConfig() {
             const eventsContainer = document.getElementById('event-types');
             eventsContainer.innerHTML = '';
 
-            // 所有可能的事件类型，按类别分组
-            const eventCategories = {
-                '登录认证': [
+            // 获取事件类别配置（优先使用API缓存）
+            let eventCategories;
+            if (eventCategoriesCache) {
+                eventCategories = eventCategoriesCache;
+            } else {
+                eventCategories = {
+                    '登录认证': [
                     { id: 'LoginSucc', icon: 'fa-sign-in-alt', color: '#4facfe', name: '登录成功' },
                     { id: 'LoginSucc2FA1', icon: 'fa-shield-alt', color: '#667eea', name: '登录成功(双因素)' },
                     { id: 'LoginFail', icon: 'fa-times-circle', color: '#ff6b6b', name: '登录失败' },
@@ -1097,22 +1054,21 @@ function loadConfig() {
                     { id: 'SHARE_EVENTID_RENAME', icon: 'fa-file-signature', color: '#ffc107', name: '共享文件重命名', protocol: 'SHARE' }
                 ]
             };
+            }
 
             // 按类别生成事件
+            // 定义颜色数组，循环使用
+            const categoryColors = [
+                '#667eea', '#e83e8c', '#00b09b', '#4facfe', '#ffc107',
+                '#fd7e14', '#17a2b8', '#059669', '#7c3aed', '#6c757d'
+            ];
+            let colorIndex = 0;
+            
             Object.keys(eventCategories).forEach(category => {
                 const categoryEvents = eventCategories[category];
-                const categoryColor = {
-                    '登录认证': '#667eea',
-                    'SSH连接': '#e83e8c',
-                    '文件操作': '#00b09b',
-                    '应用管理': '#4facfe',
-                    '系统监控': '#ffc107',
-                    'UPS电源': '#fd7e14',
-                    '磁盘管理': '#17a2b8',
-                    '存储管理': '#059669',
-                    '防火墙': '#7c3aed',
-                    '共享协议': '#e83e8c'
-                }[category];
+                // 通过取模循环获取颜色
+                const categoryColor = categoryColors[colorIndex % categoryColors.length];
+                colorIndex++;
 
                 // 特殊处理：共享协议按协议类型分组
                 if (category === '共享协议') {
@@ -1173,8 +1129,9 @@ function loadConfig() {
                                 </div>
                                 <div class="category-events d-flex flex-wrap gap-2 event-category-body" style="padding: 12px; border-radius: 0 0 10px 10px; border: 2px solid ${protocolColor}20; border-top: none;">
                                     ${protocolEvents.map(event => {
-                                        const isSelected = config.selected_events && config.selected_events.includes(event.id);
-                                        const isChecked = !isSelected;
+                                        const eventList = config.selected_events;
+                                        const isSelected = eventList && eventList.length > 0 && eventList.includes(event.id);
+                                        const isChecked = eventList && eventList.length > 0 ? isSelected : true;
                                         return `
                                             <div class="event-checkbox event-checkbox-item" style="padding: 6px 12px; border-radius: 12px; border: 2px solid ${event.color}30; transition: all 0.2s ease; cursor: pointer;">
                                                 <input class="form-check-input category-${category}-${protocol}" type="checkbox"
@@ -1211,8 +1168,9 @@ function loadConfig() {
                             </div>
                             <div class="category-events d-flex flex-wrap gap-2 event-category-body" style="padding: 12px; border-radius: 0 0 10px 10px; border: 2px solid ${categoryColor}20; border-top: none;">
                                 ${categoryEvents.map(event => {
-                                    const isSelected = config.selected_events && config.selected_events.includes(event.id);
-                                    const isChecked = !isSelected;
+                                    const eventList = config.selected_events;
+                                    const isSelected = eventList && eventList.length > 0 && eventList.includes(event.id);
+                                    const isChecked = eventList && eventList.length > 0 ? isSelected : true;
                                     return `
                                         <div class="event-checkbox event-checkbox-item" style="padding: 6px 12px; border-radius: 12px; border: 2px solid ${event.color}30; transition: all 0.2s ease; cursor: pointer;">
                                             <input class="form-check-input category-${category}" type="checkbox"
@@ -1231,11 +1189,16 @@ function loadConfig() {
                     eventsContainer.innerHTML += categoryHTML;
                 }
             });
+        })
+        .catch(error => {
+            console.error('[loadConfig] 加载配置时发生错误:', error);
         });
 }
 
+// 注意：_historySearchTimer, historyKeyword, historyCurrentPage, historyPageSize, historyTotal 
+// 已在 globals.js 中定义
+
 // 关键词搜索：更新 historyKeyword 并重新渲染历史列表（防抖 300ms）
-let _historySearchTimer = null;
 function onHistorySearch(kw) {
     historyKeyword = kw.trim();
     clearTimeout(_historySearchTimer);
@@ -1243,12 +1206,6 @@ function onHistorySearch(kw) {
 }
 
 // 加载推送历史
-// historyKeyword 用于关键词高亮（由搜索框驱动）
-let historyKeyword = '';
-// 分页状态
-let historyCurrentPage = 1;  // 当前页码（从1开始）
-const historyPageSize = 20;  // 每页显示数量
-let historyTotal = 0;  // 总记录数
 
 /**
  * 把文本中的 keyword 用 .kw-highlight span 包裹，用于推送历史预览高亮。
@@ -1362,13 +1319,13 @@ function loadHistory(retry = 0) {
                 }
 
                 const successBadge = item.success ?
-                    '<span class="badge bg-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
-                    '<span class="badge bg-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
+                    '<span class="badge health-badge-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
+                    '<span class="badge health-badge-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
 
                 // 来源标签
                 const sourceBadge = item.source === 'backup' ?
-                    '<span class="badge bg-warning text-dark" aria-label="来源：备份监控"><i class="fas fa-database me-1" aria-hidden="true"></i>备份</span>' :
-                    '<span class="badge bg-info" aria-label="来源：日志监控"><i class="fas fa-file-alt me-1" aria-hidden="true"></i>日志</span>';
+                    '<span class="badge health-badge-warning" aria-label="来源：备份监控"><i class="fas fa-database me-1" aria-hidden="true"></i>备份</span>' :
+                    '<span class="badge health-card-system" aria-label="来源：日志监控"><i class="fas fa-file-alt me-1" aria-hidden="true"></i>日志</span>';
 
                 // 使用 preview 字段，并高亮关键词
                 const rawPreview = item.preview ||
@@ -1401,7 +1358,7 @@ function loadHistory(retry = 0) {
                             'pushplus': 'fa-plus'
                         };
                         const icon = iconMap[ch] || 'fa-paper-plane';
-                        const statusClass = result ? 'bg-success' : 'bg-danger';
+                        const statusClass = result ? 'health-badge-success' : 'health-badge-danger';
                         const statusIcon = result ? 'fa-check' : 'fa-times';
                         channelBadges.push(`<span class="badge ${statusClass} me-1" title="${ch}: ${result ? '成功' : '失败'}"><i class="fas ${icon} me-1"></i><i class="fas ${statusIcon}"></i></span>`);
                     }
@@ -1419,7 +1376,7 @@ function loadHistory(retry = 0) {
                     <td>${successBadge}</td>
                     <td>${channelHtml}</td>
                     <td style="white-space: nowrap;">
-                        <span class="badge bg-primary rounded-pill">
+                        <span class="badge health-card-cpu rounded-pill">
                             ${item.count}
                         </span>
                     </td>
@@ -1526,8 +1483,8 @@ function showHistoryDetail(historyId) {
                 });
 
                 const successBadge = data.success ?
-                    '<span class="badge bg-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
-                    '<span class="badge bg-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
+                    '<span class="badge health-badge-success" aria-label="推送成功"><i class="fas fa-check me-1" aria-hidden="true"></i>成功</span>' :
+                    '<span class="badge health-badge-danger" aria-label="推送失败"><i class="fas fa-times me-1" aria-hidden="true"></i>失败</span>';
 
                 // 构建详情内容
                 let levelsHtml = '';
@@ -1537,7 +1494,7 @@ function showHistoryDetail(historyId) {
                             <h6 class="text-primary"><i class="fas fa-layer-group me-2"></i>日志级别统计</h6>
                             <div class="d-flex flex-wrap gap-2">
                                 ${Object.entries(data.levels).map(([level, count]) => `
-                                    <span class="badge bg-info">${level}: ${count}</span>
+                                    <span class="badge health-card-system">${level}: ${count}</span>
                                 `).join('')}
                             </div>
                         </div>
@@ -1588,7 +1545,7 @@ function showHistoryDetail(historyId) {
                                                 </tr>
                                                 <tr>
                                                     <td>日志数量</td>
-                                                    <td><span class="badge bg-primary rounded-pill">${data.count}</span> 条</td>
+                                                    <td><span class="badge health-card-cpu rounded-pill">${data.count}</span> 条</td>
                                                 </tr>
                                                 <tr>
                                                     <td>最后日志ID</td>
@@ -1671,17 +1628,6 @@ function checkDatabaseFull() {
     .then(([dbData, connData, backupStatusData, backupData]) => {
         let html = '';
 
-        // 更新系统状态中的备份数据库状态（使用backup-status接口，更快响应）
-        const backupDbStatusIndicator = document.getElementById('backup-db-status-indicator');
-        const backupDbStatus = backupStatusData.db_available ? '已连接' : '未连接';
-        if (backupStatusData.db_available) {
-            backupDbStatusIndicator.className = 'badge badge-online';
-        } else {
-            backupDbStatusIndicator.className = 'badge badge-offline';
-        }
-        backupDbStatusIndicator.textContent = backupDbStatus;
-        backupDbStatusIndicator.setAttribute('aria-label', '备份数据库：' + backupDbStatus);
-
         // 更新最后备份时间
         const lastBackupTimeEl = document.getElementById('last-backup-time');
         if (lastBackupTimeEl) {
@@ -1748,13 +1694,6 @@ function checkDatabaseFull() {
         }
         
         panel.innerHTML = html;
-        
-        // 显示通知
-        if (connData.success && connData.connection_status === '已连接' && dbData.success) {
-            showNotification('数据库检查完成，状态正常', 'success');
-        } else {
-            showNotification('数据库检查完成，存在异常', 'warning');
-        }
     })
     .catch(error => {
         panel.innerHTML = `
@@ -1762,7 +1701,6 @@ function checkDatabaseFull() {
                 <i class="fas fa-times-circle me-2"></i>检查失败: ${error.message}
             </div>
         `;
-        showNotification('数据库检查失败', 'danger');
     });
 }
 
@@ -1832,7 +1770,7 @@ function showNotification(message, type = 'info') {
     if (type === 'danger') icon = 'fa-times-circle';
 
     // 亮色系主题（green / sunset）的关闭按钮无需反色，深色系主题需要
-    const darkThemes = ['dark', 'ocean'];
+    const darkThemes = ['dark', 'ocean', 'cyber'];
     const isDark = darkThemes.includes(currentTheme);
     const closeBtnStyle = isDark ? 'filter:invert(1) grayscale(100%) brightness(200%);' : '';
     notification.innerHTML = `
@@ -1877,41 +1815,9 @@ function controlMonitor(action) {
 
 // ========== 浮动按钮菜单和面板切换函数 ==========
 
-// 切换浮动按钮菜单收缩/展开
-function toggleFabMenu() {
-    const fabMenu = document.getElementById('fabMenu');
-    const mainBtnIcon = fabMenu.querySelector('.fab-main i');
-
-    fabMenu.classList.toggle('active');
-
-    // 根据菜单状态切换图标
-    if (fabMenu.classList.contains('active')) {
-        mainBtnIcon.classList.remove('fa-bars');
-        mainBtnIcon.classList.add('fa-times');
-        fabMenu.querySelector('.fab-main').setAttribute('title', '收起菜单');
-    } else {
-        mainBtnIcon.classList.remove('fa-times');
-        mainBtnIcon.classList.add('fa-bars');
-        fabMenu.querySelector('.fab-main').setAttribute('title', '展开菜单');
-    }
-}
-
-// 显示/隐藏用户菜单
-function showUserMenu() {
-    const menu = document.getElementById('userMenuPopup');
-    menu.classList.toggle('active');
-}
-
-function hideUserMenu() {
-    const menu = document.getElementById('userMenuPopup');
-    menu.classList.remove('active');
-}
-
-// 切换可展开操作菜单
-function toggleExpandableMenu() {
-    const menu = document.getElementById('expandableMenu');
-    menu.classList.toggle('active');
-}
+// 注：toggleFabMenu, showUserMenu, hideUserMenu, toggleExpandableMenu 
+// 已在 fab.js 中定义并导出到 window（带空值保护）
+// 此处不再重复定义
 
 // 点击外部关闭弹窗菜单
 document.addEventListener('click', function(e) {
@@ -1934,11 +1840,23 @@ function switchFabPanel(element, target) {
     // 停止健康检查的实时更新（如果正在运行）
     stopHealthUpdate();
 
-    // 更新按钮激活状态
+    // 更新浮动按钮激活状态
     document.querySelectorAll('.fab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    element.classList.add('active');
+    if (element && element.classList) {
+        element.classList.add('active');
+    }
+    
+    // 同步移动端底部导航激活状态
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const mobileBtn = document.querySelector(`.mobile-nav-btn[data-target="${target}"]`);
+    if (mobileBtn) mobileBtn.classList.add('active');
+    
+    // 同步侧边栏导航激活状态
+    syncNavActive(target);
 
     // 更新面板显示
     document.querySelectorAll('.config-panel').forEach(panel => {
@@ -1960,12 +1878,14 @@ function switchFabPanel(element, target) {
             startHealthUpdate();
         }, 1000);
     }
+
+    // 如果切换到事件管理面板，加载事件列表
+    if (target === 'events') {
+        refreshEventsList();
+    }
 }
 
-// 保留旧函数兼容性
-function toggleSidebar() {
-    toggleFabMenu();
-}
+// 保留旧函数兼容性 - 已迁移到现代侧边栏，旧toggleFabMenu不再使用
 
 function switchConfigPanel(element, target) {
     const targetBtn = document.querySelector(`.fab-btn[data-target="${target}"]`);
@@ -2094,7 +2014,7 @@ function saveBasicConfig() {
         selected_levels: selectedLevels,
         selected_events: selectedEvents,
         log_levels: currentConfig.log_levels || ["调试", "普通", "警告", "错误", "严重错误"],
-        event_ids: currentConfig.event_ids || []
+        event_ids: selectedEvents
     };
 
     // 获取现有配置，保留其他设置
@@ -2137,7 +2057,8 @@ function savePushConfig() {
             dingtalk: document.getElementById('push-dingtalk-enabled').checked,
             feishu: document.getElementById('push-feishu-enabled').checked,
             bark: document.getElementById('push-bark-enabled').checked,
-            pushplus: document.getElementById('push-pushplus-enabled').checked
+            pushplus: document.getElementById('push-pushplus-enabled').checked,
+            meow: document.getElementById('push-meow-enabled').checked
         },
         wecom: {
             enabled: document.getElementById('push-wecom-enabled').checked,
@@ -2161,6 +2082,12 @@ function savePushConfig() {
             enabled: document.getElementById('push-pushplus-enabled').checked,
             token: document.getElementById('pushplus-token').value,
             topic: document.getElementById('pushplus-topic').value
+        },
+        meow: {
+            enabled: document.getElementById('push-meow-enabled').checked,
+            nickname: document.getElementById('meow-nickname').value,
+            title: document.getElementById('meow-title').value,
+            msgtype: document.getElementById('meow-msgtype').value
         },
         do_not_disturb: {
             enabled: document.getElementById('dnd-enabled').checked,
@@ -2223,7 +2150,7 @@ function saveFilterConfig() {
         selected_levels: selectedLevels,
         selected_events: selectedEvents,
         log_levels: currentConfig.log_levels || ["调试", "普通", "警告", "错误", "严重错误"],
-        event_ids: currentConfig.event_ids || []
+        event_ids: selectedEvents
     };
 
     apiFetch('/api/config')
@@ -2518,9 +2445,7 @@ function loadAggStats() {
         .catch(err => console.warn('加载告警聚合统计失败:', err));
 }
 
-// ========== 自动刷新功能 ==========
-let autoRefreshInterval = null;
-const DEFAULT_REFRESH_INTERVAL = 10000; // 10秒
+// 注意：autoRefreshInterval, DEFAULT_REFRESH_INTERVAL 已在 globals.js 中定义
 
 function toggleAutoRefresh(enabled) {
     if (enabled) {
@@ -2566,11 +2491,7 @@ function initAutoRefresh() {
     }
 }
 
-// ========== 历史记录日期筛选功能 ==========
-let historyDateFilter = {
-    startDate: null,
-    endDate: null
-};
+// 注意：historyDateFilter 已在 globals.js 中定义
 
 function onHistoryDateFilter() {
     const startDate = document.getElementById('history-date-start')?.value;
@@ -2647,3 +2568,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initAutoRefresh();
     initHistoryDateFilter();
 });
+// ========== 导出到全局 ==========
+window.loadConfig = loadConfig;
+window.loadStatus = loadStatus;
+window.loadHistory = loadHistory;
+window.loadAggStats = loadAggStats;
+window.checkDatabase = checkDatabase;

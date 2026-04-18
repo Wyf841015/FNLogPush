@@ -25,17 +25,8 @@ const apiCache = {
     }
 };
 
-// 正在进行的请求（防止重复）
-const pendingRequests = new Map();
-
 // 统一的Fetch请求函数
 async function apiFetch(url, options = {}) {
-    // 请求去重
-    if (pendingRequests.has(url)) {
-        console.log(`请求去重: ${url}`);
-        return pendingRequests.get(url);
-    }
-
     const defaultOptions = {
         credentials: 'same-origin',
         headers: {
@@ -43,16 +34,7 @@ async function apiFetch(url, options = {}) {
         }
     };
     const mergedOptions = { ...defaultOptions, ...options };
-
-    const fetchPromise = fetch(url, mergedOptions);
-    pendingRequests.set(url, fetchPromise);
-
-    try {
-        const response = await fetchPromise;
-        return response;
-    } finally {
-        pendingRequests.delete(url);
-    }
+    return fetch(url, mergedOptions);
 }
 
 // 带缓存的 API 请求
@@ -95,3 +77,10 @@ function throttle(func, limit) {
         }
     };
 }
+
+// ========== 导出到全局 ==========
+window.apiFetch = apiFetch;
+window.apiFetchCached = apiFetchCached;
+window.apiCache = apiCache;
+window.debounce = debounce;
+window.throttle = throttle;

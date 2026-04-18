@@ -19,6 +19,7 @@ class WebSocketManager {
         this.onDisconnected = null;
         this.onNewLogs = null;
         this.onPushResult = null;
+        this.onHealthStatus = null;  // 健康状态回调
     }
 
     connect() {
@@ -70,6 +71,13 @@ class WebSocketManager {
                 console.log('收到推送结果:', data);
                 this._emit('push_result', data);
                 if (this.onPushResult) this.onPushResult(data);
+            });
+
+            // 监听健康状态推送（WebSocket推送替代轮询）
+            this.socket.on('health_status', (data) => {
+                console.log('收到健康状态推送:', data);
+                this._emit('health_status', data);
+                if (this.onHealthStatus) this.onHealthStatus(data);
             });
 
             // 监听ping响应
@@ -139,3 +147,8 @@ class WebSocketManager {
 
 // 全局 WebSocket 管理器
 const wsManager = new WebSocketManager();
+
+// 导出初始化函数供 main.js 调用
+function initWebSocket() {
+    wsManager.connect();
+}

@@ -68,7 +68,7 @@ class PushCoordinator:
         if not logs:
             return False
 
-        logger.info(f"[DEBUG] PushCoordinator.push: 收到 {len(logs)} 条日志，IDs: {[log.id for log in logs]}")
+        logger.debug(f"PushCoordinator.push: 收到 {len(logs)} 条日志")
 
         if enabled_channels is None:
             enabled_channels = self.config.get('push_channels', {})
@@ -90,7 +90,7 @@ class PushCoordinator:
             else self.formatter.format_batch_logs(logs)
         )
         
-        logger.info(f"[DEBUG] PushCoordinator.push: 调用 push_service.push_message，内容长度={len(content)}")
+        logger.debug(f"PushCoordinator.push: 调用 push_service.push_message")
         channel_results = self.push_service.push_message(content, enabled_channels)
 
         # 判断是否至少有一个渠道成功
@@ -99,12 +99,12 @@ class PushCoordinator:
         # 记录实际推送的渠道结果
         self._record_history(logs, content, success, last_id, channel_results=channel_results if channel_results else None)
 
-        logger.info(f"[DEBUG] PushCoordinator.push: 推送完成，{len(logs)} 条日志，last_id={last_id}，success={success}")
+        logger.debug(f"PushCoordinator.push: 推送完成，{len(logs)} 条日志，success={success}")
         return success
 
     def push_raw(self, content: str, logs: List[LogRecord],
                  last_id: int, enabled_channels: Optional[Dict] = None,
-                 count: Optional[int] = None) -> bool:
+                 count: Optional[int] = None) -> Dict[str, bool]:
         """
         推送已格式化的消息（跳过内部格式化，供 DND 汇总等场景使用）。
 
@@ -114,14 +114,23 @@ class PushCoordinator:
             last_id:          当前最大日志 ID
             enabled_channels: 推送渠道开关
             count:            日志数量（可选，如果未提供则使用 len(logs)）
+
+        Returns:
+            渠道推送结果字典 {"wecom": True, "dingtalk": False}
         """
         if enabled_channels is None:
             enabled_channels = self.config.get('push_channels', {})
 
+        # DND 判断：在免打扰时段则缓存，不推送
+        if self.dnd_service.should_cache_now():
+            self.dnd_service.cache_message(content)
+            logger.debug(f"push_raw: 消息已缓存（免打扰时段），content长度={len(content)}")
+            return {}  # 返回空字典表示未实际推送
+
         channel_results = self.push_service.push_message(content, enabled_channels)
         success = any(channel_results.values()) if channel_results else False
         self._record_history(logs, content, success, last_id, count, channel_results=channel_results if channel_results else None)
-        return success
+        return channel_results
 
     def build_preview(self, logs: List[LogRecord]) -> str:
         """构建推送历史预览字符串"""

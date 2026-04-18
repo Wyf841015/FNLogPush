@@ -30,7 +30,7 @@ class SchemaValidator:
                 "type": "array",
                 "items": {"type": "string"}
             },
-            "event_ids": {"type": "array", "items": {"type": "integer"}},
+            "event_ids": {"type": "array", "items": {"type": "string"}},
             "selected_events": {"type": "array", "items": {"type": "string"}},
             "web_host": {"type": "string", "pattern": r"^[\d\.]+$|^localhost$|^[\w\.-]+$"},
             "web_port": {"type": "integer", "minimum": 1, "maximum": 65535},

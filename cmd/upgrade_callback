@@ -1,2 +1,19 @@
 #!/bin/bash
+set -u
+
+# 升级时保留加密密钥
+TRIM_PKGVAR="${TRIM_PKGVAR:-}"
+
+if [ -n "${TRIM_PKGVAR}" ] && [ -f "${TRIM_PKGVAR}/config/.encrypt_key" ]; then
+    # 确保加密密钥存在
+    echo "保留加密密钥..."
+elif [ -n "${TRIM_PKGVAR}" ]; then
+    # 如果密钥不存在，生成一个新的
+    ENCRYPT_KEY="$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())' 2>/dev/null || echo "")"
+    if [ -n "${ENCRYPT_KEY}" ]; then
+        echo "${ENCRYPT_KEY}" > "${TRIM_PKGVAR}/config/.encrypt_key"
+        chmod 600 "${TRIM_PKGVAR}/config/.encrypt_key" 2>/dev/null || true
+    fi
+fi
+
 exit 0

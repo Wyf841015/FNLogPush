@@ -1,0 +1,73 @@
+{
+    "database_path": "logger_data.db3",
+    "webhook_url": "",
+    "check_interval": 5,
+    "log_levels": [
+        "调试",
+        "普通",
+        "警告",
+        "错误",
+        "严重错误"
+    ],
+    "selected_levels": [
+        "普通",
+        "警告",
+        "错误",
+        "严重错误"
+    ],
+    "event_ids": [
+        "STORAGE_MOUNT_SUCCESS",
+        "FW_ENABLE",
+        "FW_START_SUCCESS",
+        "FW_STOP_FAILED",
+        "FW_START_FAILED",
+        "STORAGE_UMOUNT_SUCCESS",
+        "UnmountStorage",
+        "STORAGE_UMOUNT_FAILED",
+        "MountStorage",
+        "DeleteStorage",
+        "FW_STOP_SUCCESS",
+        "CreateStorage",
+        "STORAGE_MOUNT_FAILED",
+        "FW_DISABLE"
+    ],
+    "selected_events": [],
+    "web_host": "0.0.0.0",
+    "web_port": 5000,
+    "history_size": 1000,
+    "do_not_disturb": {
+        "enabled": false,
+        "start_time": "23:00",
+        "end_time": "08:00"
+    },
+    "wecom": {
+        "enabled": false,
+        "webhook_url": "",
+        "corp_id": "",
+        "agent_id": "",
+        "secret": "",
+        "touser": "@all"
+    },
+    "push_channels": {
+        "webhook": true,
+        "wecom": false
+    },
+    "backup_monitor": {
+        "enabled": false,
+        "database_path": "",
+        "status_filter": [
+            1,
+            2,
+            3,
+            4
+        ],
+        "check_interval": 10
+    },
+    "alert_aggregation": {
+        "enabled": true,
+        "window_seconds": 300,
+        "threshold": 5,
+        "silence_seconds": 600
+    },
+    "theme": "sunset"
+}
