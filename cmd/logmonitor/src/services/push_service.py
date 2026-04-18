@@ -503,16 +503,24 @@ class MeoWPushChannel(PushChannel):
                 # 400 - 参数错误
                 # 500 - 服务器错误
                 # data: False 表示失败
-                status_code = result.get('code') or result.get('status')
+                # 注意：API 可能返回字符串类型的状态码（如 "200"），需要转换
+                raw_status = result.get('code') or result.get('status')
+                try:
+                    status_code = int(raw_status) if raw_status is not None else None
+                except (ValueError, TypeError):
+                    status_code = raw_status
+                
                 is_success = False
                 
                 if status_code == 200:
                     # code=200 时，还需检查 data 字段
-                    if result.get('data') is not False:
+                    # data 不存在或为 True/null/其他非 False 值都视为成功
+                    data = result.get('data')
+                    if data is False:
+                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，data=False，响应: {result}")
+                    else:
                         is_success = True
                         logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
-                    else:
-                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，data=False，响应: {result}")
                 elif status_code == 400:
                     logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，参数错误，状态码: {status_code}，响应: {result}")
                 elif status_code == 500:
@@ -521,9 +529,9 @@ class MeoWPushChannel(PushChannel):
                     # 兼容旧格式或其他未知状态
                     if status_code == 0 or result.get('success') == True:
                         is_success = True
-                        logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，状态码: {status_code}")
+                        logger.info(f"MeoW推送成功[{i+1}/{len(segments)}]，兼容旧格式，原始状态码: {raw_status}")
                     else:
-                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，未知状态码: {status_code}，响应: {result}")
+                        logger.error(f"MeoW推送失败[{i+1}/{len(segments)}]，未知状态码: {status_code}，原始值: {raw_status}，响应: {result}")
                 
                 if not is_success:
                     all_success = False
