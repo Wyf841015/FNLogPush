@@ -326,12 +326,13 @@ class MessageFormatter:
             "title": f"{title} ({len(logs)}条)"
         }
     
-    def format_dnd_summary(self, cached_messages: List[str]) -> str:
+    def format_dnd_summary(self, cached_messages: List[str], max_length: int = 1800) -> str:
         """
         格式化免打扰期间缓存的消息汇总
         
         Args:
             cached_messages: 缓存的消息列表（已格式化的字符串）
+            max_length: 最大长度限制（默认1800，留200余量给title和序号）
             
         Returns:
             格式化后的汇总消息
@@ -346,4 +347,72 @@ class MessageFormatter:
         separator = "\n" + "-" * 30 + "\n"
         body = separator.join(cached_messages)
         
+        # 如果超长，生成精简摘要
+        if len(body) > max_length:
+            return self._format_dnd_compact_summary(cached_messages, count, max_length)
+        
         return header + body
+    
+    def _format_dnd_compact_summary(self, cached_messages: List[str], count: int, max_length: int) -> str:
+        """
+        生成精简的免打扰汇总（消息过长时使用）
+        
+        Args:
+            cached_messages: 缓存的消息列表
+            count: 消息数量
+            max_length: 最大长度限制
+            
+        Returns:
+            精简格式的汇总消息
+        """
+        # 统计各类型事件数量
+        event_stats = {}
+        time_range = None
+        
+        for msg in cached_messages:
+            # 提取事件类型（格式: 📋事件: xxx）
+            import re
+            event_match = re.search(r'📋事件:\s*(.+?)(?:\n|$)', msg)
+            if event_match:
+                event_type = event_match.group(1).strip()
+                event_stats[event_type] = event_stats.get(event_type, 0) + 1
+            
+            # 提取时间范围
+            time_match = re.search(r'🕐时间:\s*(.+)', msg)
+            if time_match and not time_range:
+                time_range = time_match.group(1).strip()
+        
+        # 生成摘要
+        lines = [f"📬 【免打扰时段消息汇总】共 {count} 条\n" + "=" * 30]
+        
+        if time_range:
+            lines.append(f"⏰ 首条时间: {time_range}")
+        
+        lines.append("\n📊 事件统计:")
+        for event, num in sorted(event_stats.items(), key=lambda x: -x[1]):
+            lines.append(f"  • {event}: {num}次")
+        
+        # 限制每条原始消息的长度，保留摘要
+        lines.append("\n📝 消息摘要:")
+        current_length = len("\n".join(lines))
+        
+        for i, msg in enumerate(cached_messages):
+            if current_length >= max_length:
+                break
+            
+            # 提取关键信息
+            summary_line = f"[{i+1}] "
+            
+            event_match = re.search(r'📋事件:\s*(.+?)(?:\n|$)', msg)
+            if event_match:
+                summary_line += event_match.group(1).strip()
+            
+            time_match = re.search(r'🕐时间:\s*(.+)', msg)
+            if time_match:
+                summary_line += f" @ {time_match.group(1).strip()}"
+            
+            if len(summary_line) + current_length < max_length - 50:
+                lines.append(summary_line)
+                current_length = len("\n".join(lines))
+        
+        return "\n".join(lines)
