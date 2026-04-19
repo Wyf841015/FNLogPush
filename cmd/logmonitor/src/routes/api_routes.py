@@ -180,6 +180,7 @@ def register_api_routes(app: Flask):
                 "error": str(e)
             })
 
+    @login_required
     @app.route('/api/push/stats', methods=['GET'])
     @api_error_handler
     def push_stats():
@@ -194,6 +195,7 @@ def register_api_routes(app: Flask):
             logger.error(f"获取推送统计失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/push/dead-letters', methods=['GET'])
     @api_error_handler
     def push_dead_letters():
@@ -227,6 +229,7 @@ def register_api_routes(app: Flask):
             logger.error(f"死信重发失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/alert-aggregation/stats', methods=['GET'])
     @api_error_handler
     def alert_aggregation_stats():
@@ -243,6 +246,7 @@ def register_api_routes(app: Flask):
             logger.error(f"获取告警聚合统计失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/alert-aggregation/groups', methods=['GET'])
     @api_error_handler
     def alert_aggregation_groups():
@@ -261,6 +265,7 @@ def register_api_routes(app: Flask):
             logger.error(f"获取活跃聚合组失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/agg/stats', methods=['GET'])
     @api_error_handler
     def agg_stats():
@@ -311,6 +316,7 @@ def register_api_routes(app: Flask):
             logger.warning(f"[事件]   - {path.resolve()}")
         return None
 
+    @login_required
     @app.route('/api/events/config', methods=['GET'])
     @api_error_handler
     def events_config():
@@ -398,6 +404,7 @@ def register_api_routes(app: Flask):
         logger.warning(f"[事件] 保存事件配置失败：未找到配置文件路径")
         return False
 
+    @login_required
     @app.route('/api/events/list', methods=['GET'])
     @api_error_handler
     def events_list():
@@ -429,6 +436,7 @@ def register_api_routes(app: Flask):
             logger.error(f"获取事件列表失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/events/add', methods=['POST'])
     @api_error_handler
     def events_add():
@@ -516,6 +524,7 @@ def register_api_routes(app: Flask):
             logger.error(f"添加事件失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/events/delete', methods=['POST'])
     @api_error_handler
     def events_delete():
@@ -563,6 +572,7 @@ def register_api_routes(app: Flask):
             logger.error(f"删除事件失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/events/update', methods=['POST'])
     @api_error_handler
     def events_update():
@@ -620,6 +630,7 @@ def register_api_routes(app: Flask):
             logger.error(f"更新事件失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/events/categories', methods=['GET'])
     @api_error_handler
     def events_categories():
@@ -644,6 +655,7 @@ def register_api_routes(app: Flask):
             logger.error(f"获取分类列表失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @login_required
     @app.route('/api/events/query-latest', methods=['GET'])
     @api_error_handler
     def events_query_latest():
