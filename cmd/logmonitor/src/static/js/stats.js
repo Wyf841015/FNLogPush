@@ -410,3 +410,5 @@ window.setPushTrendRange = function(range) {
     currentTrendRange = range;
     loadPushTrendData();
 };
+
+window.initStatsPanel = initStatsPanel;
