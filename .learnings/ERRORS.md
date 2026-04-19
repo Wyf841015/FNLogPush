@@ -1,182 +1,132 @@
-# 错误记录
+# Errors Log
 
-## [ERR-20260408-001] git-push-timeout
+## [ERR-20260420-001] stats.js syntax error
 
-**Logged**: 2026-04-08T23:22:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: infra
-
-### Summary
-Git push 到 GitHub 超时或 TLS 连接错误
-
-### Error
-```
-fatal: unable to access 'https://github.com/...': GnuTLS recv error (-110): The TLS connection was non-properly terminated.
-fatal: unable to access 'https://github.com/...': Failed to connect to github.com port 443 after 134582 ms: Couldn't connect to server
-```
-
-### Context
-- 推送 FNLogPush 和 FnDepot 仓库
-- 网络不稳定
-- 超时时间 60-180 秒
-
-### Suggested Fix
-多次重试 git push 命令，通常 2-3 次可以成功
-
-### Metadata
-- Reproducible: sometimes
-- Related Files:
-- See Also: LRN-20260408-005
-
----
-
-## [ERR-20260411-001] fnpack-manifest-missing
-
-**Logged**: 2026-04-11T22:30:00+08:00
+**Logged**: 2026-04-20T14:00:00+08:00
 **Priority**: high
-**Status**: resolved
-**Area**: infra
-
-### Summary
-fnpack 打包失败，找不到 manifest 文件
-
-### Error
-```
-Verifying files...
-error: pathspec 'manifest' did not match any file(s) known to git
-```
-
-### Context
-- git commit 时 manifest 文件被重命名为 manifest.txt
-- fnpack 工具期望的文件名是 "manifest"
-
-### Suggested Fix
-```bash
-git show HEAD:manifest > manifest
-```
-
-### Metadata
-- Reproducible: yes
-- Related Files:
-  - project/log-monitor-fpk/manifest
-- See Also: LRN-20260411-002
-
----
-
-## [ERR-20260411-002] page-infinite-refresh
-
-**Logged**: 2026-04-11T22:30:00+08:00
-**Priority**: critical
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-登录后页面无限刷新
+stats.js 语法错误，未转义的换行符导致页面无法加载
 
 ### Error
-页面持续刷新，无法正常使用
+```
+Uncaught SyntaxError: Invalid or unexpected token (at stats.js:427:49)
+```
 
 ### Context
-1. session.js 调用不存在的 `/api/auth/refresh-activity`
-2. auth.js 调用错误的 `/api/auth/status`
-3. 响应字段判断错误 `data.authenticated` vs `data.logged_in`
+- 在 stats.js 的 ECharts formatter 配置中使用了未转义的换行符
+- `{b}\n{d}%` 导致 JS 解析失败
 
 ### Suggested Fix
 ```javascript
-// auth.js
-function checkSession() {
-    apiFetch('/api/auth/check-session', {
-        credentials: 'same-origin',
-        cache: 'no-store'
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.logged_in === true) {
-                // 已登录，显示用户名
-            } else {
-                window.location.href = '/login';
-            }
-        });
-}
+// 错误
+formatter: "{b}\n{d}%"
+
+// 正确
+formatter: "{b}: {d}%"
 ```
 
 ### Metadata
 - Reproducible: yes
-- Related Files:
-  - cmd/logmonitor/src/static/js/auth.js
-  - cmd/logmonitor/src/static/js/session.js
-- See Also: LRN-20260411-001
+- Related Files: cmd/logmonitor/src/static/js/stats.js:427
+- See Also: LRN-20260420-001
 
 ---
 
-## [ERR-20260412-001] dnd-bypass
+## [ERR-20260420-002] API 404 Not Found
 
-**Logged**: 2026-04-12T00:10:00+08:00
-**Priority**: critical
+**Logged**: 2026-04-20T14:30:00+08:00
+**Priority**: high
 **Status**: resolved
-**Area**: backend
+**Area**: frontend
 
 ### Summary
-PushCoordinator.push_raw() 方法绕过 DND 免打扰检查
+前端调用不存在的 API `/api/push/history`
 
 ### Error
-免打扰时间段内仍然收到推送消息
+```
+GET https://fnlogpush.64652178.xyz:16607/api/push/history?limit=1000 404 (Not Found)
+loadStatsOverview error SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+```
 
 ### Context
-- `push_raw()` 方法没有调用 `should_cache_now()` 检查
-- `_push_aggregated()` 调用 `push_raw()` 绕过 DND 限制
-- 聚合摘要在免打扰时段仍然会推送
+- loadStatsOverview 函数调用了错误的 API 路径
+- 返回 404 HTML 页面，前端尝试解析为 JSON 失败
 
 ### Suggested Fix
-在 `push_raw()` 方法开头添加 DND 检查：
-```python
-def push_raw(self, content: str, logs: List[LogRecord], ...):
-    if self.dnd_service.should_cache_now():
-        self.dnd_service.cache_message(content)
-        logger.debug(f"push_raw: 消息已缓存（免打扰时段）")
-        return False
-    # 原有推送逻辑...
-```
+使用正确的 API 路径 `/api/stats/chart-data`
 
 ### Metadata
 - Reproducible: yes
-- Related Files:
-  - cmd/logmonitor/src/monitor_core/push_coordinator.py
-- See Also: LRN-20260412-001
+- Related Files: cmd/logmonitor/src/static/js/stats.js
+- See Also: LRN-20260420-002
 
 ---
 
-## [ERR-20260412-002] fnpack-json-format
+## [ERR-20260420-003] GitHub push connection failure
 
-**Logged**: 2026-04-12T00:15:00+08:00
+**Logged**: 2026-04-20T16:15:00+08:00
 **Priority**: medium
 **Status**: resolved
 **Area**: infra
 
 ### Summary
-fnpack.json 格式错误导致解析失败
+GitHub 推送时网络连接不稳定
 
 ### Error
-```python
-json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 55 column 5 (char 1827)
+```
+error: RPC failed; curl 55 Send failure: Broken pipe
+fatal: the remote end hung up unexpectedly
+
+error: could not read Password for 'https://github.com/...': No such device or address
+
+fatal: unable to access 'https://github.com/...': Failed to connect to github.com port 443
 ```
 
 ### Context
-- FnDepot 仓库的 fnpack.json
-- `fnlogpush.history` 结束后缺少逗号
-- `usbrsync.history` 有尾随逗号
+- 执行 `git push origin master` 时遇到网络问题
+- 可能与代理设置、网络波动有关
+- 多次重试后最终成功
 
 ### Suggested Fix
-使用 Python 验证 JSON：
-```bash
-python3 -c "import json; json.load(open('fnpack.json'))"
+1. 等待 30-60 秒后重试
+2. 确保 Git remote URL 包含完整的 personal access token
+3. 检查网络代理设置
+
+### Metadata
+- Reproducible: uncertain
+- See Also: LRN-20260420-005
+
+---
+
+## [ERR-20260420-004] WebSocket SSL connection error
+
+**Logged**: 2026-04-20T14:45:00+08:00
+**Priority**: low
+**Status**: wont_fix
+**Area**: frontend
+
+### Summary
+WebSocket 连接因 SSL 证书问题失败
+
+### Error
 ```
+WebSocket connection to 'wss://fnlogpush.64652178.xyz:16607/socket.io/?EIO=4&transport=websocket' failed: Invalid frame header
+```
+
+### Context
+- SSL 证书配置问题导致 WebSocket 无法建立
+- 错误信息在控制台持续显示，影响用户体验
+
+### Suggested Fix
+- 改用轮询模式作为降级方案（已实施）
+- 不阻塞核心功能，静默处理错误
 
 ### Metadata
 - Reproducible: yes
-- Related Files:
-  - project/FnDepot/fnpack.json
-- See Also: LRN-20260412-003
+- Related Files: cmd/logmonitor/src/static/js/websocket.js
+- See Also: LRN-20260420-004
 
 ---

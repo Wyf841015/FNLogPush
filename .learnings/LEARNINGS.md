@@ -1,194 +1,254 @@
-# Learnings
+# Learnings Log
 
-记录日常工作中学到的经验和教训，用于持续改进。
+## [LRN-20260420-001] best_practice
 
----
-
-## [LRN-20260418-001] best_practice
-
-**Logged**: 2026-04-18T10:00:00+08:00
+**Logged**: 2026-04-20T15:30:00+08:00
 **Priority**: high
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-统一管理 JavaScript 全局变量，避免重复声明冲突
+前端JS文件中字符串不能包含未转义的换行符，否则导致语法错误
 
 ### Details
-在修复 FNOS 日志监控推送系统时，main.js 中声明了 NotificationManager、ThemeManager 等全局变量，与 globals.js 中的声明冲突，导致 "Identifier 'NotificationManager' has already been declared" 错误。
-
-**问题代码：**
+在 stats.js 中，ECharts 的 formatter 字符串包含未转义的换行符 `\n`：
 ```javascript
-// globals.js
-const NotificationManager = { ... };
+// 错误写法
+formatter: "{b}\n{d}%"
 
-// main.js（重复声明）
-const NotificationManager = { ... }; // 冲突！
+// 正确写法
+formatter: "{b}: {d}%"
 ```
+这导致浏览器报 `Uncaught SyntaxError: Invalid or unexpected token` 错误。
 
 ### Suggested Action
-1. 创建 globals.js 统一管理所有全局变量
-2. 确保 HTML 中 globals.js 第一个加载
-3. main.js 只包含函数定义，不声明同名全局变量
-4. 其他模块文件（session.js、sidebar.js 等）也删除重复的全局变量声明
-
-### Metadata
-- Source: error
-- Related Files: globals.js, main.js
-- Tags: javascript, global-variables, duplicate-declaration
-- See Also: LRN-20260418-002
-
----
-
-## [LRN-20260418-002] best_practice
-
-**Logged**: 2026-04-18T10:30:00+08:00
-**Priority**: high
-**Status**: resolved
-**Area**: frontend
-
-### Summary
-Fetch API 的 Response 对象 body stream 只能读取一次
-
-### Details
-apiFetch 函数中的请求去重逻辑缓存了原始 Promise，导致同一个 Response 对象被多次调用 `.json()`，触发错误：
-```
-TypeError: Failed to execute 'json' on 'Response': body stream already read
-```
-
-**问题代码：**
-```javascript
-async function apiFetch(url, options = {}) {
-    if (pendingRequests.has(url)) {
-        return pendingRequests.get(url); // 返回已消费过的 Response
-    }
-    const fetchPromise = fetch(url, mergedOptions);
-    pendingRequests.set(url, fetchPromise);
-    // ...
-}
-```
-
-### Suggested Action
-1. 如果需要多次读取 Response，使用 `response.clone()` 创建副本
-2. 或者移除请求去重逻辑，让每个调用都创建新的 fetch 请求
-3. 对于 API 请求，通常不需要去重，因为数据需要实时性
-
-### Metadata
-- Source: error
-- Related Files: api.js
-- Tags: javascript, fetch, response, stream
-
----
-
-## [LRN-20260418-003] best_practice
-
-**Logged**: 2026-04-18T11:00:00+08:00
-**Priority**: low
-**Status**: pending
-**Area**: config
-
-### Summary
-Python requirements.txt 中不必列出间接依赖
-
-### Details
-在检查 requirements.txt 时发现：
-- `flask-cors` - 未被代码导入
-- `eventlet` - 未使用（Flask-SocketIO 可以不依赖 eventlet 工作）
-- `python-socketio` - flask-socketio 的间接依赖
-- `python-engineio` - python-socketio 的间接依赖
-
-### Suggested Action
-只保留代码中直接 import 的依赖。间接依赖由 pip 自动安装。
-
-**保留的必需依赖：**
-- Flask, flask-socketio, psutil, requests, pytz, bcrypt
-
-**可选（推荐但非必需）：**
-- python-dotenv, gunicorn
-
-**可移除：**
-- flask-cors, eventlet, python-socketio, python-engineio
+在 JS 文件中使用字符串模板时，避免直接在字符串字面量中使用 `\n`，或者使用模板字符串（反引号）。
 
 ### Metadata
 - Source: conversation
-- Tags: python, dependencies, requirements.txt
+- Related Files: cmd/logmonitor/src/static/js/stats.js
+- Tags: frontend, javascript, syntax
 
 ---
 
-## [LRN-20260418-004] best_practice
+## [LRN-20260420-002] best_practice
 
-**Logged**: 2026-04-18T09:00:00+08:00
+**Logged**: 2026-04-20T15:35:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+前端调用API前应确认API路径是否正确存在
+
+### Details
+前端代码调用 `/api/push/history` API，但该路径不存在，导致返回 404 HTML 页面，前端尝试解析 JSON 时报语法错误。
+
+**错误调用：**
+```javascript
+var r = await fetch("/api/push/history?limit=1000");
+```
+
+**正确做法：**
+```javascript
+var r = await fetch("/api/stats/chart-data");
+```
+
+### Suggested Action
+1. 在修改前端代码前，确认后端是否存在对应的 API 路由
+2. 使用浏览器的 Network 标签检查 API 响应
+3. 添加错误处理，处理 API 返回非 JSON 的情况
+
+### Metadata
+- Source: conversation
+- Related Files: cmd/logmonitor/src/static/js/stats.js
+- Tags: frontend, api, error-handling
+
+---
+
+## [LRN-20260420-003] best_practice
+
+**Logged**: 2026-04-20T16:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: config
+
+### Summary
+更新版本号需要同时修改多个文件，保持一致性
+
+### Details
+发布新版本时需要更新的文件：
+1. `manifest` - 飞牛NAS应用清单
+2. `fnpack.json` - FnDepot 应用仓库配置
+3. `README.md` - 项目文档（主目录和子目录）
+4. `app.py` - 代码中的 `__version__` 变量
+
+### Suggested Action
+建立版本更新 checklist：
+- [ ] manifest
+- [ ] fnpack.json（如果存在）
+- [ ] README.md（主目录）
+- [ ] README.md（子目录，如果存在）
+- [ ] 代码中的版本变量
+
+### Metadata
+- Source: conversation
+- Tags: version, release, documentation
+
+---
+
+## [LRN-20260420-004] best_practice
+
+**Logged**: 2026-04-20T16:10:00+08:00
 **Priority**: medium
 **Status**: resolved
 **Area**: frontend
 
 ### Summary
-修复 JS 文件语法错误应先验证再打包
+WebSocket连接失败不应阻塞核心功能，使用轮询作为降级方案
 
 ### Details
-在修复 JavaScript 重复声明问题时，通过 `node --check` 验证所有 JS 文件语法：
-```bash
-for f in *.js; do node --check "$f" && echo "OK $f" || echo "FAIL $f"; done
+在生产环境中，WebSocket 可能因 SSL 证书、网络问题等无法连接：
+- 直接显示错误日志会干扰用户
+- 应该优雅降级到轮询模式
+
+**解决方案：**
+```javascript
+// 优先使用轮询模式
+transports: ['polling', 'websocket']
+
+// 连接失败时降级处理
+this.socket.on('connect_error', (error) => {
+    console.log('WebSocket连接失败，将使用轮询模式');
+    // 不显示错误，不阻塞功能
+});
 ```
 
 ### Suggested Action
-1. 修改 JS 文件后，用 `node --check` 验证语法
-2. 所有文件通过后再打包
-3. 避免打包后发现语法错误需要重新打包
+1. WebSocket 配置优先使用轮询模式
+2. 连接失败时静默处理，不显示错误
+3. 保留 HTTP 轮询作为备用方案
 
 ### Metadata
-- Source: workflow
-- Tags: javascript, syntax-check, build
+- Source: conversation
+- Related Files: cmd/logmonitor/src/static/js/websocket.js
+- Tags: websocket, graceful-degradation, error-handling
 
 ---
 
-## [LRN-20260418-005] best_practice
+## [LRN-20260420-005] best_practice
 
-**Logged**: 2026-04-18T14:00:00+08:00
-**Priority**: critical
+**Logged**: 2026-04-20T16:20:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+GitHub 推送可能因网络问题失败，多次重试通常能成功
+
+### Details
+执行 `git push origin master` 时遇到：
+- `curl 55 Send failure: Broken pipe`
+- `Empty reply from server`
+- `Failed to connect to github.com port 443`
+
+等待一段时间后重试通常能成功。
+
+### Suggested Action
+1. GitHub 推送失败后，等待 30-60 秒再重试
+2. 确保 Git remote URL 包含完整的 token
+3. 可以尝试 `git fetch` + `git pull --rebase` 解决冲突后再推送
+
+### Metadata
+- Source: conversation
+- Tags: git, github, network
+
+---
+
+## [LRN-20260420-006] best_practice
+
+**Logged**: 2026-04-20T16:25:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+JavaScript 文件加载顺序很重要，被依赖的模块必须先加载
+
+### Details
+`main.js` 中调用 `initStatsPanel()` 函数，但该函数定义在 `stats.js` 中。如果 `stats.js` 没有正确加载，会报 `ReferenceError: initStatsPanel is not defined`。
+
+### Suggested Action
+1. 在 HTML 中确保被依赖的 JS 文件在调用者之前加载
+2. 使用浏览器的 Console 和 Network 标签排查加载问题
+3. 清除浏览器缓存后再测试
+
+### Metadata
+- Source: conversation
+- Related Files: cmd/logmonitor/src/templates/index.html
+- Tags: javascript, module-loading, dependency
+
+---
+
+## [LRN-20260420-007] best_practice
+
+**Logged**: 2026-04-20T16:30:00+08:00
+**Priority**: medium
 **Status**: resolved
 **Area**: backend
 
 ### Summary
-API 状态码可能是字符串类型，需要显式转换为整数比较
+后端 API 应统一返回相同的数据结构，便于前端处理
 
 ### Details
-在修复 MeoW 推送问题时发现，API 返回的状态码可能是字符串类型（如 `"200"`），而 Python 中 `"200" == 200` 返回 `False`，导致状态码判断逻辑失败。
+项目中不同 API 返回的数据结构不一致：
+- 有的返回 `{"success": true, ...}`
+- 有的返回 `{"status": "success", ...}`
 
-**问题代码：**
-```python
-status_code = result.get('code') or result.get('status')
-if status_code == 200:  # "200" != 200，始终为 False！
-    is_success = True
-```
-
-**后果：**
-- 系统误判推送失败
-- DND 免打扰缓存不被清空
-- 消息被重复推送
+这导致前端需要针对不同 API 写不同的判断逻辑。
 
 ### Suggested Action
-1. 从 API 获取状态码后，强制转换为整数：
-```python
-raw_status = result.get('code') or result.get('status')
-try:
-    status_code = int(raw_status) if raw_status is not None else None
-except (ValueError, TypeError):
-    status_code = raw_status
-```
-
-2. 记录原始值用于调试：
-```python
-logger.error(f"未知状态码: {status_code}，原始值: {raw_status}")
-```
-
-3. 通用原则：任何从外部来源（JSON、配置文件、环境变量）获取的数值，都应显式类型转换
+1. 制定统一的 API 响应格式规范
+2. 创建统一的响应辅助函数
+3. 前端添加兼容处理：`if (result.success || result.status === "success")`
 
 ### Metadata
-- Source: error
-- Related Files: push_service.py (MeoWPushChannel)
-- Tags: python, api, type-conversion, bug
-- Pattern-Key: api.status_code_string_type
-- Recurrence-Count: 1
-- First-Seen: 2026-04-18
-- Last-Seen: 2026-04-18
+- Source: conversation
+- Related Files: cmd/logmonitor/src/routes/api_routes.py
+- Tags: api, backend, consistency
+
+---
+
+## [LRN-20260420-008] best_practice
+
+**Logged**: 2026-04-20T16:35:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+图表组件需要响应式设计，适配不同屏幕尺寸
+
+### Details
+ECharts 图表需要考虑桌面端、平板端、移动端的显示效果：
+- 图表高度自适应
+- 图例位置调整（桌面端右侧，移动端底部）
+- 字体大小调整
+- 触摸交互优化
+
+### Suggested Action
+```javascript
+// 检测屏幕宽度
+var isMobile = window.innerWidth < 768;
+
+// 根据屏幕调整配置
+var gridLeft = isMobile ? '2%' : '3%';
+var axisLabelFontSize = isMobile ? 9 : 11;
+```
+
+### Metadata
+- Source: conversation
+- Related Files: cmd/logmonitor/src/static/js/stats.js
+- Tags: responsive, echarts, mobile
+
+---
