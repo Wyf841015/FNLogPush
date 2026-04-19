@@ -526,6 +526,35 @@ function loadStatus() {
             document.getElementById('history-count').textContent = data.history_count + ' 条';
             document.getElementById('check-interval').textContent = data.config.check_interval + ' 秒';
 
+            // 更新 KPI 卡片
+            const kpiMonitorStatus = document.getElementById('kpi-monitor-status');
+            if (kpiMonitorStatus) {
+                kpiMonitorStatus.textContent = data.running ? '运行中' : '已停止';
+                kpiMonitorStatus.className = 'kpi-value ' + (data.running ? 'text-success' : 'text-danger');
+            }
+            const kpiMonitorSub = document.getElementById('kpi-monitor-sub');
+            if (kpiMonitorSub) {
+                kpiMonitorSub.textContent = '检查间隔 ' + data.config.check_interval + ' 秒';
+            }
+            const kpiPushCount = document.getElementById('kpi-push-count');
+            if (kpiPushCount) {
+                kpiPushCount.textContent = data.history_count || '0';
+            }
+            const kpiSuppressCount = document.getElementById('kpi-suppress-count');
+            if (kpiSuppressCount) {
+                kpiSuppressCount.textContent = data.alert_aggregation?.total_suppressed || '0';
+            }
+            const kpiSuppressSub = document.getElementById('kpi-suppress-sub');
+            if (kpiSuppressSub) {
+                const received = data.alert_aggregation?.total_received || 0;
+                const pushed = data.alert_aggregation?.total_pushed || 0;
+                kpiSuppressSub.textContent = '接收 ' + received + ' / 推送 ' + pushed;
+            }
+            const kpiTime = document.getElementById('kpi-time');
+            if (kpiTime) {
+                kpiTime.textContent = data.last_history_timestamp ? formatRelativeTime(data.last_history_timestamp) : '--';
+            }
+
             // 更新最后日志ID的相对时间
             const lastIdRelativeEl = document.getElementById('last-id-relative');
             if (lastIdRelativeEl) {
