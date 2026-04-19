@@ -1118,16 +1118,33 @@
                         <div class="card-body">
                             <!-- 搜索和筛选 -->
                             <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
-                                <div class="input-group" style="max-width: 250px;">
+                                <div class="input-group" style="max-width: 280px;">
                                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                                     <input type="text" id="event-search" class="form-control" placeholder="搜索事件ID或名称…" oninput="filterEvents()">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="clearEventSearch()" title="清空搜索" style="display:none;" id="clear-search-btn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
-                                <select id="event-category-filter" class="form-select" style="max-width: 150px;" onchange="filterEvents()">
+                                <select id="event-category-filter" class="form-select" style="max-width: 160px;" onchange="filterEvents()">
                                     <option value="">全部分类</option>
                                 </select>
-                                <button class="btn btn-outline-secondary btn-sm" onclick="refreshEventsList()" title="刷新">
-                                    <i class="fas fa-sync"></i>
-                                </button>
+                                <div class="ms-auto d-flex gap-1">
+                                    <button class="btn btn-outline-success btn-sm" onclick="selectAllVisibleEvents()" title="全选可见事件">
+                                        <i class="fas fa-check-square me-1"></i>全选
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="deselectAllVisibleEvents()" title="取消全部选择">
+                                        <i class="fas fa-square me-1"></i>取消
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="refreshEventsList()" title="刷新">
+                                        <i class="fas fa-sync"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 搜索结果统计 -->
+                            <div class="mb-2 d-flex justify-content-between align-items-center text-muted small" id="events-stats">
+                                <span>共 <strong id="events-total-count">0</strong> 个事件</span>
+                                <span id="events-filter-info" style="display:none;"></span>
                             </div>
                             
                             <!-- 事件列表 -->

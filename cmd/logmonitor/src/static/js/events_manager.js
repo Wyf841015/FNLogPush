@@ -1,22 +1,330 @@
 // 事件管理
 var FONT_AWESOME_ICONS = ["fa-bell","fa-exclamation-circle","fa-exclamation-triangle","fa-info-circle","fa-check-circle","fa-times-circle","fa-question-circle","fa-cog","fa-cogs","fa-wrench","fa-tools","fa-server","fa-desktop","fa-microchip","fa-hdd","fa-database","fa-cpu","fa-fan","fa-bolt","fa-plug","fa-power-off","fa-sync","fa-refresh","fa-wifi","fa-ethernet","fa-globe","fa-cloud","fa-upload","fa-download","fa-share","fa-folder","fa-file","fa-save","fa-trash","fa-edit","fa-user","fa-users","fa-key","fa-lock","fa-lock-open","fa-shield","fa-eye","fa-search","fa-filter","fa-chart-bar","fa-clock","fa-calendar","fa-alarm","fa-bug","fa-code","fa-terminal","fa-rocket","fa-signal","fa-envelope","fa-paper-plane","fa-comment","fa-phone","fa-camera","fa-video","fa-music","fa-gamepad","fa-print","fa-home","fa-hospital","fa-bank","fa-store","fa-tag","fa-money-bill","fa-heart","fa-medkit","fa-car","fa-bus","fa-train","fa-plane","fa-sun","fa-moon","fa-star","fa-fire","fa-leaf","fa-coffee","fa-book","fa-graduation-cap"];
 var eventsData = [];
-function esc(s){if(s==null||s==undefined)return"";if(typeof s!=="string")s=String(s);return s.replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
-async function refreshEventsList(){var c=document.getElementById("events-list-container");if(!c)return;c.innerHTML='<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i></div>';try{var r=await fetch("/api/events/list");var rs=await r.json();if(rs.status==="success"){eventsData=rs.events||[];renderEventsList(eventsData);updateCategoryFilter(eventsData);}else{c.innerHTML='<div class="alert alert-danger">'+rs.error+'</div>';}}catch(e){c.innerHTML='<div class="alert alert-danger">'+e.message+'</div>';}}
-function renderEventsList(evts){var c=document.getElementById("events-list-container");if(!c)return;if(evts.length===0){c.innerHTML='<div class="text-center text-muted py-4"><i class="fas fa-inbox"></i><p>暂无事件</p></div>';return;}var h='<div class="table-responsive"><table class="table table-hover table-sm table-borderless"><thead><tr><th style="width:40px;"></th><th>事件ID</th><th>名称</th><th class="d-none d-md-table-cell">分类</th><th class="d-none d-lg-table-cell" style="width:80px;">颜色</th><th style="width:80px;">操作</th></tr></thead><tbody>';evts.forEach(function(e){var s=e.color?"color:"+e.color:"";h+='<tr><td><i class="fas '+(e.icon||"fa-bell")+'" style="'+s+'"></i></td><td><code class="small">'+esc(e.id)+'</code></td><td class="small">'+esc(e.name)+'</td><td class="d-none d-md-table-cell"><span class="badge bg-secondary small">'+esc(e.category||"默认")+'</span></td><td class="d-none d-lg-table-cell"><span class="badge" style="background:'+(e.color||"#007bff")+';color:#fff;padding:2px 6px;font-size:10px;">'+esc(e.color||"#007bff")+'</span></td><td><button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="editEvent(\''+esc(e.id)+'\')"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="confirmDeleteEvent(\''+esc(e.id)+'\')"><i class="fas fa-trash"></i></button></td></tr>';});c.innerHTML=h+'</tbody></table></div>';}
-function updateCategoryFilter(evts){var sel=document.getElementById("event-category-filter");if(!sel)return;var cats={};evts.forEach(function(e){cats[e.category||"默认"]=1;});var cur=sel.value;sel.innerHTML='<option value="">全部分类</option>';Object.keys(cats).sort().forEach(function(c){sel.innerHTML+='<option value="'+c+'">'+c+'</option>';});sel.value=cur;}
-function filterEvents(){var txt=(document.getElementById("event-search")||{}).value||"";var cat=(document.getElementById("event-category-filter")||{}).value||"";txt=txt.toLowerCase();var f=eventsData.filter(function(e){return(!txt||(e.id&&e.id.toLowerCase().indexOf(txt)!==-1)||(e.name&&e.name.toLowerCase().indexOf(txt)!==-1))&&(!cat||(e.category||"默认")===cat);});renderEventsList(f);}
-function showAddEventModal(){var m=new bootstrap.Modal(document.getElementById("eventModal"));document.getElementById("eventModalLabel").innerHTML='<i class="fas fa-plus me-2"></i>添加事件';document.getElementById("event-id-original").value="";document.getElementById("event-id").value="";document.getElementById("event-id").disabled=false;document.getElementById("event-name").value="";document.getElementById("event-color").value="#007bff";document.querySelectorAll(".color-preset").forEach(function(btn){btn.style.border="2px solid transparent";});var firstPreset=document.querySelector(".color-preset");if(firstPreset)firstPreset.style.border="2px solid #000";document.getElementById("event-icon").value="fa-bell";var icon=document.getElementById("event-icon-preview");if(icon){icon.innerHTML='<i class="fas fa-bell"></i>';icon.style.color="#007bff";}document.getElementById("event-query-result").style.display="none";loadEventCategories();m.show();}
-function editEvent(id){var e=eventsData.find(function(x){return x.id===id;});if(!e)return;var m=new bootstrap.Modal(document.getElementById("eventModal"));document.getElementById("eventModalLabel").innerHTML='<i class="fas fa-edit me-2"></i>编辑事件';document.getElementById("event-id-original").value=e.id;document.getElementById("event-id").value=e.id;document.getElementById("event-id").disabled=true;document.getElementById("event-name").value=e.name||"";document.getElementById("event-color").value=e.color||"#007bff";document.querySelectorAll(".color-preset").forEach(function(btn){var c=btn.getAttribute("onclick").match(/'(#[^']+)'/);btn.style.border=(c&&c[1]===e.color)?"2px solid #000":"2px solid transparent";});var icon=document.getElementById("event-icon-preview");if(icon){icon.style.color=e.color||"#007bff";}document.getElementById("event-icon").value=e.icon||"fa-bell";document.getElementById("event-icon-preview").innerHTML='<i class="fas '+(e.icon||"fa-bell")+'"></i>';loadEventCategories();document.getElementById("event-category").value=e.category||"custom";m.show();}
-function loadEventCategories(){var sel=document.getElementById("event-category");if(!sel)return;var cats={};eventsData.forEach(function(e){cats[e.category||"默认"]=1;});sel.innerHTML='<option value="custom">自定义事件</option>';Object.keys(cats).sort().forEach(function(c){if(c!=="默认")sel.innerHTML+='<option value="'+c+'">'+c+'</option>';});}
-async function queryEventLog(){var eventId=document.getElementById("event-id").value.trim();var resultDiv=document.getElementById("event-query-result");var contentDiv=document.getElementById("event-query-content");if(!eventId){contentDiv.innerHTML='<div class="text-warning"><i class="fas fa-exclamation-triangle"></i> 请输入事件ID</div>';resultDiv.style.display="block";resultDiv.querySelector(".alert").className="alert alert-warning";return;}contentDiv.innerHTML='<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 查询中...</div>';resultDiv.style.display="block";resultDiv.querySelector(".alert").className="alert alert-info";try{var r=await fetch("/api/events/query-latest?event_id="+encodeURIComponent(eventId));var rs=await r.json();if(rs.status==="success"){if(rs.found){displayLogDetail(rs.log,resultDiv);}else{contentDiv.innerHTML='<div class="text-muted"><i class="fas fa-info-circle"></i> '+esc(rs.message||"数据库中未找到该事件的记录")+'</div>';resultDiv.querySelector(".alert").className="alert alert-secondary";}}else{contentDiv.innerHTML='<div class="text-danger"><i class="fas fa-times-circle"></i> '+esc(rs.error||"查询失败")+'</div>';resultDiv.querySelector(".alert").className="alert alert-danger";}}catch(e){contentDiv.innerHTML='<div class="text-danger"><i class="fas fa-times-circle"></i> 网络错误: '+esc(e.message)+'</div>';resultDiv.querySelector(".alert").className="alert alert-danger";}}
-function displayLogDetail(log,resultDiv){var contentDiv=document.getElementById("event-query-content");var ts=log.logtime_str||"";var levelColor={"调试":"#6c757d","普通":"#4facfe","警告":"#fa709a","错误":"#ff6b6b","严重错误":"#dc3545"}[log.loglevel]||"#667eea";var h='<div class="log-detail-row"><span class="log-detail-label">记录ID:</span><span class="log-detail-value"><code>'+log.id+'</code></span></div>';h+='<div class="log-detail-row"><span class="log-detail-label">事件ID:</span><span class="log-detail-value"><code>'+esc(log.eventId)+'</code></span></div>';h+='<div class="log-detail-row"><span class="log-detail-label">日志级别:</span><span class="log-detail-value"><span class="badge" style="background:'+levelColor+';color:#fff">'+esc(log.loglevel||"未知")+'</span></span></div>';h+='<div class="log-detail-row"><span class="log-detail-label">分类:</span><span class="log-detail-value">'+esc(log.category||"")+'</span></div>';h+='<div class="log-detail-row"><span class="log-detail-label">时间:</span><span class="log-detail-value">'+esc(ts)+'</span></div>';if(log.serviceId){h+='<div class="log-detail-row"><span class="log-detail-label">服务ID:</span><span class="log-detail-value">'+esc(log.serviceId)+'</span></div>';}if(log.uname){h+='<div class="log-detail-row"><span class="log-detail-label">用户名:</span><span class="log-detail-value">'+esc(log.uname)+'</span></div>';}h+='<div class="mt-2"><strong>参数:</strong></div>';h+='<div class="log-message">'+esc(log.parameter||"")+'</div>';contentDiv.innerHTML=h;resultDiv.querySelector(".alert").className="alert alert-success";}
-async function saveEvent(){var id=document.getElementById("event-id").value.trim();var name=document.getElementById("event-name").value.trim();var color=document.getElementById("event-color").value;var icon=document.getElementById("event-icon").value;var cat=document.getElementById("event-category").value;var orig=document.getElementById("event-id-original").value;if(!id||!name){alert("请填写事件ID和名称");return;}var data={id:id,name:name,color:color,icon:icon,category_id:cat,category_name:cat==="custom"?"自定义事件":cat};try{var url=orig?"/api/events/update":"/api/events/add";var r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});var rs=await r.json();if(rs.status==="success"){bootstrap.Modal.getInstance(document.getElementById("eventModal")).hide();showNotification(rs.message||"保存成功","success");refreshEventsList();if(typeof eventCategoriesCache!=='undefined'){eventCategoriesCache=null;}if(typeof loadConfig==='function'){loadConfig();}else if(typeof loadEventCategoriesFromAPI==='function'){loadEventCategoriesFromAPI();}}else{alert("保存失败: "+(rs.error||""));}}catch(e){alert("保存失败: "+e.message);}}
-function confirmDeleteEvent(id){if(confirm('确定要删除事件 "'+id+'" 吗？'))deleteEvent(id);}
-async function deleteEvent(id){try{var r=await fetch("/api/events/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:id})});var rs=await r.json();if(rs.status==="success"){showNotification(rs.message||"删除成功","success");refreshEventsList();}else{alert("删除失败: "+(rs.error||""));}}catch(e){alert("删除失败: "+e.message);}}
-function showIconPicker(){var m=new bootstrap.Modal(document.getElementById("iconPickerModal"));renderIconGrid("");m.show();}
-function renderIconGrid(f){var g=document.getElementById("icon-picker-grid");if(!g)return;f=(f||"").toLowerCase();var h="";var cnt=0;FONT_AWESOME_ICONS.forEach(function(ic){var n=ic.replace("fa-","");if(f&&n.indexOf(f)===-1)return;if(cnt>=80)return;cnt++;var sel=document.getElementById("event-icon").value===ic?"border-primary bg-light":"";h+='<div class="col-2 mb-2"><button type="button" class="btn btn-light w-100 py-2 '+sel+'" onclick="selectIcon(\''+ic+'\')" title="'+n+'"><i class="fas '+ic+'"></i></button></div>';});g.innerHTML=h||'<div class="col-12 text-muted">未找到</div>';}
-function filterIcons(v){renderIconGrid(v);}
-function selectIcon(cls){document.getElementById("event-icon").value=cls;document.getElementById("event-icon-preview").innerHTML='<i class="fas '+cls+'"></i>';bootstrap.Modal.getInstance(document.getElementById("iconPickerModal")).hide();}
-function selectEventColor(color){document.getElementById("event-color").value=color;document.querySelectorAll(".color-preset").forEach(function(btn){btn.style.border="2px solid transparent";});var btn=event.target;btn.style.border="2px solid #000";var icon=document.getElementById("event-icon-preview");if(icon)icon.style.color=color;}
-;window.refreshEventsList=refreshEventsList;window.renderEventsList=renderEventsList;window.filterEvents=filterEvents;window.updateCategoryFilter=updateCategoryFilter;window.showAddEventModal=showAddEventModal;window.editEvent=editEvent;window.confirmDeleteEvent=confirmDeleteEvent;window.deleteEvent=deleteEvent;window.saveEvent=saveEvent;window.selectIcon=selectIcon;window.selectEventColor=selectEventColor;window.filterIcons=filterIcons;window.showIconPicker=showIconPicker;window.queryEventLog=queryEventLog;window.displayLogDetail=displayLogDetail;
+var filteredEvents = [];
+var selectedEvents = new Set();
+
+function esc(s) {
+    if (s == null || s == undefined) return "";
+    if (typeof s !== "string") s = String(s);
+    return s.replace(/[&<>"']/g, function(m) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+}
+
+// 刷新事件列表
+async function refreshEventsList() {
+    var c = document.getElementById("events-list-container");
+    if (!c) return;
+    c.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i></div>';
+    try {
+        var r = await fetch("/api/events/list");
+        var rs = await r.json();
+        if (rs.status === "success") {
+            eventsData = rs.events || [];
+            selectedEvents.clear();
+            filterEvents();
+            updateCategoryFilter(eventsData);
+            updateEventsStats(eventsData.length, 0);
+        } else {
+            c.innerHTML = '<div class="alert alert-danger">' + esc(rs.error) + '</div>';
+        }
+    } catch (e) {
+        c.innerHTML = '<div class="alert alert-danger">' + esc(e.message) + '</div>';
+    }
+}
+
+// 渲染事件列表
+function renderEventsList(evts) {
+    var c = document.getElementById("events-list-container");
+    if (!c) return;
+    filteredEvents = evts;
+    
+    if (evts.length === 0) {
+        c.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x"></i><p class="mt-2">暂无事件</p></div>';
+        return;
+    }
+    
+    var h = '<div class="table-responsive"><table class="table table-hover table-sm table-borderless">';
+    h += '<thead><tr>';
+    h += '<th style="width:30px;"><input type="checkbox" class="form-check-input" id="select-all-events" onchange="toggleSelectAllEvents(this.checked)"></th>';
+    h += '<th style="width:40px;"></th><th>事件ID</th><th>名称</th>';
+    h += '<th class="d-none d-md-table-cell">分类</th>';
+    h += '<th class="d-none d-lg-table-cell" style="width:80px;">颜色</th>';
+    h += '<th style="width:100px;">操作</th>';
+    h += '</tr></thead><tbody>';
+    
+    evts.forEach(function(e) {
+        var s = e.color ? "color:" + e.color : "";
+        var checked = selectedEvents.has(e.id) ? "checked" : "";
+        h += '<tr class="event-row" data-event-id="' + esc(e.id) + '">';
+        h += '<td><input type="checkbox" class="form-check-input event-checkbox" value="' + esc(e.id) + '" ' + checked + ' onchange="toggleEventSelection(\'' + esc(e.id) + '\')"></td>';
+        h += '<td><i class="fas ' + (e.icon || "fa-bell") + '" style="' + s + '"></i></td>';
+        h += '<td><code class="small">' + esc(e.id) + '</code></td>';
+        h += '<td class="small">' + esc(e.name) + '</td>';
+        h += '<td class="d-none d-md-table-cell"><span class="badge bg-secondary small">' + esc(e.category || "默认") + '</span></td>';
+        h += '<td class="d-none d-lg-table-cell"><span class="badge" style="background:' + (e.color || "#007bff") + ';color:#fff;padding:2px 6px;font-size:10px;">' + esc(e.color || "#007bff") + '</span></td>';
+        h += '<td>';
+        h += '<button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="editEvent(\'' + esc(e.id) + '\')" title="编辑"><i class="fas fa-edit"></i></button> ';
+        h += '<button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="confirmDeleteEvent(\'' + esc(e.id) + '\')" title="删除"><i class="fas fa-trash"></i></button>';
+        h += '</td></tr>';
+    });
+    
+    c.innerHTML = h + '</tbody></table></div>';
+    updateSelectAllState();
+}
+
+// 更新分类筛选器
+function updateCategoryFilter(evts) {
+    var sel = document.getElementById("event-category-filter");
+    if (!sel) return;
+    
+    var cats = {};
+    evts.forEach(function(e) {
+        cats[e.category || "默认"] = 1;
+    });
+    
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">全部分类</option>';
+    Object.keys(cats).sort().forEach(function(c) {
+        sel.innerHTML += '<option value="' + c + '">' + c + '</option>';
+    });
+    sel.value = cur;
+}
+
+// 过滤事件
+function filterEvents() {
+    var txt = (document.getElementById("event-search") || {}).value || "";
+    var cat = (document.getElementById("event-category-filter") || {}).value || "";
+    txt = txt.toLowerCase();
+    
+    var f = eventsData.filter(function(e) {
+        return (!txt || (e.id && e.id.toLowerCase().indexOf(txt) !== -1) || (e.name && e.name.toLowerCase().indexOf(txt) !== -1)) 
+               && (!cat || (e.category || "默认") === cat);
+    });
+    
+    renderEventsList(f);
+    
+    var clearBtn = document.getElementById("clear-search-btn");
+    if (clearBtn) {
+        clearBtn.style.display = txt ? "block" : "none";
+    }
+    
+    var isFiltered = txt || cat;
+    updateEventsStats(eventsData.length, f.length, isFiltered, txt, cat);
+}
+
+// 更新事件统计
+function updateEventsStats(total, filtered, isFiltered, searchText, category) {
+    var totalEl = document.getElementById("events-total-count");
+    var filterInfo = document.getElementById("events-filter-info");
+    
+    if (totalEl) totalEl.textContent = total;
+    
+    if (filterInfo) {
+        if (isFiltered && filtered !== total) {
+            filterInfo.style.display = "inline";
+            filterInfo.innerHTML = '<span class="text-primary">筛选: <strong>' + filtered + '</strong> 条</span> ' +
+                '<button class="btn btn-sm btn-link p-0 ms-1" onclick="clearEventSearch()">清除筛选</button>';
+        } else {
+            filterInfo.style.display = "none";
+        }
+    }
+}
+
+// 清空搜索
+function clearEventSearch() {
+    var searchInput = document.getElementById("event-search");
+    var categorySelect = document.getElementById("event-category-filter");
+    
+    if (searchInput) searchInput.value = "";
+    if (categorySelect) categorySelect.value = "";
+    
+    filterEvents();
+}
+
+// ============ 批量选择功能 ============
+
+// 切换单个事件选择状态
+function toggleEventSelection(eventId) {
+    if (selectedEvents.has(eventId)) {
+        selectedEvents.delete(eventId);
+    } else {
+        selectedEvents.add(eventId);
+    }
+    updateSelectAllState();
+}
+
+// 全选/取消所有可见事件
+function toggleSelectAllEvents(checked) {
+    var checkboxes = document.querySelectorAll(".event-checkbox");
+    checkboxes.forEach(function(cb) {
+        cb.checked = checked;
+        var id = cb.value;
+        if (checked) {
+            selectedEvents.add(id);
+        } else {
+            selectedEvents.delete(id);
+        }
+    });
+    updateSelectAllState();
+}
+
+// 选中所有可见事件
+function selectAllVisibleEvents() {
+    filteredEvents.forEach(function(e) {
+        selectedEvents.add(e.id);
+    });
+    var checkboxes = document.querySelectorAll(".event-checkbox");
+    checkboxes.forEach(function(cb) {
+        cb.checked = true;
+    });
+    updateSelectAllState();
+    showNotification("已选中 " + selectedEvents.size + " 个事件", "info");
+}
+
+// 取消所有选中
+function deselectAllVisibleEvents() {
+    selectedEvents.clear();
+    var checkboxes = document.querySelectorAll(".event-checkbox");
+    checkboxes.forEach(function(cb) {
+        cb.checked = false;
+    });
+    updateSelectAllState();
+    showNotification("已取消所有选择", "info");
+}
+
+// 更新全选框状态
+function updateSelectAllState() {
+    var selectAll = document.getElementById("select-all-events");
+    var checkboxes = document.querySelectorAll(".event-checkbox");
+    
+    if (!selectAll || checkboxes.length === 0) return;
+    
+    var checkedCount = 0;
+    checkboxes.forEach(function(cb) {
+        if (cb.checked) checkedCount++;
+    });
+    
+    if (checkedCount === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    } else if (checkedCount === checkboxes.length) {
+        selectAll.checked = true;
+        selectAll.indeterminate = false;
+    } else {
+        selectAll.checked = false;
+        selectAll.indeterminate = true;
+    }
+}
+
+// 确认删除事件
+function confirmDeleteEvent(eventId) {
+    if (confirm("确定要删除事件 '" + eventId + "' 吗？")) {
+        deleteEvent(eventId);
+    }
+}
+
+// 删除事件
+async function deleteEvent(eventId) {
+    try {
+        var resp = await fetch("/api/events/delete", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id: eventId})
+        });
+        var result = await resp.json();
+        
+        if (result.success) {
+            showNotification("事件已删除", "success");
+            refreshEventsList();
+        } else {
+            showNotification(result.error || "删除失败", "danger");
+        }
+    } catch (e) {
+        showNotification("删除失败: " + e.message, "danger");
+    }
+}
+
+// 编辑事件
+function editEvent(eventId) {
+    // 查找事件数据
+    var event = eventsData.find(function(e) { return e.id === eventId; });
+    if (!event) {
+        showNotification("未找到事件: " + eventId, "danger");
+        return;
+    }
+    
+    // 填充编辑表单
+    var modal = new bootstrap.Modal(document.getElementById("addEventModal"));
+    document.getElementById("event-id").value = event.id;
+    document.getElementById("event-id").readOnly = true;
+    document.getElementById("event-name").value = event.name || "";
+    document.getElementById("event-icon").value = event.icon || "fa-bell";
+    document.getElementById("event-color").value = event.color || "#007bff";
+    
+    // 显示模态框
+    modal.show();
+}
+
+// 显示添加事件模态框
+function showAddEventModal() {
+    document.getElementById("event-id").value = "";
+    document.getElementById("event-id").readOnly = false;
+    document.getElementById("event-name").value = "";
+    document.getElementById("event-icon").value = "fa-bell";
+    document.getElementById("event-color").value = "#007bff";
+    
+    var modal = new bootstrap.Modal(document.getElementById("addEventModal"));
+    modal.show();
+}
+
+// 保存事件
+async function saveEvent() {
+    var id = document.getElementById("event-id").value.trim();
+    var name = document.getElementById("event-name").value.trim();
+    var icon = document.getElementById("event-icon").value;
+    var color = document.getElementById("event-color").value;
+    
+    if (!id || !name) {
+        showNotification("事件ID和名称不能为空", "warning");
+        return;
+    }
+    
+    var isEdit = document.getElementById("event-id").readOnly;
+    var url = isEdit ? "/api/events/update" : "/api/events/add";
+    
+    try {
+        var resp = await fetch(url, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id: id, name: name, icon: icon, color: color})
+        });
+        var result = await resp.json();
+        
+        if (result.success) {
+            showNotification(isEdit ? "事件已更新" : "事件已添加", "success");
+            bootstrap.Modal.getInstance(document.getElementById("addEventModal")).hide();
+            refreshEventsList();
+        } else {
+            showNotification(result.error || "保存失败", "danger");
+        }
+    } catch (e) {
+        showNotification("保存失败: " + e.message, "danger");
+    }
+}
+
+// 键盘快捷键支持
+document.addEventListener("DOMContentLoaded", function() {
+    var searchInput = document.getElementById("event-search");
+    if (searchInput) {
+        searchInput.addEventListener("keydown", function(e) {
+            // Escape 清空搜索
+            if (e.key === "Escape") {
+                clearEventSearch();
+                this.blur();
+            }
+        });
+    }
+});
+
