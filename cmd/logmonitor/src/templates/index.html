@@ -1503,6 +1503,65 @@
         </div>
     </div>
 
+    <!-- 添加/编辑事件模态框 -->
+    <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addEventModalLabel">
+                        <i class="fas fa-bolt me-2"></i>添加/编辑事件
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="event-form" onsubmit="saveEvent(); return false;">
+                        <input type="hidden" id="event-id">
+                        <div class="mb-3">
+                            <label class="form-label">事件ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="event-id-input" placeholder="如: error_log" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">事件名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="event-name-input" placeholder="如: 错误日志" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">图标</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="event-icon-input" value="fa-bell">
+                                <span class="input-group-text" id="event-icon-preview"><i class="fas fa-bell"></i></span>
+                                <button type="button" class="btn btn-outline-secondary" onclick="showIconPicker()">
+                                    <i class="fas fa-icons"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">颜色</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="color" class="form-control form-control-color" id="event-color-input" value="#007bff" style="width:60px;">
+                                <div class="color-presets d-flex gap-1 flex-wrap">
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#dc3545;" onclick="selectEventColor('#dc3545');" title="红色"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#fd7e14;" onclick="selectEventColor('#fd7e14');" title="橙色"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#ffc107;" onclick="selectEventColor('#ffc107');" title="黄色"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#198754;" onclick="selectEventColor('#198754');" title="绿色"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#0dcaf0;" onclick="selectEventColor('#0dcaf0');" title="青色"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#007bff;" onclick="selectEventColor('#007bff');" title="蓝色"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#6f42c1;" onclick="selectEventColor('#6f42c1');" title="紫色"></button>
+                                    <button type="button" class="btn btn-sm color-preset" style="background:#e83e8c;" onclick="selectEventColor('#e83e8c');" title="粉色"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary" form="event-form">
+                        <i class="fas fa-save me-1"></i>保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 图标选择器模态框 -->
     <div class="modal fade" id="iconPickerModal" tabindex="-1" aria-labelledby="iconPickerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">

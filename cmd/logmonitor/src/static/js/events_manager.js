@@ -257,11 +257,11 @@ function editEvent(eventId) {
     
     // 填充编辑表单
     var modal = new bootstrap.Modal(document.getElementById("addEventModal"));
-    document.getElementById("event-id").value = event.id;
-    document.getElementById("event-id").readOnly = true;
-    document.getElementById("event-name").value = event.name || "";
-    document.getElementById("event-icon").value = event.icon || "fa-bell";
-    document.getElementById("event-color").value = event.color || "#007bff";
+    document.getElementById("event-id-input").value = event.id;
+    document.getElementById("event-id-input").readOnly = true;
+    document.getElementById("event-name-input").value = event.name || "";
+    document.getElementById("event-icon-input").value = event.icon || "fa-bell";
+    document.getElementById("event-color-input").value = event.color || "#007bff";
     
     // 显示模态框
     modal.show();
@@ -269,11 +269,11 @@ function editEvent(eventId) {
 
 // 显示添加事件模态框
 function showAddEventModal() {
-    document.getElementById("event-id").value = "";
-    document.getElementById("event-id").readOnly = false;
-    document.getElementById("event-name").value = "";
-    document.getElementById("event-icon").value = "fa-bell";
-    document.getElementById("event-color").value = "#007bff";
+    document.getElementById("event-id-input").value = "";
+    document.getElementById("event-id-input").readOnly = false;
+    document.getElementById("event-name-input").value = "";
+    document.getElementById("event-icon-input").value = "fa-bell";
+    document.getElementById("event-color-input").value = "#007bff";
     
     var modal = new bootstrap.Modal(document.getElementById("addEventModal"));
     modal.show();
@@ -281,17 +281,17 @@ function showAddEventModal() {
 
 // 保存事件
 async function saveEvent() {
-    var id = document.getElementById("event-id").value.trim();
-    var name = document.getElementById("event-name").value.trim();
-    var icon = document.getElementById("event-icon").value;
-    var color = document.getElementById("event-color").value;
+    var id = document.getElementById("event-id-input").value.trim();
+    var name = document.getElementById("event-name-input").value.trim();
+    var icon = document.getElementById("event-icon-input").value;
+    var color = document.getElementById("event-color-input").value;
     
     if (!id || !name) {
         showNotification("事件ID和名称不能为空", "warning");
         return;
     }
     
-    var isEdit = document.getElementById("event-id").readOnly;
+    var isEdit = document.getElementById("event-id-input").readOnly;
     var url = isEdit ? "/api/events/update" : "/api/events/add";
     
     try {
@@ -366,7 +366,7 @@ function renderIconPickerGrid(onSelect) {
     FONT_AWESOME_ICONS.forEach(function(icon) {
         var sel = icon === currentIcon ? 'selected border-primary' : '';
         html += '<div class="col-2 text-center py-2">';
-        html += '<button type="button" class="btn icon-btn ' + sel + '" data-icon="' + icon + '" onclick="pickIcon('' + icon + '')">';
+        html += '<button type="button" class="btn icon-btn ' + sel + '" data-icon="' + icon + '" onclick="pickIcon(\'' + icon + '\')">';
         html += '<i class="fas ' + icon + '"></i></button></div>';
     });
     grid.innerHTML = html;
