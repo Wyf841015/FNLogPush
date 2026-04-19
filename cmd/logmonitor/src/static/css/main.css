@@ -4847,3 +4847,80 @@ a:focus-visible {
     color: rgba(255, 255, 255, 0.5);
 }
 
+
+
+/* ========== 统计图表面板样式 ========== */
+.stats-chart-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.stats-chart-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.theme-light .stats-chart-card {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.theme-light .stats-chart-card:hover {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.stats-chart-title {
+    margin: 0 0 12px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+
+.stats-overview {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+
+.theme-light .stats-overview {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.stats-overview-item {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    transition: transform 0.2s;
+}
+
+.stats-overview-item:hover {
+    transform: translateY(-2px);
+}
+
+.theme-light .stats-overview-item {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.stats-overview-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stats-overview-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary, rgba(255,255,255,0.6));
+    margin-top: 4px;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#panel-stats.active {
+    animation: fadeIn 0.3s ease;
+}

@@ -296,3 +296,98 @@ function setPushTrendRange(range) {
 window.initCharts = initCharts;
 window.loadChartData = loadChartData;
 window.setPushTrendRange = setPushTrendRange;
+
+
+// ========== 统计面板功能 ==========
+function updateStatsTabBtn(btn) {
+    document.querySelectorAll("#panel-stats .btn-group .btn").forEach(function(b) {
+        b.classList.remove("active");
+    });
+    if (btn) btn.classList.add("active");
+}
+
+async function refreshStatsCharts() {
+    loadPushTrendChart(currentPushRange || "24h");
+    loadChannelPieChart();
+    loadEventTypeChart();
+    loadStatsOverview();
+}
+
+async function loadStatsOverview() {
+    var el = document.getElementById("stats-total-push");
+    if (!el) return;
+    try {
+        var r = await fetch("/api/push/history?limit=1000");
+        var data = await r.json();
+        if (data.status !== "success") return;
+        var records = data.records || [];
+        var total = records.length;
+        var today = new Date().toDateString();
+        var todayCount = records.filter(function(rec) {
+            return new Date(rec.timestamp).toDateString() === today;
+        }).length;
+        var hourCounts = {};
+        records.forEach(function(rec) {
+            var h = new Date(rec.timestamp).getHours();
+            hourCounts[h] = (hourCounts[h] || 0) + 1;
+        });
+        var peakHour = 0, peakCount = 0;
+        Object.keys(hourCounts).forEach(function(h) {
+            if (hourCounts[h] > peakCount) {
+                peakCount = hourCounts[h];
+                peakHour = parseInt(h);
+            }
+        });
+        var days = new Set();
+        records.forEach(function(rec) {
+            days.add(new Date(rec.timestamp).toDateString());
+        });
+        var avgDaily = days.size > 0 ? Math.round(total / days.size) : 0;
+        document.getElementById("stats-total-push").textContent = total;
+        document.getElementById("stats-today-push").textContent = todayCount;
+        document.getElementById("stats-peak-hour").textContent = peakHour + ":00";
+        document.getElementById("stats-avg-daily").textContent = avgDaily;
+    } catch (e) {
+        console.error("loadStatsOverview error", e);
+    }
+}
+
+async function loadEventTypeChart() {
+    var el = document.getElementById("event-type-chart");
+    if (!el) return;
+    try {
+        var r = await fetch("/api/events/list");
+        var data = await r.json();
+        if (data.status !== "success") {
+            el.innerHTML = "<div class=\"text-center text-muted py-5\">加载失败</div>";
+            return;
+        }
+        var events = data.events || [];
+        if (events.length === 0) {
+            el.innerHTML = "<div class=\"text-center text-muted py-5\">暂无数据</div>";
+            return;
+        }
+        var chartData = events.slice(0, 10).map(function(e) {
+            return { value: 1, name: e.name || e.id, itemStyle: { color: e.color || "#007bff" } };
+        });
+        var chart = echarts.init(el);
+        chart.setOption({
+            tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
+            series: [{
+                type: "pie",
+                radius: ["40%", "70%"],
+                avoidLabelOverlap: false,
+                itemStyle: { borderRadius: 6, borderColor: "#1a1a2e", borderWidth: 2 },
+                label: { show: true, formatter: "{b}
+{d}%", fontSize: 10 },
+                data: chartData
+            }]
+        });
+    } catch (e) {
+        el.innerHTML = "<div class=\"text-center text-muted py-5\">加载失败: " + e.message + "</div>";
+    }
+}
+
+window.refreshStatsCharts = refreshStatsCharts;
+window.loadStatsOverview = loadStatsOverview;
+window.loadEventTypeChart = loadEventTypeChart;

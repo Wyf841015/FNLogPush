@@ -224,33 +224,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 统计图表区域 -->
-                        <div class="header-divider"></div>
-                        <div class="charts-container" id="charts-container">
-                            <div class="row g-3">
-                                <div class="col-md-8">
-                                    <div class="chart-card">
-                                        <div class="chart-header">
-                                            <h6 class="chart-title"><i class="fas fa-chart-line me-2"></i>推送趋势</h6>
-                                            <div class="btn-group btn-group-sm chart-tabs" role="group">
-                                                <button type="button" class="btn btn-outline-primary active" data-range="24h" onclick="setPushTrendRange('24h')">24小时</button>
-                                                <button type="button" class="btn btn-outline-primary" data-range="7d" onclick="setPushTrendRange('7d')">7天</button>
-                                            </div>
-                                        </div>
-                                        <div id="push-trend-chart" style="height: 200px;"></div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="chart-card">
-                                        <div class="chart-header">
-                                            <h6 class="chart-title"><i class="fas fa-chart-pie me-2"></i>推送渠道</h6>
-                                        </div>
-                                        <div id="push-channel-chart" style="height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -300,6 +273,10 @@
                         <a class="nav-item" data-target="health" data-label="健康检查" onclick="switchNavPanel(this, 'health')">
                             <div class="nav-icon"><i class="fas fa-heartbeat"></i></div>
                             <span class="nav-text">健康检查</span>
+                        </a>
+                        <a class="nav-item" data-target="stats" data-label="统计图表" onclick="switchNavPanel(this, 'stats')">
+                            <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
+                            <span class="nav-text">统计图表</span>
                         </a>
                     </div>
 
@@ -1176,6 +1153,81 @@
                                 <div id="health-status-content">
                                     <div class="text-center">
                                         <p>点击上方按钮检查系统健康状态</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 统计图表面板 -->
+                <div class="config-panel" id="panel-stats">
+                    <div class="card">
+                        <div class="card-header bg-gradient-primary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 icon-text"><i class="fas fa-chart-line me-2"></i>统计图表</h5>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-light active" data-range="24h" onclick="setPushTrendRange('24h'); updateStatsTabBtn(this)">24小时</button>
+                                    <button type="button" class="btn btn-outline-light" data-range="7d" onclick="setPushTrendRange('7d'); updateStatsTabBtn(this)">7天</button>
+                                    <button type="button" class="btn btn-outline-light" onclick="refreshStatsCharts()">
+                                        <i class="fas fa-sync"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- 推送趋势图 -->
+                            <div class="stats-chart-card mb-4">
+                                <h6 class="stats-chart-title"><i class="fas fa-chart-area me-2"></i>推送趋势</h6>
+                                <div id="push-trend-chart" style="height: 280px;"></div>
+                            </div>
+                            
+                            <!-- 图表网格 -->
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="stats-chart-card">
+                                        <h6 class="stats-chart-title"><i class="fas fa-chart-pie me-2"></i>推送渠道分布</h6>
+                                        <div id="push-channel-chart" style="height: 250px;"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="stats-chart-card">
+                                        <h6 class="stats-chart-title"><i class="fas fa-bolt me-2"></i>事件类型统计</h6>
+                                        <div id="event-type-chart" style="height: 250px;">
+                                            <div class="text-center text-muted py-5">
+                                                <i class="fas fa-spinner fa-spin"></i> 加载中...
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 统计概览 -->
+                            <div class="stats-overview mt-4">
+                                <div class="row g-3 text-center">
+                                    <div class="col-6 col-md-3">
+                                        <div class="stats-overview-item">
+                                            <div class="stats-overview-value text-primary" id="stats-total-push">--</div>
+                                            <div class="stats-overview-label">总推送</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="stats-overview-item">
+                                            <div class="stats-overview-value text-success" id="stats-today-push">--</div>
+                                            <div class="stats-overview-label">今日推送</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="stats-overview-item">
+                                            <div class="stats-overview-value text-warning" id="stats-peak-hour">--</div>
+                                            <div class="stats-overview-label">高峰时段</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="stats-overview-item">
+                                            <div class="stats-overview-value text-info" id="stats-avg-daily">--</div>
+                                            <div class="stats-overview-label">日均推送</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
