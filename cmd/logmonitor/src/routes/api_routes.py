@@ -14,6 +14,7 @@ import psutil
 from flask import Flask, jsonify
 
 from utils import api_error_handler
+from utils.auth import login_required
 from utils.events_helper import get_all_configured_event_ids
 
 logger = logging.getLogger(__name__)
