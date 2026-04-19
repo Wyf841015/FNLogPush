@@ -306,6 +306,7 @@ function editEvent(eventId) {
     document.getElementById("event-id-input").value = event.id;
     document.getElementById("event-id-input").readOnly = true;
     document.getElementById("event-name-input").value = event.name || "";
+    document.getElementById("event-category-input").value = event.category || "";
     document.getElementById("event-icon-input").value = event.icon || "fa-bell";
     document.getElementById("event-color-input").value = event.color || "#007bff";
     
@@ -325,6 +326,7 @@ function showAddEventModal() {
     document.getElementById("event-id-input").value = "";
     document.getElementById("event-id-input").readOnly = false;
     document.getElementById("event-name-input").value = "";
+    document.getElementById("event-category-input").value = "";
     document.getElementById("event-icon-input").value = "fa-bell";
     document.getElementById("event-color-input").value = "#007bff";
     
@@ -342,6 +344,7 @@ function showAddEventModal() {
 async function saveEvent() {
     var id = document.getElementById("event-id-input").value.trim();
     var name = document.getElementById("event-name-input").value.trim();
+    var category = document.getElementById("event-category-input").value.trim();
     var icon = document.getElementById("event-icon-input").value;
     var color = document.getElementById("event-color-input").value;
     
@@ -357,7 +360,7 @@ async function saveEvent() {
         var resp = await fetch(url, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id: id, name: name, icon: icon, color: color})
+            body: JSON.stringify({id: id, name: name, category: category, icon: icon, color: color})
         });
         var result = await resp.json();
         
