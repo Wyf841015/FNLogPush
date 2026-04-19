@@ -328,3 +328,59 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+
+
+// ========== 事件颜色选择 ==========
+function selectEventColor(color) {
+    var colorInput = document.getElementById('event-color');
+    var colorPresets = document.querySelectorAll('.color-preset');
+    if (colorInput) { colorInput.value = color; }
+    colorPresets.forEach(function(btn) {
+        if (btn.getAttribute('style').indexOf(color) !== -1) {
+            btn.style.border = '2px solid #fff';
+            btn.style.boxShadow = '0 0 0 2px ' + color;
+        } else {
+            btn.style.border = '2px solid transparent';
+            btn.style.boxShadow = 'none';
+        }
+    });
+}
+
+function showIconPicker() {
+    var preview = document.getElementById('event-icon-preview');
+    var iconInput = document.getElementById('event-icon');
+    var modal = new bootstrap.Modal(document.getElementById('iconPickerModal'));
+    modal.show();
+    renderIconPickerGrid(function(icon) {
+        if (iconInput) iconInput.value = icon;
+        if (preview) preview.innerHTML = '<i class="fas ' + icon + '"></i>';
+        bootstrap.Modal.getInstance(document.getElementById('iconPickerModal')).hide();
+    });
+}
+
+function renderIconPickerGrid(onSelect) {
+    var grid = document.getElementById('icon-picker-grid');
+    if (!grid) return;
+    var currentIcon = (document.getElementById('event-icon') || {}).value || 'fa-bell';
+    var html = '';
+    FONT_AWESOME_ICONS.forEach(function(icon) {
+        var sel = icon === currentIcon ? 'selected border-primary' : '';
+        html += '<div class="col-2 text-center py-2">';
+        html += '<button type="button" class="btn icon-btn ' + sel + '" data-icon="' + icon + '" onclick="pickIcon('' + icon + '')">';
+        html += '<i class="fas ' + icon + '"></i></button></div>';
+    });
+    grid.innerHTML = html;
+    window._iconPickerCallback = onSelect;
+}
+
+function pickIcon(icon) {
+    document.querySelectorAll('.icon-btn').forEach(function(btn) {
+        btn.classList.remove('selected', 'border-primary');
+        if (btn.getAttribute('data-icon') === icon) btn.classList.add('selected', 'border-primary');
+    });
+    if (typeof window._iconPickerCallback === 'function') window._iconPickerCallback(icon);
+}
+
+window.selectEventColor = selectEventColor;
+window.showIconPicker = showIconPicker;
+window.pickIcon = pickIcon;
