@@ -332,7 +332,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // ========== 事件颜色选择 ==========
 function selectEventColor(color) {
-    var colorInput = document.getElementById('event-color');
+    var colorInput = document.getElementById('event-color-input');
     var colorPresets = document.querySelectorAll('.color-preset');
     if (colorInput) { colorInput.value = color; }
     colorPresets.forEach(function(btn) {
@@ -348,7 +348,7 @@ function selectEventColor(color) {
 
 function showIconPicker() {
     var preview = document.getElementById('event-icon-preview');
-    var iconInput = document.getElementById('event-icon');
+    var iconInput = document.getElementById('event-icon-input');
     var modal = new bootstrap.Modal(document.getElementById('iconPickerModal'));
     modal.show();
     renderIconPickerGrid(function(icon) {
@@ -361,7 +361,7 @@ function showIconPicker() {
 function renderIconPickerGrid(onSelect) {
     var grid = document.getElementById('icon-picker-grid');
     if (!grid) return;
-    var currentIcon = (document.getElementById('event-icon') || {}).value || 'fa-bell';
+    var currentIcon = (document.getElementById('event-icon-input') || {}).value || 'fa-bell';
     var html = '';
     FONT_AWESOME_ICONS.forEach(function(icon) {
         var sel = icon === currentIcon ? 'selected border-primary' : '';
