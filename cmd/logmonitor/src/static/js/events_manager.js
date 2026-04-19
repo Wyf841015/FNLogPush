@@ -2,7 +2,6 @@
 var FONT_AWESOME_ICONS = ["fa-bell","fa-exclamation-circle","fa-exclamation-triangle","fa-info-circle","fa-check-circle","fa-times-circle","fa-question-circle","fa-cog","fa-cogs","fa-wrench","fa-tools","fa-server","fa-desktop","fa-microchip","fa-hdd","fa-database","fa-cpu","fa-fan","fa-bolt","fa-plug","fa-power-off","fa-sync","fa-refresh","fa-wifi","fa-ethernet","fa-globe","fa-cloud","fa-upload","fa-download","fa-share","fa-folder","fa-file","fa-save","fa-trash","fa-edit","fa-user","fa-users","fa-key","fa-lock","fa-lock-open","fa-shield","fa-eye","fa-search","fa-filter","fa-chart-bar","fa-clock","fa-calendar","fa-alarm","fa-bug","fa-code","fa-terminal","fa-rocket","fa-signal","fa-envelope","fa-paper-plane","fa-comment","fa-phone","fa-camera","fa-video","fa-music","fa-gamepad","fa-print","fa-home","fa-hospital","fa-bank","fa-store","fa-tag","fa-money-bill","fa-heart","fa-medkit","fa-car","fa-bus","fa-train","fa-plane","fa-sun","fa-moon","fa-star","fa-fire","fa-leaf","fa-coffee","fa-book","fa-graduation-cap"];
 var eventsData = [];
 var filteredEvents = [];
-var selectedEvents = new Set();
 
 function esc(s) {
     if (s == null || s == undefined) return "";
@@ -22,7 +21,6 @@ async function refreshEventsList() {
         var rs = await r.json();
         if (rs.status === "success") {
             eventsData = rs.events || [];
-            selectedEvents.clear();
             filterEvents();
             updateCategoryFilter(eventsData);
             updateEventsStats(eventsData.length, 0);
@@ -47,7 +45,6 @@ function renderEventsList(evts) {
     
     var h = '<div class="table-responsive"><table class="table table-hover table-sm table-borderless">';
     h += '<thead><tr>';
-    h += '<th style="width:30px;"><input type="checkbox" class="form-check-input" id="select-all-events" onchange="toggleSelectAllEvents(this.checked)"></th>';
     h += '<th style="width:40px;"></th><th>事件ID</th><th>名称</th>';
     h += '<th class="d-none d-md-table-cell">分类</th>';
     h += '<th class="d-none d-lg-table-cell" style="width:80px;">颜色</th>';
@@ -56,9 +53,7 @@ function renderEventsList(evts) {
     
     evts.forEach(function(e) {
         var s = e.color ? "color:" + e.color : "";
-        var checked = selectedEvents.has(e.id) ? "checked" : "";
         h += '<tr class="event-row" data-event-id="' + esc(e.id) + '">';
-        h += '<td><input type="checkbox" class="form-check-input event-checkbox" value="' + esc(e.id) + '" ' + checked + ' onchange="toggleEventSelection(\'' + esc(e.id) + '\')"></td>';
         h += '<td><i class="fas ' + (e.icon || "fa-bell") + '" style="' + s + '"></i></td>';
         h += '<td><code class="small">' + esc(e.id) + '</code></td>';
         h += '<td class="small">' + esc(e.name) + '</td>';
@@ -71,7 +66,6 @@ function renderEventsList(evts) {
     });
     
     c.innerHTML = h + '</tbody></table></div>';
-    updateSelectAllState();
 }
 
 // 更新分类筛选器
@@ -91,6 +85,58 @@ function updateCategoryFilter(evts) {
     });
     sel.value = cur;
 }
+
+// 过滤事件
+function filterEvents() {
+    var txt = (document.getElementById("event-search") || {}).value || "";
+    var cat = (document.getElementById("event-category-filter") || {}).value || "";
+    txt = txt.toLowerCase();
+    
+    var f = eventsData.filter(function(e) {
+        return (!txt || (e.id && e.id.toLowerCase().indexOf(txt) !== -1) || (e.name && e.name.toLowerCase().indexOf(txt) !== -1)) 
+               && (!cat || (e.category || "默认") === cat);
+    });
+    
+    renderEventsList(f);
+    
+    var clearBtn = document.getElementById("clear-search-btn");
+    if (clearBtn) {
+        clearBtn.style.display = txt ? "block" : "none";
+    }
+    
+    var isFiltered = txt || cat;
+    updateEventsStats(eventsData.length, f.length, isFiltered, txt, cat);
+}
+
+// 更新事件统计
+function updateEventsStats(total, filtered, isFiltered, searchText, category) {
+    var totalEl = document.getElementById("events-total-count");
+    var filterInfo = document.getElementById("events-filter-info");
+    
+    if (totalEl) totalEl.textContent = total;
+    
+    if (filterInfo) {
+        if (isFiltered && filtered !== total) {
+            filterInfo.style.display = "inline";
+            filterInfo.innerHTML = '<span class="text-primary">筛选: <strong>' + filtered + '</strong> 条</span> ' +
+                '<button class="btn btn-sm btn-link p-0 ms-1" onclick="clearEventSearch()">清除筛选</button>';
+        } else {
+            filterInfo.style.display = "none";
+        }
+    }
+}
+
+// 清空搜索
+function clearEventSearch() {
+    var searchInput = document.getElementById("event-search");
+    var categorySelect = document.getElementById("event-category-filter");
+    
+    if (searchInput) searchInput.value = "";
+    if (categorySelect) categorySelect.value = "";
+    
+    filterEvents();
+}
+
 
 // 过滤事件
 function filterEvents() {
