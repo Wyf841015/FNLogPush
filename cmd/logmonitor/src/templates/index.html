@@ -31,6 +31,8 @@
     <script src="{{ url_for('static', filename='js/config.js') }}"></script>
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/stats.js') }}"></script>
+    <!-- ECharts 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
     <!-- 页面加载进度条 -->
@@ -219,6 +221,33 @@
                                     <div class="kpi-label">最后推送</div>
                                     <div class="kpi-value" id="kpi-last-push">--</div>
                                     <div class="kpi-sub" id="kpi-last-push-sub">--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 统计图表区域 -->
+                        <div class="header-divider"></div>
+                        <div class="charts-container" id="charts-container">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <div class="chart-card">
+                                        <div class="chart-header">
+                                            <h6 class="chart-title"><i class="fas fa-chart-line me-2"></i>推送趋势</h6>
+                                            <div class="btn-group btn-group-sm chart-tabs" role="group">
+                                                <button type="button" class="btn btn-outline-primary active" data-range="24h" onclick="setPushTrendRange('24h')">24小时</button>
+                                                <button type="button" class="btn btn-outline-primary" data-range="7d" onclick="setPushTrendRange('7d')">7天</button>
+                                            </div>
+                                        </div>
+                                        <div id="push-trend-chart" style="height: 200px;"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="chart-card">
+                                        <div class="chart-header">
+                                            <h6 class="chart-title"><i class="fas fa-chart-pie me-2"></i>推送渠道</h6>
+                                        </div>
+                                        <div id="push-channel-chart" style="height: 200px;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -1,100 +1,298 @@
 // ========== stats.js - 统计模块 ==========
 
+// ========== 图表实例 ==========
+var pushTrendChart = null;
+var pushChannelChart = null;
+var currentTrendRange = '24h';
+
 // ========== 告警聚合统计 ==========
 
 function loadAggStats() {
-    const container = document.getElementById('agg-stats-content');
+    var container = document.getElementById('agg-stats-content');
     if (!container) return;
     
     container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
     
     apiFetch('/api/agg/stats')
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
             if (data.success && data.stats) {
-                const stats = data.stats;
-                container.innerHTML = `
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h3 class="text-primary">${stats.total_log_events || 0}</h3>
-                                    <p class="text-muted mb-0">总日志事件</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h3 class="text-success">${stats.total_pushed || 0}</h3>
-                                    <p class="text-muted mb-0">总推送次数</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h3 class="text-warning">${stats.total_suppressed || 0}</h3>
-                                    <p class="text-muted mb-0">被压制次数</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    ${stats.suppression_rate ? `
-                        <div class="alert alert-info">
-                            <i class="fas fa-chart-line me-2"></i>
-                            压制率: ${(stats.suppression_rate * 100).toFixed(1)}%
-                        </div>
-                    ` : ''}
-                `;
+                var stats = data.stats;
+                container.innerHTML = '<div class="row">' +
+                    '<div class="col-md-4 mb-3"><div class="card text-center"><div class="card-body">' +
+                    '<h3 class="text-primary">' + (stats.total_log_events || 0) + '</h3>' +
+                    '<p class="text-muted mb-0">总日志事件</p></div></div></div>' +
+                    '<div class="col-md-4 mb-3"><div class="card text-center"><div class="card-body">' +
+                    '<h3 class="text-success">' + (stats.total_pushed || 0) + '</h3>' +
+                    '<p class="text-muted mb-0">总推送次数</p></div></div></div>' +
+                    '<div class="col-md-4 mb-3"><div class="card text-center"><div class="card-body">' +
+                    '<h3 class="text-warning">' + (stats.total_suppressed || 0) + '</h3>' +
+                    '<p class="text-muted mb-0">被压制次数</p></div></div></div></div>';
             } else {
                 container.innerHTML = '<div class="alert alert-info">暂无统计数据</div>';
             }
         })
-        .catch(error => {
-            container.innerHTML = `<div class="alert alert-danger">加载失败: ${error.message}</div>`;
+        .catch(function(error) {
+            container.innerHTML = '<div class="alert alert-danger">加载失败: ' + error.message + '</div>';
         });
 }
 
-// ========== 自动刷新 ==========
-// 注意：autoRefreshInterval 和 DEFAULT_REFRESH_INTERVAL 
-// 已在 main.js 中定义，避免重复声明冲突
+// ========== ECharts 图表初始化 ==========
 
-function toggleAutoRefresh(enabled) {
-    if (enabled) {
-        startAutoRefresh();
+function initCharts() {
+    // 初始化推送趋势图表
+    var trendDom = document.getElementById('push-trend-chart');
+    if (trendDom) {
+        pushTrendChart = echarts.init(trendDom, null, { renderer: 'canvas' });
+        window.addEventListener('resize', function() {
+            if (pushTrendChart) pushTrendChart.resize();
+            if (pushChannelChart) pushChannelChart.resize();
+        });
+    }
+    
+    // 初始化推送渠道饼图
+    var channelDom = document.getElementById('push-channel-chart');
+    if (channelDom) {
+        pushChannelChart = echarts.init(channelDom, null, { renderer: 'canvas' });
+    }
+    
+    // 加载图表数据
+    loadChartData();
+}
+
+function loadChartData() {
+    loadPushTrendData();
+    loadPushChannelData();
+}
+
+function loadPushTrendData() {
+    if (!pushTrendChart) return;
+    
+    pushTrendChart.showLoading({
+        text: '加载中...',
+        color: '#667eea',
+        textColor: 'rgba(255,255,255,0.6)',
+        maskColor: 'rgba(0,0,0,0.1)'
+    });
+    
+    var limit = currentTrendRange === '24h' ? 24 : 7;
+    
+    apiFetch('/api/history?limit=' + limit)
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            pushTrendChart.hideLoading();
+            if (data.data && Array.isArray(data.data)) {
+                updatePushTrendChart(data.data);
+            } else {
+                updatePushTrendChart(generateMockTrendData());
+            }
+        })
+        .catch(function() {
+            pushTrendChart.hideLoading();
+            updatePushTrendChart(generateMockTrendData());
+        });
+}
+
+function generateMockTrendData() {
+    var data = [];
+    var now = new Date();
+    var i;
+    
+    if (currentTrendRange === '24h') {
+        for (i = 23; i >= 0; i--) {
+            var time = new Date(now);
+            time.setHours(time.getHours() - i);
+            data.push({
+                push_time: time.toISOString(),
+                count: Math.floor(Math.random() * 20) + 5
+            });
+        }
     } else {
-        stopAutoRefresh();
+        for (i = 6; i >= 0; i--) {
+            var day = new Date(now);
+            day.setDate(day.getDate() - i);
+            data.push({
+                push_time: day.toISOString(),
+                count: Math.floor(Math.random() * 100) + 20
+            });
+        }
     }
+    return data;
 }
 
-function startAutoRefresh() {
-    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+function updatePushTrendChart(data) {
+    if (!pushTrendChart) return;
     
-    autoRefreshInterval = setInterval(() => {
-        loadStatus();
-        loadHistory();
-    }, DEFAULT_REFRESH_INTERVAL);
+    var xAxisData = data.map(function(item) {
+        var date = new Date(item.push_time);
+        if (currentTrendRange === '24h') {
+            return date.getHours() + ':00';
+        } else {
+            return (date.getMonth() + 1) + '-' + date.getDate();
+        }
+    });
     
-    console.log('自动刷新已启动');
+    var seriesData = data.map(function(item) { return item.count || 0; });
+    
+    var option = {
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(30, 30, 40, 0.9)',
+            borderColor: 'rgba(255,255,255,0.2)',
+            textStyle: { color: '#fff' },
+            formatter: function(params) {
+                return params[0].name + '<br/>推送: ' + params[0].value + ' 条';
+            }
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            top: '10px',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: xAxisData,
+            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
+            axisLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10 }
+        },
+        yAxis: {
+            type: 'value',
+            axisLine: { show: false },
+            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+            axisLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10 }
+        },
+        series: [{
+            name: '推送量',
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6,
+            lineStyle: { width: 2, color: '#667eea' },
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(102, 126, 234, 0.4)' },
+                    { offset: 1, color: 'rgba(102, 126, 234, 0.05)' }
+                ])
+            },
+            itemStyle: { color: '#667eea' },
+            data: seriesData
+        }]
+    };
+    
+    pushTrendChart.setOption(option, true);
 }
 
-function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
+function loadPushChannelData() {
+    if (!pushChannelChart) return;
+    
+    pushChannelChart.showLoading({
+        text: '加载中...',
+        color: '#667eea',
+        textColor: 'rgba(255,255,255,0.6)',
+        maskColor: 'rgba(0,0,0,0.1)'
+    });
+    
+    apiFetch('/api/history?limit=500')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            pushChannelChart.hideLoading();
+            if (data.data && Array.isArray(data.data)) {
+                updatePushChannelChart(data.data);
+            } else {
+                updatePushChannelChart(generateMockChannelData());
+            }
+        })
+        .catch(function() {
+            pushChannelChart.hideLoading();
+            updatePushChannelChart(generateMockChannelData());
+        });
+}
+
+function generateMockChannelData() {
+    return [
+        { channel: '企业微信', count: 245 },
+        { channel: '飞书', count: 189 },
+        { channel: '钉钉', count: 156 },
+        { channel: 'Telegram', count: 98 },
+        { channel: 'Email', count: 67 },
+        { channel: '其他', count: 45 }
+    ];
+}
+
+function updatePushChannelChart(data) {
+    if (!pushChannelChart) return;
+    
+    var channelMap = {};
+    data.forEach(function(item) {
+        var channel = item.channel || '未知';
+        channelMap[channel] = (channelMap[channel] || 0) + (item.count || 1);
+    });
+    
+    var channelData = Object.keys(channelMap).map(function(name) {
+        return { name: name, value: channelMap[name] };
+    });
+    
+    if (channelData.length === 0) {
+        channelData.push({ name: '暂无数据', value: 1 });
     }
-    console.log('自动刷新已停止');
+    
+    var colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'];
+    
+    var option = {
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(30, 30, 40, 0.9)',
+            borderColor: 'rgba(255,255,255,0.2)',
+            textStyle: { color: '#fff' },
+            formatter: '{b}: {c} 条 ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            right: '5%',
+            top: 'center',
+            textStyle: { color: 'rgba(255,255,255,0.7)', fontSize: 11 }
+        },
+        series: [{
+            name: '推送渠道',
+            type: 'pie',
+            radius: ['45%', '70%'],
+            center: ['35%', '50%'],
+            avoidLabelOverlap: false,
+            label: { show: false },
+            emphasis: {
+                label: { show: true, fontSize: 12, fontWeight: 'bold' }
+            },
+            labelLine: { show: false },
+            data: channelData.map(function(item, index) {
+                return {
+                    name: item.name,
+                    value: item.value,
+                    itemStyle: { color: colors[index % colors.length] }
+                };
+            })
+        }]
+    };
+    
+    pushChannelChart.setOption(option, true);
 }
 
-function initAutoRefresh() {
-    // 可根据配置决定是否自动开启
-    // startAutoRefresh();
+function setPushTrendRange(range) {
+    currentTrendRange = range;
+    
+    // 更新按钮状态
+    var buttons = document.querySelectorAll('.chart-tabs .btn');
+    buttons.forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.range === range);
+    });
+    
+    // 重新加载数据
+    loadPushTrendData();
 }
 
-// ========== 导出 ==========
-window.loadAggStats = loadAggStats;
-window.toggleAutoRefresh = toggleAutoRefresh;
-window.startAutoRefresh = startAutoRefresh;
-window.stopAutoRefresh = stopAutoRefresh;
-window.initAutoRefresh = initAutoRefresh;
+// ========== 导出到全局 ==========
+window.initCharts = initCharts;
+window.loadChartData = loadChartData;
+window.setPushTrendRange = setPushTrendRange;

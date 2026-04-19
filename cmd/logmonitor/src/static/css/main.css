@@ -4791,3 +4791,59 @@ a:focus-visible {
     border-radius: 8px;
 }
 
+/* ========== 统计图表样式 ========== */
+.charts-container {
+    margin-top: 8px;
+}
+
+.chart-card {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.chart-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.theme-dark .chart-card,
+.theme-ocean .chart-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.theme-dark .chart-card:hover,
+.theme-ocean .chart-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chart-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+
+.chart-tabs .btn {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+}
+
+/* 图表加载动画 */
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
