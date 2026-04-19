@@ -180,51 +180,93 @@ function updatePushTrendChart(data) {
     
     var seriesData = data.map(function(item) { return item.count || 0; });
     
+    // 响应式配置
+    var isMobile = window.innerWidth < 768;
+    var gridLeft = isMobile ? '2%' : '3%';
+    var gridRight = isMobile ? '2%' : '4%';
+    var axisLabelFontSize = isMobile ? 9 : 11;
+    var tooltipFontSize = isMobile ? 11 : 13;
+    
+    // 检测是否为暗色主题
+    var isDark = document.body.classList.contains('theme-dark') || !document.body.classList.contains('theme-light');
+    var textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+    var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+    var splitLineColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+    
     var option = {
+        backgroundColor: 'transparent',
         tooltip: {
             trigger: 'axis',
-            backgroundColor: 'rgba(30, 30, 40, 0.9)',
-            borderColor: 'rgba(255,255,255,0.2)',
-            textStyle: { color: '#fff' },
+            backgroundColor: isDark ? 'rgba(30, 30, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+            borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+            borderWidth: 1,
+            padding: [10, 14],
+            textStyle: { color: isDark ? '#fff' : '#333', fontSize: tooltipFontSize },
             formatter: function(params) {
-                return params[0].name + '<br/>推送: ' + params[0].value + ' 条';
-            }
+                return '<div style="font-weight:600;margin-bottom:4px;">' + params[0].name + '</div>' +
+                       '<div style="display:flex;align-items:center;gap:8px;">' +
+                       '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);"></span>' +
+                       '<span>推送: <strong style="color:#667eea;">' + params[0].value + '</strong> 条</span></div>';
+            },
+            extraCssText: 'border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);'
         },
         grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            top: '10px',
+            left: gridLeft,
+            right: gridRight,
+            bottom: isMobile ? '2%' : '3%',
+            top: isMobile ? '15px' : '20px',
             containLabel: true
         },
         xAxis: {
             type: 'category',
             boundaryGap: false,
             data: xAxisData,
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
-            axisLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10 }
+            axisLine: { lineStyle: { color: gridColor } },
+            axisTick: { show: false },
+            axisLabel: { 
+                color: textColor, 
+                fontSize: axisLabelFontSize,
+                margin: 8,
+                rotate: isMobile ? 45 : 0
+            }
         },
         yAxis: {
             type: 'value',
             axisLine: { show: false },
-            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            axisLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10 }
+            axisTick: { show: false },
+            splitLine: { lineStyle: { color: splitLineColor, type: 'dashed' } },
+            axisLabel: { color: textColor, fontSize: axisLabelFontSize }
         },
         series: [{
             name: '推送量',
             type: 'line',
-            smooth: true,
+            smooth: 0.4,
             symbol: 'circle',
-            symbolSize: 6,
-            lineStyle: { width: 2, color: '#667eea' },
+            symbolSize: isMobile ? 5 : 8,
+            showSymbol: false,
+            hoverAnimation: true,
+            lineStyle: { width: isMobile ? 2 : 3, color: '#667eea' },
             areaStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: 'rgba(102, 126, 234, 0.4)' },
-                    { offset: 1, color: 'rgba(102, 126, 234, 0.05)' }
+                    { offset: 0, color: 'rgba(102, 126, 234, 0.35)' },
+                    { offset: 0.5, color: 'rgba(102, 126, 234, 0.15)' },
+                    { offset: 1, color: 'rgba(102, 126, 234, 0.02)' }
                 ])
             },
-            itemStyle: { color: '#667eea' },
-            data: seriesData
+            itemStyle: { 
+                color: '#667eea',
+                borderWidth: 2,
+                borderColor: '#fff',
+                shadowColor: 'rgba(102, 126, 234, 0.5)',
+                shadowBlur: 8
+            },
+            emphasis: {
+                scale: true,
+                scaleSize: 2
+            },
+            data: seriesData,
+            animationDuration: 1500,
+            animationEasing: 'cubicOut'
         }]
     };
     
@@ -273,8 +315,8 @@ function updatePushChannelChart(data) {
     
     var channelMap = {};
     data.forEach(function(item) {
-        var channel = item.channel || '未知';
-        channelMap[channel] = (channelMap[channel] || 0) + (item.count || 1);
+        var channel = item.channel || item.name || '未知';
+        channelMap[channel] = (channelMap[channel] || 0) + (item.count || item.value || 1);
     });
     
     var channelData = Object.keys(channelMap).map(function(name) {
@@ -285,40 +327,110 @@ function updatePushChannelChart(data) {
         channelData.push({ name: '暂无数据', value: 1 });
     }
     
-    var colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'];
+    // 响应式配置
+    var isMobile = window.innerWidth < 768;
+    var tooltipFontSize = isMobile ? 11 : 13;
+    
+    // 检测是否为暗色主题
+    var isDark = document.body.classList.contains('theme-dark') || !document.body.classList.contains('theme-light');
+    var textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+    
+    // 渐变色数组
+    var colors = [
+        { start: '#667eea', end: '#764ba2' },
+        { start: '#f093fb', end: '#f5576c' },
+        { start: '#4facfe', end: '#00f2fe' },
+        { start: '#43e97b', end: '#38f9d7' },
+        { start: '#fa709a', end: '#fee140' },
+        { start: '#a8edea', end: '#fed6e3' },
+        { start: '#d299c2', end: '#fef9d7' },
+        { start: '#89f7fe', end: '#66a6ff' }
+    ];
     
     var option = {
+        backgroundColor: 'transparent',
         tooltip: {
             trigger: 'item',
-            backgroundColor: 'rgba(30, 30, 40, 0.9)',
-            borderColor: 'rgba(255,255,255,0.2)',
-            textStyle: { color: '#fff' },
-            formatter: '{b}: {c} 条 ({d}%)'
+            backgroundColor: isDark ? 'rgba(30, 30, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+            borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+            borderWidth: 1,
+            padding: [10, 14],
+            textStyle: { color: isDark ? '#fff' : '#333', fontSize: tooltipFontSize },
+            formatter: function(params) {
+                if (params.name === '暂无数据') return '<div style="text-align:center;color:#999;">暂无数据</div>';
+                return '<div style="font-weight:600;margin-bottom:4px;">' + params.name + '</div>' +
+                       '<div style="color:#888;">推送: <strong style="color:#667eea;">' + params.value + '</strong> 条</div>' +
+                       '<div style="color:#888;">占比: <strong style="color:#f5576c;">' + params.percent.toFixed(1) + '%</strong></div>';
+            },
+            extraCssText: 'border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);'
         },
         legend: {
-            orient: 'vertical',
-            right: '5%',
-            top: 'center',
-            textStyle: { color: 'rgba(255,255,255,0.7)', fontSize: 11 }
+            orient: isMobile ? 'horizontal' : 'vertical',
+            bottom: isMobile ? '5%' : 'auto',
+            top: isMobile ? 'auto' : 'center',
+            right: isMobile ? 'auto' : '3%',
+            left: isMobile ? 'center' : 'auto',
+            width: isMobile ? '90%' : 'auto',
+            itemWidth: 12,
+            itemHeight: 12,
+            itemGap: isMobile ? 16 : 12,
+            textStyle: { 
+                color: textColor, 
+                fontSize: isMobile ? 10 : 12,
+                lineHeight: isMobile ? 20 : 20
+            },
+            pageTextStyle: { color: textColor },
+            pageIconColor: '#667eea',
+            pageIconInactiveColor: 'rgba(255,255,255,0.3)'
         },
         series: [{
             name: '推送渠道',
             type: 'pie',
-            radius: ['45%', '70%'],
-            center: ['35%', '50%'],
-            avoidLabelOverlap: false,
-            label: { show: false },
-            emphasis: {
-                label: { show: true, fontSize: 12, fontWeight: 'bold' }
+            radius: isMobile ? ['40%', '65%'] : ['40%', '70%'],
+            center: isMobile ? ['50%', '45%'] : ['38%', '50%'],
+            roseType: false,
+            avoidLabelOverlap: true,
+            itemStyle: {
+                borderRadius: 8,
+                borderColor: isDark ? '#1a1a2e' : '#fff',
+                borderWidth: 2
             },
-            labelLine: { show: false },
+            label: {
+                show: false,
+                position: 'outside',
+                formatter: '{b}\n{d}%',
+                color: textColor
+            },
+            labelLine: {
+                show: false,
+                length: 15,
+                length2: 10,
+                smooth: true
+            },
+            emphasis: {
+                scale: true,
+                scaleSize: 8,
+                itemStyle: {
+                    shadowBlur: 20,
+                    shadowColor: 'rgba(102, 126, 234, 0.5)'
+                }
+            },
             data: channelData.map(function(item, index) {
+                var color = colors[index % colors.length];
                 return {
                     name: item.name,
                     value: item.value,
-                    itemStyle: { color: colors[index % colors.length] }
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [
+                            { offset: 0, color: color.start },
+                            { offset: 1, color: color.end }
+                        ])
+                    }
                 };
-            })
+            }),
+            animationType: 'expansion',
+            animationDuration: 1200,
+            animationEasing: 'cubicOut'
         }]
     };
     
@@ -410,26 +522,94 @@ async function loadEventTypeChart() {
         }
         var events = data.events || [];
         if (events.length === 0) {
-            el.innerHTML = "<div class=\"text-center text-muted py-5\">暂无数据</div>";
+            el.innerHTML = "<div class=\"text-center text-muted py-5\"><i class='fas fa-chart-pie me-2'></i>暂无事件数据</div>";
             return;
         }
+        
+        // 响应式配置
+        var isMobile = window.innerWidth < 768;
+        var tooltipFontSize = isMobile ? 11 : 13;
+        
+        // 检测是否为暗色主题
+        var isDark = document.body.classList.contains('theme-dark') || !document.body.classList.contains('theme-light');
+        var textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+        
         var chartData = events.slice(0, 10).map(function(e) {
-            return { value: 1, name: e.name || e.id, itemStyle: { color: e.color || "#007bff" } };
+            return { 
+                value: 1, 
+                name: e.name || e.id, 
+                itemStyle: { 
+                    color: e.color || "#007bff",
+                    borderColor: isDark ? '#1a1a2e' : '#fff',
+                    borderWidth: 2
+                }
+            };
         });
+        
         var chart = echarts.init(el);
         chart.setOption({
-            tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: "item",
+                backgroundColor: isDark ? 'rgba(30, 30, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                padding: [10, 14],
+                textStyle: { color: isDark ? '#fff' : '#333', fontSize: tooltipFontSize },
+                formatter: function(params) {
+                    return '<div style="font-weight:600;margin-bottom:4px;">' + params.name + '</div>' +
+                           '<div style="color:#888;">事件类型</div>';
+                },
+                extraCssText: 'border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);'
+            },
+            legend: {
+                orient: isMobile ? 'horizontal' : 'vertical',
+                bottom: isMobile ? '0%' : 'auto',
+                top: isMobile ? 'auto' : 'center',
+                right: isMobile ? 'auto' : '3%',
+                left: isMobile ? 'center' : 'auto',
+                width: isMobile ? '95%' : 'auto',
+                itemWidth: 10,
+                itemHeight: 10,
+                itemGap: isMobile ? 12 : 10,
+                textStyle: { 
+                    color: textColor, 
+                    fontSize: isMobile ? 9 : 11
+                }
+            },
             series: [{
                 type: "pie",
-                radius: ["40%", "70%"],
-                avoidLabelOverlap: false,
-                itemStyle: { borderRadius: 6, borderColor: "#1a1a2e", borderWidth: 2 },
-                label: { show: true, formatter: "{b}: {d}%", fontSize: 10 },
-                data: chartData
+                radius: isMobile ? ["35%", "60%"] : ["40%", "70%"],
+                center: ['50%', isMobile ? '50%' : '50%'],
+                avoidLabelOverlap: true,
+                itemStyle: { 
+                    borderRadius: 8, 
+                    borderColor: isDark ? '#1a1a2e' : '#fff', 
+                    borderWidth: 2 
+                },
+                label: { 
+                    show: false 
+                },
+                emphasis: {
+                    scale: true,
+                    scaleSize: 6,
+                    itemStyle: {
+                        shadowBlur: 15,
+                        shadowColor: 'rgba(0, 0, 0, 0.3)'
+                    }
+                },
+                data: chartData,
+                animationDuration: 1200,
+                animationEasing: 'cubicOut'
             }]
         });
+        
+        // 响应窗口变化
+        window.addEventListener('resize', function() {
+            chart.resize();
+        });
     } catch (e) {
-        el.innerHTML = "<div class=\"text-center text-muted py-5\">加载失败: " + e.message + "</div>";
+        el.innerHTML = "<div class=\"text-center text-muted py-5\"><i class='fas fa-exclamation-triangle me-2'></i>加载失败</div>";
     }
 }
 
