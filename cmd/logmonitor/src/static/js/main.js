@@ -2500,17 +2500,97 @@ function onHistoryDateFilter() {
     historyDateFilter.startDate = startDate || null;
     historyDateFilter.endDate = endDate || null;
 
+    // 更新筛选结果统计显示
+    updateHistoryFilterSummary(startDate, endDate);
+
     // 重新加载历史记录
     if (typeof loadHistory === 'function') {
         loadHistory();
     }
 }
 
+function updateHistoryFilterSummary(startDate, endDate) {
+    const summary = document.getElementById('history-filter-summary');
+    if (!summary) return;
+    
+    if (startDate || endDate) {
+        const hasStart = startDate ? formatDateChinese(startDate) : '最早';
+        const hasEnd = endDate ? formatDateChinese(endDate) : '最晚';
+        summary.textContent = `筛选: ${hasStart} 至 ${hasEnd}`;
+        summary.style.display = 'inline';
+    } else {
+        summary.style.display = 'none';
+    }
+}
+
+function formatDateChinese(dateStr) {
+    const d = new Date(dateStr);
+    return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// ========== 推送历史快捷日期筛选 ==========
+function setHistoryDateRange(preset) {
+    const today = new Date();
+    const startInput = document.getElementById('history-date-start');
+    const endInput = document.getElementById('history-date-end');
+    
+    if (!startInput || !endInput) return;
+    
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    let startDate, endDate;
+    
+    switch (preset) {
+        case 'today':
+            startDate = new Date(today);
+            endDate = new Date(today);
+            break;
+        case 'yesterday':
+            startDate = new Date(today);
+            startDate.setDate(startDate.getDate() - 1);
+            endDate = new Date(startDate);
+            break;
+        case 'week':
+            // 本周一
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - today.getDay() + 1);
+            endDate = new Date(today);
+            break;
+        case 'month':
+            // 本月1日
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today);
+            break;
+        default:
+            return;
+    }
+    
+    startInput.value = formatDate(startDate);
+    endInput.value = formatDate(endDate);
+    
+    // 触发筛选
+    if (typeof onHistoryDateFilter === 'function') {
+        onHistoryDateFilter();
+    }
+}
+
 function clearHistoryDateFilter() {
-    document.getElementById('history-date-start').value = '';
-    document.getElementById('history-date-end').value = '';
+    const startInput = document.getElementById('history-date-start');
+    const endInput = document.getElementById('history-date-end');
+    
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
     historyDateFilter.startDate = null;
     historyDateFilter.endDate = null;
+    
+    // 清除筛选结果统计
+    const summary = document.getElementById('history-filter-summary');
+    if (summary) summary.style.display = 'none';
 
     if (typeof loadHistory === 'function') {
         loadHistory();

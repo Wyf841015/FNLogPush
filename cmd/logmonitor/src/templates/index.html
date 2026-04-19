@@ -1042,6 +1042,13 @@
                                         <i class="fas fa-times" aria-hidden="true"></i>
                                     </button>
                                 </div>
+                                <!-- 快捷日期按钮 -->
+                                <div class="btn-group btn-group-sm me-1" role="group" aria-label="快捷日期选择">
+                                    <button type="button" class="btn btn-outline-primary" onclick="setHistoryDateRange('today')" title="今天">今天</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="setHistoryDateRange('yesterday')" title="昨天">昨天</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="setHistoryDateRange('week')" title="本周">本周</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="setHistoryDateRange('month')" title="本月">本月</button>
+                                </div>
                                 <div class="input-group" style="max-width: 160px;">
                                     <span class="input-group-text"><i class="fas fa-calendar" aria-hidden="true"></i></span>
                                     <input type="date" id="history-date-start" class="form-control form-control-sm"
@@ -1055,6 +1062,8 @@
                                 <button class="btn btn-outline-secondary btn-sm" type="button" onclick="clearHistoryDateFilter()" title="清除日期筛选">
                                     <i class="fas fa-times-circle" aria-hidden="true"></i> 清除
                                 </button>
+                                <!-- 筛选结果统计 -->
+                                <span class="text-muted ms-auto small" id="history-filter-summary" style="display:none;"></span>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-hover">
