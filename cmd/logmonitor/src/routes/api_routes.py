@@ -394,15 +394,20 @@ def register_api_routes(app: Flask):
         import json
         events_file = _get_events_file_path()
         
-        if events_file:
+        if not events_file:
+            logger.error("[事件] 保存事件配置失败：未找到配置文件路径")
+            return False
+        
+        try:
             abs_events_path = events_file.resolve()
             events_file.parent.mkdir(parents=True, exist_ok=True)
             with open(events_file, 'w', encoding='utf-8') as f:
                 json.dump(config, f, ensure_ascii=False, indent=4)
             logger.info(f"[事件] 保存事件配置到: {abs_events_path}")
             return True
-        logger.warning(f"[事件] 保存事件配置失败：未找到配置文件路径")
-        return False
+        except Exception as e:
+            logger.error(f"[事件] 保存事件配置失败: {e}")
+            return False
 
     @login_required
     @app.route('/api/events/list', methods=['GET'])
