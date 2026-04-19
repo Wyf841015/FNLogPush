@@ -363,35 +363,35 @@ async function loadStatsOverview() {
     var el = document.getElementById("stats-total-push");
     if (!el) return;
     try {
-        var r = await fetch("/api/push/history?limit=1000");
+        var r = await fetch("/api/stats/chart-data");
         var data = await r.json();
-        if (data.status !== "success") return;
-        var records = data.records || [];
-        var total = records.length;
-        var today = new Date().toDateString();
-        var todayCount = records.filter(function(rec) {
-            return new Date(rec.timestamp).toDateString() === today;
-        }).length;
-        var hourCounts = {};
-        records.forEach(function(rec) {
-            var h = new Date(rec.timestamp).getHours();
-            hourCounts[h] = (hourCounts[h] || 0) + 1;
-        });
-        var peakHour = 0, peakCount = 0;
-        Object.keys(hourCounts).forEach(function(h) {
-            if (hourCounts[h] > peakCount) {
-                peakCount = hourCounts[h];
-                peakHour = parseInt(h);
+        if (!data.success) return;
+        
+        // 使用API返回的概览数据
+        if (data.overview) {
+            document.getElementById("stats-total-push").textContent = data.overview.total || 0;
+            document.getElementById("stats-today-push").textContent = data.overview.today || 0;
+        }
+        
+        // 计算峰值时段和日均
+        var trendData = data.trend7d || [];
+        var total = data.overview ? data.overview.total : 0;
+        var maxHour = 0, maxHourCount = 0;
+        var dayCounts = {};
+        trendData.forEach(function(item) {
+            var d = new Date(item.timestamp);
+            var hour = d.getHours();
+            if (item.count > maxHourCount) {
+                maxHourCount = item.count;
+                maxHour = hour;
             }
+            var dayKey = d.toDateString();
+            dayCounts[dayKey] = (dayCounts[dayKey] || 0) + item.count;
         });
-        var days = new Set();
-        records.forEach(function(rec) {
-            days.add(new Date(rec.timestamp).toDateString());
-        });
-        var avgDaily = days.size > 0 ? Math.round(total / days.size) : 0;
-        document.getElementById("stats-total-push").textContent = total;
-        document.getElementById("stats-today-push").textContent = todayCount;
-        document.getElementById("stats-peak-hour").textContent = peakHour + ":00";
+        var days = Object.keys(dayCounts).length;
+        var avgDaily = days > 0 ? Math.round(total / days) : 0;
+        
+        document.getElementById("stats-peak-hour").textContent = maxHour + ":00";
         document.getElementById("stats-avg-daily").textContent = avgDaily;
     } catch (e) {
         console.error("loadStatsOverview error", e);
