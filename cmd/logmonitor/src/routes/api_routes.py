@@ -305,13 +305,14 @@ def register_api_routes(app: Flask):
             hourly_data = []
             for h in range(23, -1, -1):
                 hour_time = now - timedelta(hours=h)
-                hour_key = hour_time.strftime('%Y-%m-%d %H:00')
                 count = 0
                 for rec in records:
                     try:
-                        rec_time = datetime.fromisoformat(rec.get('timestamp', '').replace('Z', '+00:00'))
-                        if rec_time.year == hour_time.year and rec_time.month == hour_time.month and rec_time.day == hour_time.day and rec_time.hour == hour_time.hour:
-                            count += 1
+                        ts_str = rec.get('timestamp', '')
+                        if ts_str:
+                            rec_time = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                            if rec_time.year == hour_time.year and rec_time.month == hour_time.month and rec_time.day == hour_time.day and rec_time.hour == hour_time.hour:
+                                count += 1
                     except:
                         pass
                 hourly_data.append({
@@ -323,13 +324,14 @@ def register_api_routes(app: Flask):
             daily_data = []
             for d in range(6, -1, -1):
                 day_time = now - timedelta(days=d)
-                day_key = day_time.strftime('%Y-%m-%d')
                 count = 0
                 for rec in records:
                     try:
-                        rec_time = datetime.fromisoformat(rec.get('timestamp', '').replace('Z', '+00:00'))
-                        if rec_time.year == day_time.year and rec_time.month == day_time.month and rec_time.day == day_time.day:
-                            count += 1
+                        ts_str = rec.get('timestamp', '')
+                        if ts_str:
+                            rec_time = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                            if rec_time.year == day_time.year and rec_time.month == day_time.month and rec_time.day == day_time.day:
+                                count += 1
                     except:
                         pass
                 daily_data.append({
@@ -360,10 +362,17 @@ def register_api_routes(app: Flask):
                 })
             
             # 计算今日推送
-            today_count = sum(1 for rec in records if rec.get('timestamp', '').startswith(now.strftime('%Y-%m-%d')))
+            today_count = 0
+            today_str = now.strftime('%Y-%m-%d')
+            for rec in records:
+                ts = rec.get('timestamp', '')
+                if ts and ts.startswith(today_str):
+                    today_count += 1
             
             # 总推送数
             total_count = history_data.get('total', 0)
+            
+            logger.info(f"[Stats] Found {len(records)} history records, total: {total_count}")
             
             return jsonify({
                 "success": True,

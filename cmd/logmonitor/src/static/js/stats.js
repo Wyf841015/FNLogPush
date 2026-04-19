@@ -64,7 +64,10 @@ function loadChartData() {
 }
 
 function loadPushTrendData() {
-    if (!pushTrendChart) return;
+    if (!pushTrendChart) {
+        console.log('[Stats] pushTrendChart not initialized');
+        return;
+    }
     
     pushTrendChart.showLoading({
         text: '加载中...',
@@ -73,16 +76,21 @@ function loadPushTrendData() {
         maskColor: 'rgba(0,0,0,0.1)'
     });
     
+    console.log('[Stats] Loading chart data from API...');
+    
     // 使用新的统计API
     apiFetch('/api/stats/chart-data')
         .then(function(response) { return response.json(); })
         .then(function(data) {
+            console.log('[Stats] API response:', data);
             pushTrendChart.hideLoading();
             if (data.success) {
                 var trendData = currentTrendRange === '24h' ? data.trend24h : data.trend7d;
+                console.log('[Stats] Trend data:', trendData);
                 if (trendData && trendData.length > 0) {
                     updatePushTrendChart(trendData);
                 } else {
+                    console.log('[Stats] No trend data, using mock');
                     updatePushTrendChart(generateMockTrendData());
                 }
                 // 更新概览统计
@@ -90,14 +98,16 @@ function loadPushTrendData() {
                     updateStatsOverview(data.overview);
                 }
                 // 更新渠道数据
-                if (data.channels && data.channels.length > 0 && data.channels[0].value > 0) {
+                if (data.channels && data.channels.length > 0) {
                     updatePushChannelChart(data.channels);
                 }
             } else {
+                console.log('[Stats] API failed, using mock');
                 updatePushTrendChart(generateMockTrendData());
             }
         })
-        .catch(function() {
+        .catch(function(err) {
+            console.error('[Stats] API error:', err);
             pushTrendChart.hideLoading();
             updatePushTrendChart(generateMockTrendData());
         });
