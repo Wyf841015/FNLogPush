@@ -3,6 +3,45 @@ var FONT_AWESOME_ICONS = ["fa-bell","fa-exclamation-circle","fa-exclamation-tria
 var eventsData = [];
 var filteredEvents = [];
 
+// 加载分类到下拉框
+function loadCategoryOptions() {
+    var select = document.getElementById("event-category-input");
+    if (!select) return;
+    
+    // 获取所有现有分类
+    var categories = {};
+    eventsData.forEach(function(e) {
+        if (e.category) {
+            categories[e.category] = true;
+        }
+    });
+    
+    // 构建选项HTML
+    var html = '<option value="">-- 选择分类 --</option>';
+    Object.keys(categories).sort().forEach(function(cat) {
+        html += '<option value="' + esc(cat) + '">' + esc(cat) + '</option>';
+    });
+    html += '<option value="__new__">+ 新建分类...</option>';
+    
+    select.innerHTML = html;
+    
+    // 如果选择了"新建分类"，显示输入框
+    select.onchange = function() {
+        var inputDiv = document.getElementById("event-category-new-div");
+        if (this.value === "__new__") {
+            if (!inputDiv) {
+                var newDiv = document.createElement("div");
+                newDiv.id = "event-category-new-div";
+                newDiv.className = "mt-2";
+                newDiv.innerHTML = '<input type="text" class="form-control" id="event-category-new-input" placeholder="输入新分类名称">';
+                select.parentNode.appendChild(newDiv);
+            }
+        } else if (inputDiv) {
+            inputDiv.remove();
+        }
+    };
+}
+
 function esc(s) {
     if (s == null || s == undefined) return "";
     if (typeof s !== "string") s = String(s);
@@ -301,12 +340,33 @@ function editEvent(eventId) {
         return;
     }
     
+    // 加载分类选项
+    loadCategoryOptions();
+    
     // 填充编辑表单
     var modal = new bootstrap.Modal(document.getElementById("addEventModal"));
     document.getElementById("event-id-input").value = event.id;
     document.getElementById("event-id-input").readOnly = true;
     document.getElementById("event-name-input").value = event.name || "";
-    document.getElementById("event-category-input").value = event.category || "";
+    
+    // 设置分类
+    var categorySelect = document.getElementById("event-category-input");
+    if (event.category && categorySelect) {
+        var opt = categorySelect.querySelector('option[value="' + event.category + '"]');
+        if (opt) {
+            categorySelect.value = event.category;
+        } else {
+            // 添加缺失的选项
+            var newOpt = document.createElement("option");
+            newOpt.value = event.category;
+            newOpt.textContent = event.category;
+            categorySelect.insertBefore(newOpt, categorySelect.lastElementChild);
+            categorySelect.value = event.category;
+        }
+    } else if (categorySelect) {
+        categorySelect.value = "";
+    }
+    
     document.getElementById("event-icon-input").value = event.icon || "fa-bell";
     document.getElementById("event-color-input").value = event.color || "#007bff";
     
@@ -323,12 +383,19 @@ function editEvent(eventId) {
 
 // 显示添加事件模态框
 function showAddEventModal() {
+    // 加载分类选项
+    loadCategoryOptions();
+    
     document.getElementById("event-id-input").value = "";
     document.getElementById("event-id-input").readOnly = false;
     document.getElementById("event-name-input").value = "";
     document.getElementById("event-category-input").value = "";
     document.getElementById("event-icon-input").value = "fa-bell";
     document.getElementById("event-color-input").value = "#007bff";
+    
+    // 移除新建分类输入框
+    var newDiv = document.getElementById("event-category-new-div");
+    if (newDiv) newDiv.remove();
     
     // 初始化预览图标
     var preview = document.getElementById("event-icon-preview");
@@ -344,7 +411,15 @@ function showAddEventModal() {
 async function saveEvent() {
     var id = document.getElementById("event-id-input").value.trim();
     var name = document.getElementById("event-name-input").value.trim();
-    var category = document.getElementById("event-category-input").value.trim();
+    var categorySelect = document.getElementById("event-category-input");
+    var category = categorySelect ? categorySelect.value : "";
+    
+    // 处理新建分类
+    if (category === "__new__") {
+        var newInput = document.getElementById("event-category-new-input");
+        category = newInput ? newInput.value.trim() : "";
+    }
+    
     var icon = document.getElementById("event-icon-input").value;
     var color = document.getElementById("event-color-input").value;
     
