@@ -263,6 +263,13 @@ function editEvent(eventId) {
     document.getElementById("event-icon-input").value = event.icon || "fa-bell";
     document.getElementById("event-color-input").value = event.color || "#007bff";
     
+    // 更新预览图标
+    var preview = document.getElementById("event-icon-preview");
+    var color = event.color || "#007bff";
+    if (preview) {
+        preview.innerHTML = '<i class="fas ' + (event.icon || "fa-bell") + '" style="color:' + color + ';"></i>';
+    }
+    
     // 显示模态框
     modal.show();
 }
@@ -274,6 +281,12 @@ function showAddEventModal() {
     document.getElementById("event-name-input").value = "";
     document.getElementById("event-icon-input").value = "fa-bell";
     document.getElementById("event-color-input").value = "#007bff";
+    
+    // 初始化预览图标
+    var preview = document.getElementById("event-icon-preview");
+    if (preview) {
+        preview.innerHTML = '<i class="fas fa-bell" style="color:#007bff;"></i>';
+    }
     
     var modal = new bootstrap.Modal(document.getElementById("addEventModal"));
     modal.show();
@@ -334,6 +347,7 @@ document.addEventListener("DOMContentLoaded", function() {
 function selectEventColor(color) {
     var colorInput = document.getElementById('event-color-input');
     var colorPresets = document.querySelectorAll('.color-preset');
+    var preview = document.getElementById('event-icon-preview');
     if (colorInput) { colorInput.value = color; }
     colorPresets.forEach(function(btn) {
         if (btn.getAttribute('style').indexOf(color) !== -1) {
@@ -344,6 +358,11 @@ function selectEventColor(color) {
             btn.style.boxShadow = 'none';
         }
     });
+    // 更新预览图标颜色
+    if (preview) {
+        var iconEl = preview.querySelector('i');
+        if (iconEl) { iconEl.style.color = color; }
+    }
 }
 
 function showIconPicker() {
