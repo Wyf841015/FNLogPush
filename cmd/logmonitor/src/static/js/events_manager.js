@@ -281,7 +281,7 @@ async function deleteEvent(eventId) {
         });
         var result = await resp.json();
         
-        if (result.success) {
+        if (result.success || result.status === "success") {
             showNotification("事件已删除", "success");
             refreshEventsList();
         } else {
@@ -364,7 +364,7 @@ async function saveEvent() {
         });
         var result = await resp.json();
         
-        if (result.success) {
+        if (result.success || result.status === "success") {
             showNotification(isEdit ? "事件已更新" : "事件已添加", "success");
             bootstrap.Modal.getInstance(document.getElementById("addEventModal")).hide();
             refreshEventsList();
