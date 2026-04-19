@@ -445,6 +445,7 @@ def register_api_routes(app: Flask):
             
             event_id = data.get('id', '').strip()
             event_name = data.get('name', '').strip()
+            event_category = data.get('category', '').strip()
             event_icon = data.get('icon', 'fa-bell')
             event_color = data.get('color', '#007bff')
             category_id = data.get('category_id', 'custom')
@@ -464,8 +465,9 @@ def register_api_routes(app: Flask):
             
             # 查找或创建自定义分类
             custom_category = None
+            category_name = event_category if event_category else '自定义事件'
             for cat in config.get('categories', []):
-                if cat.get('id') == category_id:
+                if cat.get('id') == category_id or cat.get('name') == category_name:
                     custom_category = cat
                     break
             
@@ -473,18 +475,21 @@ def register_api_routes(app: Flask):
                 # 创建新分类
                 custom_category = {
                     "id": category_id,
-                    "name": data.get('category_name', '自定义事件'),
+                    "name": category_name,
                     "events": []
                 }
                 config.setdefault('categories', []).append(custom_category)
             
             # 添加事件
-            custom_category['events'].append({
+            new_event = {
                 "id": event_id,
                 "name": event_name,
                 "icon": event_icon,
                 "color": event_color
-            })
+            }
+            if event_category:
+                new_event['category'] = event_category
+            custom_category['events'].append(new_event)
             
             if _save_events_config(config):
                 # 自动将新事件添加到监控列表
@@ -574,6 +579,7 @@ def register_api_routes(app: Flask):
             
             event_id = data.get('id', '').strip()
             event_name = data.get('name', '').strip()
+            event_category = data.get('category', '').strip()
             event_icon = data.get('icon', 'fa-bell')
             event_color = data.get('color', '#007bff')
             
@@ -590,6 +596,10 @@ def register_api_routes(app: Flask):
                         evt['name'] = event_name
                         evt['icon'] = event_icon
                         evt['color'] = event_color
+                        if event_category:
+                            evt['category'] = event_category
+                        else:
+                            evt.pop('category', None)
                         found = True
                         break
                 if found:
