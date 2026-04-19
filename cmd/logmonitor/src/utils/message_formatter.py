@@ -332,7 +332,7 @@ class MessageFormatter:
         
         Args:
             cached_messages: 缓存的消息列表（已格式化的字符串）
-            max_length: 最大长度限制（默认1800，留200余量给title和序号）
+            max_length: 最大长度限制（此参数保留但不再使用精简摘要）
             
         Returns:
             格式化后的汇总消息
@@ -341,15 +341,39 @@ class MessageFormatter:
             return ""
         
         count = len(cached_messages)
-        header = f"📬 【免打扰时段消息汇总】共 {count} 条\n" + "=" * 30 + "\n"
         
-        # 使用分隔符连接各条消息
+        # 统计事件ID出现次数
+        import re
+        event_stats = {}
+        time_range = None
+        
+        for msg in cached_messages:
+            # 提取事件类型（格式: 📋事件: xxx）
+            event_match = re.search(r'📋事件:\s*(.+?)(?:\n|$)', msg)
+            if event_match:
+                event_type = event_match.group(1).strip()
+                event_stats[event_type] = event_stats.get(event_type, 0) + 1
+            
+            # 提取时间范围
+            time_match = re.search(r'🕐时间:\s*(.+)', msg)
+            if time_match and not time_range:
+                time_range = time_match.group(1).strip()
+        
+        # 构建事件统计行
+        event_stats_line = ""
+        if event_stats:
+            stats_parts = [f"{event}: {num}次" for event, num in sorted(event_stats.items(), key=lambda x: -x[1])]
+            event_stats_line = "\n📊 事件统计: " + " | ".join(stats_parts)
+        
+        # 构建时间信息行
+        time_line = f"\n⏰ 首条时间: {time_range}" if time_range else ""
+        
+        # 完整的头部信息
+        header = f"📬 【免打扰时段消息汇总】共 {count} 条{event_stats_line}{time_line}\n" + "=" * 30 + "\n"
+        
+        # 使用分隔符连接各条消息（保持完整内容，不精简）
         separator = "\n" + "-" * 30 + "\n"
         body = separator.join(cached_messages)
-        
-        # 如果超长，生成精简摘要
-        if len(body) > max_length:
-            return self._format_dnd_compact_summary(cached_messages, count, max_length)
         
         return header + body
     
