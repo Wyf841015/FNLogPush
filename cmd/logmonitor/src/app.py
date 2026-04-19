@@ -6,6 +6,10 @@
 
 适配飞牛NAS原生应用
 """
+
+# 应用版本
+__version__ = "0.9.0"
+
 import sys
 import io
 import os
