@@ -40,9 +40,9 @@ function loadAggStats() {
 // ========== ECharts 图表初始化 ==========
 
 function initCharts() {
-    // 初始化推送趋势图表
+    // 只在图表未初始化时才初始化
     var trendDom = document.getElementById('push-trend-chart');
-    if (trendDom) {
+    if (trendDom && !pushTrendChart) {
         pushTrendChart = echarts.init(trendDom, null, { renderer: 'canvas' });
         window.addEventListener('resize', function() {
             if (pushTrendChart) pushTrendChart.resize();
@@ -50,14 +50,11 @@ function initCharts() {
         });
     }
     
-    // 初始化推送渠道饼图
+    // 只在图表未初始化时才初始化
     var channelDom = document.getElementById('push-channel-chart');
-    if (channelDom) {
+    if (channelDom && !pushChannelChart) {
         pushChannelChart = echarts.init(channelDom, null, { renderer: 'canvas' });
     }
-    
-    // 加载图表数据
-    loadChartData();
 }
 
 function loadChartData() {
@@ -437,12 +434,20 @@ window.loadEventTypeChart = loadEventTypeChart;
 function initStatsPanel() {
     // 初始化图表
     initCharts();
-    // 加载图表数据
-    loadChartData();
-    // 加载统计概览
-    loadStatsOverview();
-    // 加载事件类型图表
-    loadEventTypeChart();
+    
+    // 确保图表容器可见后再加载数据
+    setTimeout(function() {
+        // 调整图表大小
+        if (pushTrendChart) pushTrendChart.resize();
+        if (pushChannelChart) pushChannelChart.resize();
+        
+        // 加载图表数据
+        loadChartData();
+        // 加载统计概览
+        loadStatsOverview();
+        // 加载事件类型图表
+        loadEventTypeChart();
+    }, 100);
 }
 
 // ========== 兼容性别名 ==========
