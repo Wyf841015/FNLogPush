@@ -424,8 +424,7 @@ async function loadEventTypeChart() {
                 radius: ["40%", "70%"],
                 avoidLabelOverlap: false,
                 itemStyle: { borderRadius: 6, borderColor: "#1a1a2e", borderWidth: 2 },
-                label: { show: true, formatter: "{b}
-{d}%", fontSize: 10 },
+                label: { show: true, formatter: "{b}: {d}%", fontSize: 10 },
                 data: chartData
             }]
         });
