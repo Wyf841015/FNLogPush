@@ -60,6 +60,7 @@ function initCharts() {
 function loadChartData() {
     loadPushTrendData();
     loadPushChannelData();
+    loadStatsOverviewFromApi();
 }
 
 function loadPushTrendData() {
@@ -72,16 +73,26 @@ function loadPushTrendData() {
         maskColor: 'rgba(0,0,0,0.1)'
     });
     
-    var limit = currentTrendRange === '24h' ? 200 : 500;
-    
-    apiFetch('/api/history?limit=' + limit)
+    // 使用新的统计API
+    apiFetch('/api/stats/chart-data')
         .then(function(response) { return response.json(); })
         .then(function(data) {
             pushTrendChart.hideLoading();
-            if (data.data && Array.isArray(data.data)) {
-                // 按时间聚合数据
-                var trendData = aggregateHistoryByTime(data.data, currentTrendRange);
-                updatePushTrendChart(trendData);
+            if (data.success) {
+                var trendData = currentTrendRange === '24h' ? data.trend24h : data.trend7d;
+                if (trendData && trendData.length > 0) {
+                    updatePushTrendChart(trendData);
+                } else {
+                    updatePushTrendChart(generateMockTrendData());
+                }
+                // 更新概览统计
+                if (data.overview) {
+                    updateStatsOverview(data.overview);
+                }
+                // 更新渠道数据
+                if (data.channels && data.channels.length > 0 && data.channels[0].value > 0) {
+                    updatePushChannelChart(data.channels);
+                }
             } else {
                 updatePushTrendChart(generateMockTrendData());
             }
@@ -92,42 +103,30 @@ function loadPushTrendData() {
         });
 }
 
-// 按时间聚合历史数据
-function aggregateHistoryByTime(records, range) {
-    var aggregated = {};
-    var now = new Date();
+function loadPushChannelData() {
+    if (!pushChannelChart) return;
     
-    records.forEach(function(rec) {
-        var ts = new Date(rec.timestamp || rec.push_time);
-        var key;
-        if (range === '24h') {
-            key = ts.getHours();
-        } else {
-            key = ts.getMonth() + '-' + ts.getDate();
-        }
-        aggregated[key] = (aggregated[key] || 0) + 1;
-    });
-    
-    var result = [];
-    if (range === '24h') {
-        for (var h = 0; h < 24; h++) {
-            result.push({
-                timestamp: new Date(now.getFullYear(), now.getMonth(), now.getDate(), h).toISOString(),
-                count: aggregated[h] || 0
-            });
-        }
-    } else {
-        for (var d = 6; d >= 0; d--) {
-            var day = new Date(now);
-            day.setDate(day.getDate() - d);
-            var key = day.getMonth() + '-' + day.getDate();
-            result.push({
-                timestamp: day.toISOString(),
-                count: aggregated[key] || 0
-            });
-        }
-    }
-    return result;
+    // 渠道数据从统计API获取
+}
+
+// 从API加载统计概览
+function loadStatsOverviewFromApi() {
+    apiFetch('/api/stats/chart-data')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success && data.overview) {
+                updateStatsOverview(data.overview);
+            }
+        })
+        .catch(function() {});
+}
+
+// 更新统计概览
+function updateStatsOverview(overview) {
+    var totalEl = document.getElementById('stats-total-push');
+    var todayEl = document.getElementById('stats-today-push');
+    if (totalEl) totalEl.textContent = overview.total || 0;
+    if (todayEl) todayEl.textContent = overview.today || 0;
 }
 
 function generateMockTrendData() {

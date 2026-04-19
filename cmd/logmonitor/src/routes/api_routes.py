@@ -281,6 +281,104 @@ def register_api_routes(app: Flask):
             logger.error(f"获取聚合统计失败: {e}", exc_info=True)
             return jsonify({"success": False, "error": str(e)})
 
+    @login_required
+    @app.route('/api/stats/chart-data', methods=['GET'])
+    @api_error_handler
+    def stats_chart_data():
+        """
+        获取统计图表数据
+        返回推送趋势、渠道分布、概览统计等数据
+        """
+        try:
+            from monitor_core import get_monitor
+            monitor = get_monitor()
+            if not monitor:
+                return jsonify({"success": False, "error": "监控服务未启动"}), 500
+            
+            # 获取历史记录用于趋势分析
+            history_data = monitor.get_history(limit=500)
+            records = history_data.get('data', [])
+            
+            # 计算24小时趋势
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            hourly_data = []
+            for h in range(23, -1, -1):
+                hour_time = now - timedelta(hours=h)
+                hour_key = hour_time.strftime('%Y-%m-%d %H:00')
+                count = 0
+                for rec in records:
+                    try:
+                        rec_time = datetime.fromisoformat(rec.get('timestamp', '').replace('Z', '+00:00'))
+                        if rec_time.year == hour_time.year and rec_time.month == hour_time.month and rec_time.day == hour_time.day and rec_time.hour == hour_time.hour:
+                            count += 1
+                    except:
+                        pass
+                hourly_data.append({
+                    'timestamp': hour_time.isoformat(),
+                    'count': count
+                })
+            
+            # 计算7天趋势
+            daily_data = []
+            for d in range(6, -1, -1):
+                day_time = now - timedelta(days=d)
+                day_key = day_time.strftime('%Y-%m-%d')
+                count = 0
+                for rec in records:
+                    try:
+                        rec_time = datetime.fromisoformat(rec.get('timestamp', '').replace('Z', '+00:00'))
+                        if rec_time.year == day_time.year and rec_time.month == day_time.month and rec_time.day == day_time.day:
+                            count += 1
+                    except:
+                        pass
+                daily_data.append({
+                    'timestamp': day_time.isoformat(),
+                    'count': count
+                })
+            
+            # 计算渠道分布
+            channel_counts = {}
+            for rec in records:
+                results = rec.get('channel_results', {})
+                if results:
+                    for channel, success in results.items():
+                        if channel not in channel_counts:
+                            channel_counts[channel] = {'success': 0, 'failed': 0}
+                        if success:
+                            channel_counts[channel]['success'] += 1
+                        else:
+                            channel_counts[channel]['failed'] += 1
+            
+            channel_data = []
+            channel_labels = {'wecom': '企业微信', 'dingtalk': '钉钉', 'feishu': '飞书', 'telegram': 'Telegram', 'email': '邮件', 'webhook': 'Webhook'}
+            for channel, counts in channel_counts.items():
+                label = channel_labels.get(channel, channel)
+                channel_data.append({
+                    'name': label,
+                    'value': counts['success'] + counts['failed']
+                })
+            
+            # 计算今日推送
+            today_count = sum(1 for rec in records if rec.get('timestamp', '').startswith(now.strftime('%Y-%m-%d')))
+            
+            # 总推送数
+            total_count = history_data.get('total', 0)
+            
+            return jsonify({
+                "success": True,
+                "trend24h": hourly_data,
+                "trend7d": daily_data,
+                "channels": channel_data if channel_data else [{'name': '暂无数据', 'value': 0}],
+                "overview": {
+                    "total": total_count,
+                    "today": today_count
+                }
+            })
+        except Exception as e:
+            logger.error(f"获取图表统计数据失败: {e}", exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
+
     def _find_events_json():
         """查找 events.json 文件的多个可能位置（与 config.json 逻辑一致）"""
         import os
