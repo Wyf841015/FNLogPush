@@ -75,14 +75,16 @@ function loadPushTrendData() {
         maskColor: 'rgba(0,0,0,0.1)'
     });
     
-    var limit = currentTrendRange === '24h' ? 24 : 7;
+    var limit = currentTrendRange === '24h' ? 200 : 500;
     
     apiFetch('/api/history?limit=' + limit)
         .then(function(response) { return response.json(); })
         .then(function(data) {
             pushTrendChart.hideLoading();
             if (data.data && Array.isArray(data.data)) {
-                updatePushTrendChart(data.data);
+                // 按时间聚合数据
+                var trendData = aggregateHistoryByTime(data.data, currentTrendRange);
+                updatePushTrendChart(trendData);
             } else {
                 updatePushTrendChart(generateMockTrendData());
             }
@@ -91,6 +93,44 @@ function loadPushTrendData() {
             pushTrendChart.hideLoading();
             updatePushTrendChart(generateMockTrendData());
         });
+}
+
+// 按时间聚合历史数据
+function aggregateHistoryByTime(records, range) {
+    var aggregated = {};
+    var now = new Date();
+    
+    records.forEach(function(rec) {
+        var ts = new Date(rec.timestamp || rec.push_time);
+        var key;
+        if (range === '24h') {
+            key = ts.getHours();
+        } else {
+            key = ts.getMonth() + '-' + ts.getDate();
+        }
+        aggregated[key] = (aggregated[key] || 0) + 1;
+    });
+    
+    var result = [];
+    if (range === '24h') {
+        for (var h = 0; h < 24; h++) {
+            result.push({
+                timestamp: new Date(now.getFullYear(), now.getMonth(), now.getDate(), h).toISOString(),
+                count: aggregated[h] || 0
+            });
+        }
+    } else {
+        for (var d = 6; d >= 0; d--) {
+            var day = new Date(now);
+            day.setDate(day.getDate() - d);
+            var key = day.getMonth() + '-' + day.getDate();
+            result.push({
+                timestamp: day.toISOString(),
+                count: aggregated[key] || 0
+            });
+        }
+    }
+    return result;
 }
 
 function generateMockTrendData() {
