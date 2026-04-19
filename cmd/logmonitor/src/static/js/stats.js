@@ -124,7 +124,7 @@ function updatePushTrendChart(data) {
     if (!pushTrendChart) return;
     
     var xAxisData = data.map(function(item) {
-        var date = new Date(item.push_time);
+        var date = new Date(item.timestamp || item.push_time);
         if (currentTrendRange === '24h') {
             return date.getHours() + ':00';
         } else {
@@ -391,3 +391,22 @@ async function loadEventTypeChart() {
 window.refreshStatsCharts = refreshStatsCharts;
 window.loadStatsOverview = loadStatsOverview;
 window.loadEventTypeChart = loadEventTypeChart;
+
+
+// ========== 统计面板初始化 ==========
+function initStatsPanel() {
+    // 初始化图表
+    initCharts();
+    // 加载图表数据
+    loadChartData();
+    // 加载统计概览
+    loadStatsOverview();
+    // 加载事件类型图表
+    loadEventTypeChart();
+}
+
+// ========== 兼容性别名 ==========
+window.setPushTrendRange = function(range) {
+    currentTrendRange = range;
+    loadPushTrendData();
+};

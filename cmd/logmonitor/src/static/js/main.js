@@ -355,6 +355,11 @@ console.log('Font Awesome 已加载:', document.querySelector('link[href*="font-
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== DOMContentLoaded 事件触发 ===');
 
+    // 初始化统计图表
+    if (typeof initCharts === 'function') {
+        initCharts();
+    }
+
     // 注意：currentConfig 已在上方全局声明
     // let currentConfig = {};  // 已移除，避免作用域冲突
 
@@ -1908,6 +1913,11 @@ function switchFabPanel(element, target) {
     // 如果切换到事件管理面板，加载事件列表
     if (target === 'events') {
         refreshEventsList();
+    }
+
+    // 如果切换到统计图表面板，加载图表
+    if (target === 'stats') {
+        initStatsPanel();
     }
 }
 
