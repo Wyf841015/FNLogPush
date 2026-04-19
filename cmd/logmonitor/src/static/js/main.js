@@ -1220,9 +1220,35 @@ function highlightKeyword(text, kw) {
     return text.replace(re, '<mark class="kw-highlight">$1</mark>');
 }
 
+// ========== 骨架屏生成函数 ==========
+function generateSkeletonRows(count, type) {
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        if (type === 'history') {
+            html += '<tr class="skeleton-row"><td><span class="skeleton skeleton-time"></span></td>';
+            html += '<td><span class="skeleton skeleton-badge"></span></td>';
+            html += '<td><span class="skeleton skeleton-badge"></span></td>';
+            html += '<td><span class="skeleton skeleton-badge"></span></td>';
+            html += '<td><span class="skeleton skeleton-num"></span></td>';
+            html += '<td><span class="skeleton skeleton-id"></span></td>';
+            html += '<td><span class="skeleton skeleton-text"></span></td></tr>';
+        } else if (type === 'events') {
+            html += '<tr class="events-skeleton-row"><td><span class="skeleton skeleton-icon"></span></td>';
+            html += '<td><span class="skeleton skeleton-id"></span></td>';
+            html += '<td><span class="skeleton skeleton-name"></span></td>';
+            html += '<td><span class="skeleton skeleton-category"></span></td>';
+            html += '<td><span class="skeleton skeleton-category"></span></td>';
+            html += '<td></td></tr>';
+        }
+    }
+    return html;
+}
+
 function loadHistory(retry = 0) {
     const tbody = document.getElementById('history-table');
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">加载中...</span></div> 加载中...</td></tr>';
+    // 显示骨架屏
+    tbody.innerHTML = generateSkeletonRows(5, 'history');
+    tbody.classList.add('loading');
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
