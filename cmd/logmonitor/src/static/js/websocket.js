@@ -5,11 +5,12 @@ class WebSocketManager {
         this.socket = null;
         this.connected = false;
         this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 10;
-        this.reconnectDelay = 3000;
+        this.maxReconnectAttempts = 5;
+        this.reconnectDelay = 5000;
         this.pingInterval = null;
         this.pingDelay = 30000;
         this.listeners = {};
+        this.enabled = true;
         this._init();
     }
 
@@ -19,10 +20,11 @@ class WebSocketManager {
         this.onDisconnected = null;
         this.onNewLogs = null;
         this.onPushResult = null;
-        this.onHealthStatus = null;  // 健康状态回调
+        this.onHealthStatus = null;
     }
 
     connect() {
+        if (!this.enabled) return;
         if (this.socket && this.connected) return;
 
         // 构建 WebSocket URL
@@ -31,10 +33,11 @@ class WebSocketManager {
 
         try {
             this.socket = io(wsUrl, {
-                transports: ['websocket', 'polling'],
+                transports: ['polling', 'websocket'],
                 reconnection: true,
                 reconnectionAttempts: this.maxReconnectAttempts,
-                reconnectionDelay: this.reconnectDelay
+                reconnectionDelay: this.reconnectDelay,
+                timeout: 10000
             });
 
             this.socket.on('connect', () => {
@@ -47,7 +50,6 @@ class WebSocketManager {
             });
 
             this.socket.on('disconnect', () => {
-                console.log('WebSocket已断开');
                 this.connected = false;
                 this.stopPing();
                 this._emit('disconnected');
@@ -55,38 +57,39 @@ class WebSocketManager {
             });
 
             this.socket.on('connect_error', (error) => {
-                console.error('WebSocket连接错误:', error);
+                console.log('WebSocket连接失败，将使用轮询模式');
                 this.reconnectAttempts++;
+                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                    console.log('WebSocket连接已达最大重试次数，已禁用实时推送功能');
+                    this.enabled = false;
+                }
             });
 
             // 监听新日志事件
             this.socket.on('new_logs', (data) => {
-                console.log('收到新日志推送:', data.count);
                 this._emit('new_logs', data);
                 if (this.onNewLogs) this.onNewLogs(data);
             });
 
             // 监听推送结果事件
             this.socket.on('push_result', (data) => {
-                console.log('收到推送结果:', data);
                 this._emit('push_result', data);
                 if (this.onPushResult) this.onPushResult(data);
             });
 
-            // 监听健康状态推送（WebSocket推送替代轮询）
+            // 监听健康状态推送
             this.socket.on('health_status', (data) => {
-                console.log('收到健康状态推送:', data);
                 this._emit('health_status', data);
                 if (this.onHealthStatus) this.onHealthStatus(data);
             });
 
             // 监听ping响应
             this.socket.on('pong', () => {
-                console.log('收到pong响应');
+                // 静默处理
             });
 
         } catch (error) {
-            console.error('WebSocket初始化失败:', error);
+            console.log('WebSocket初始化失败，将使用轮询模式');
         }
     }
 
