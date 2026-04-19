@@ -694,4 +694,273 @@ def register_api_routes(app: Flask):
             logger.error(f"查询事件记录失败: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    # ==================== 配置导入/导出 ====================
+
+    @app.route('/api/config/export', methods=['GET'])
+    @login_required
+    @api_error_handler
+    def export_config():
+        """
+        导出完整配置（config.json + events.json）
+        """
+        try:
+            import json
+            import os
+            from datetime import datetime
+            from flask import current_app, send_file
+            
+            config_dir = current_app.config.get('CONFIG_DIR', '/app/working/workspaces/default/fnos/etc/fnlogpush')
+            
+            # 读取配置文件
+            config_path = os.path.join(config_dir, 'config.json')
+            events_path = os.path.join(config_dir, 'events.json')
+            
+            config_data = {}
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+            
+            events_data = []
+            if os.path.exists(events_path):
+                with open(events_path, 'r', encoding='utf-8') as f:
+                    events_data = json.load(f)
+            
+            # 构建导出数据
+            export_data = {
+                "version": "1.0",
+                "export_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "config": config_data,
+                "events": events_data
+            }
+            
+            # 创建临时文件
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"fnlogpush_config_{timestamp}.json"
+            temp_path = os.path.join('/tmp', filename)
+            
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, ensure_ascii=False, indent=2)
+            
+            return send_file(
+                temp_path,
+                mimetype='application/json',
+                as_attachment=True,
+                download_name=filename
+            )
+            
+        except Exception as e:
+            logger.error(f"导出配置失败: {e}", exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/config/import', methods=['POST'])
+    @login_required
+    @api_error_handler
+    def import_config():
+        """
+        导入配置（config.json + events.json）
+        """
+        try:
+            import json
+            import os
+            from flask import current_app, request
+            
+            data = request.json
+            if not data:
+                return jsonify({"success": False, "error": "未收到数据"}), 400
+            
+            config_dir = current_app.config.get('CONFIG_DIR', '/app/working/workspaces/default/fnos/etc/fnlogpush')
+            
+            # 验证版本
+            if data.get('version') != "1.0":
+                return jsonify({"success": False, "error": "不支持的配置文件版本"}), 400
+            
+            # 保存 config.json
+            if 'config' in data and data['config']:
+                config_path = os.path.join(config_dir, 'config.json')
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    json.dump(data['config'], f, ensure_ascii=False, indent=4)
+                logger.info("[配置] 已更新 config.json")
+            
+            # 保存 events.json
+            if 'events' in data and data['events']:
+                events_path = os.path.join(config_dir, 'events.json')
+                with open(events_path, 'w', encoding='utf-8') as f:
+                    json.dump(data['events'], f, ensure_ascii=False, indent=4)
+                logger.info("[事件] 已更新 events.json")
+            
+            # 重新加载配置
+            from monitor_core import get_monitor
+            monitor = get_monitor()
+            if monitor:
+                monitor.reload_config()
+                logger.info("[监控] 配置已重新加载")
+            
+            return jsonify({
+                "success": True,
+                "message": "配置导入成功，系统配置已更新"
+            })
+            
+        except Exception as e:
+            logger.error(f"导入配置失败: {e}", exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/config/backup/list', methods=['GET'])
+    @login_required
+    @api_error_handler
+    def list_config_backups():
+        """
+        获取配置备份历史
+        """
+        try:
+            import os
+            from flask import current_app
+            
+            backup_dir = os.path.join(current_app.config.get('CONFIG_DIR', '/app/working/workspaces/default/fnos/etc/fnlogpush'), 'backups')
+            
+            if not os.path.exists(backup_dir):
+                return jsonify({"success": True, "backups": []})
+            
+            backups = []
+            for f in os.listdir(backup_dir):
+                if f.startswith('fnlogpush_config_') and f.endswith('.json'):
+                    path = os.path.join(backup_dir, f)
+                    stat = os.stat(path)
+                    backups.append({
+                        "name": f,
+                        "path": path,
+                        "size": stat.st_size,
+                        "mtime": stat.st_mtime
+                    })
+            
+            # 按时间倒序
+            backups.sort(key=lambda x: x['mtime'], reverse=True)
+            
+            return jsonify({
+                "success": True,
+                "backups": backups
+            })
+            
+        except Exception as e:
+            logger.error(f"获取备份列表失败: {e}", exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/config/backup/create', methods=['POST'])
+    @login_required
+    @api_error_handler
+    def create_config_backup():
+        """
+        创建手动备份
+        """
+        try:
+            import json
+            import os
+            from datetime import datetime
+            from flask import current_app
+            
+            config_dir = current_app.config.get('CONFIG_DIR', '/app/working/workspaces/default/fnos/etc/fnlogpush')
+            backup_dir = os.path.join(config_dir, 'backups')
+            
+            # 创建备份目录
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            # 读取当前配置
+            config_path = os.path.join(config_dir, 'config.json')
+            events_path = os.path.join(config_dir, 'events.json')
+            
+            export_data = {
+                "version": "1.0",
+                "export_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "manual": True,
+                "config": {},
+                "events": []
+            }
+            
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    export_data['config'] = json.load(f)
+            
+            if os.path.exists(events_path):
+                with open(events_path, 'r', encoding='utf-8') as f:
+                    export_data['events'] = json.load(f)
+            
+            # 保存备份
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"fnlogpush_config_{timestamp}.json"
+            backup_path = os.path.join(backup_dir, filename)
+            
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, ensure_ascii=False, indent=2)
+            
+            # 清理旧备份（保留最近10个）
+            backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('fnlogpush_config_')], reverse=True)
+            for old_backup in backups[10:]:
+                try:
+                    os.remove(os.path.join(backup_dir, old_backup))
+                except Exception:
+                    pass
+            
+            return jsonify({
+                "success": True,
+                "message": f"备份已创建: {filename}"
+            })
+            
+        except Exception as e:
+            logger.error(f"创建备份失败: {e}", exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/config/backup/restore/<path:filename>', methods=['POST'])
+    @login_required
+    @api_error_handler
+    def restore_config_backup(filename):
+        """
+        从备份恢复配置
+        """
+        try:
+            import json
+            import os
+            from flask import current_app
+            
+            # 安全检查：只允许恢复backups目录下的文件
+            backup_dir = os.path.join(current_app.config.get('CONFIG_DIR', '/app/working/workspaces/default/fnos/etc/fnlogpush'), 'backups')
+            backup_path = os.path.normpath(os.path.join(backup_dir, filename))
+            
+            if not backup_path.startswith(backup_dir):
+                return jsonify({"success": False, "error": "无效的备份文件路径"}), 400
+            
+            if not os.path.exists(backup_path):
+                return jsonify({"success": False, "error": "备份文件不存在"}), 404
+            
+            # 读取备份文件
+            with open(backup_path, 'r', encoding='utf-8') as bf:
+                backup_data = json.load(bf)
+            
+            config_dir = current_app.config.get('CONFIG_DIR', '/app/working/workspaces/default/fnos/etc/fnlogpush')
+            
+            # 恢复 config.json
+            if 'config' in backup_data and backup_data['config']:
+                config_path = os.path.join(config_dir, 'config.json')
+                with open(config_path, 'w', encoding='utf-8') as cf:
+                    json.dump(backup_data['config'], cf, ensure_ascii=False, indent=4)
+            
+            # 恢复 events.json
+            if 'events' in backup_data and backup_data['events']:
+                events_path = os.path.join(config_dir, 'events.json')
+                with open(events_path, 'w', encoding='utf-8') as ef:
+                    json.dump(backup_data['events'], ef, ensure_ascii=False, indent=4)
+            
+            # 重新加载配置
+            from monitor_core import get_monitor
+            monitor = get_monitor()
+            if monitor:
+                monitor.reload_config()
+            
+            return jsonify({
+                "success": True,
+                "message": "已从备份恢复: " + filename
+            })
+            
+        except Exception as e:
+            logger.error("恢复备份失败: " + str(e), exc_info=True)
+            return jsonify({"success": False, "error": str(e)}), 500
+
     return app
