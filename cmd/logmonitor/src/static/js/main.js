@@ -2524,15 +2524,24 @@ function animateNumber(element, newValue) {
     const oldValue = element.textContent;
     if (oldValue === newValue) return;
 
-    // 添加动画类
+    // 添加数值动画类
     element.classList.add('animating');
+
+    // 同时给父级KPI卡片添加更新动画
+    const kpiCard = element.closest('.kpi-card');
+    if (kpiCard) {
+        kpiCard.classList.add('updated');
+        setTimeout(() => kpiCard.classList.remove('updated'), 600);
+    }
 
     // 更新数值
     element.textContent = newValue;
 
-    // 动画结束后移除类
+    // 添加数值变化动画
+    element.classList.add('changed');
     setTimeout(() => {
         element.classList.remove('animating');
+        element.classList.remove('changed');
     }, 400);
 }
 

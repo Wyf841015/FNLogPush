@@ -2599,6 +2599,82 @@ body.theme-sunset .bg-glow {
             100% { opacity: 1; }
         }
 
+        /* KPI 入场动画 - 卡片依次渐入 */
+        @keyframes kpiSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .kpi-card {
+            opacity: 0;
+            animation: kpiSlideIn 0.5s ease-out forwards;
+        }
+        .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+        .kpi-card:nth-child(5) { animation-delay: 0.5s; }
+        .kpi-card:nth-child(6) { animation-delay: 0.6s; }
+
+        /* KPI 更新时的脉冲动画 */
+        @keyframes kpiPulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+            }
+            70% {
+                transform: scale(1.02);
+                box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+            }
+        }
+        .kpi-card.updated {
+            animation: kpiPulse 0.6s ease-out;
+        }
+
+        /* KPI 数值变化动画 */
+        @keyframes valueChange {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); color: #fbbf24; }
+            100% { transform: scale(1); }
+        }
+        .kpi-value.changed {
+            animation: valueChange 0.4s ease-out;
+        }
+
+        /* KPI 背景微光动画 */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255,255,255,0.1) 50%,
+                transparent 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .kpi-card:hover::after {
+            opacity: 1;
+        }
+
         /* 分隔线 */
         .header-divider {
             height: 1px;
