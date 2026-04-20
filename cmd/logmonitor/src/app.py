@@ -204,6 +204,55 @@ def create_app():
     config_manager = ConfigManager(str(Path(APP_HOME) / 'config' / 'config.json'))
     init_media_routes(app, config_manager, app.media_monitor)
     
+    # 注册相册监控路由
+    from services.photo_monitor_service import PhotoMonitorService
+    from services.photo_event_service import PhotoEventService
+    from routes.photo_routes import init_photo_routes
+    
+    # 创建相册事件服务实例
+    app.photo_event_service = PhotoEventService(data_dir=str(Path(APP_HOME) / 'data'))
+    
+    # 从配置获取相册监控配置
+    photo_config = {}
+    try:
+        config_path = Path(APP_HOME) / 'config' / 'config.json'
+        if config_path.exists():
+            import json
+            with open(config_path, 'r', encoding='utf-8') as f:
+                full_config = json.load(f)
+                photo_config = full_config.get('photo_monitor', {})
+    except Exception as e:
+        logger.warning(f"加载相册监控配置失败: {e}")
+    
+    # 创建并初始化相册监控服务
+    app.photo_monitor = PhotoMonitorService(
+        db_path=photo_config.get('db_path', '/usr/local/apps/@appdata/trim.photos/db/photo.db'),
+        cursor_dir=str(Path(APP_HOME) / 'data' / 'cursor'),
+        poll_interval=photo_config.get('poll_interval', 10),
+        monitor_events=photo_config.get('monitor_events', ['PHOTO_SHARE_CREATED', 'PHOTO_SHARE_EXPIRED', 'PHOTO_DEVICE_REGISTERED', 'FACE_RECOGNITION_UPDATED']),
+        on_event=lambda events: handle_photo_events(events, app)
+    )
+    
+    def handle_photo_events(events, flask_app):
+        """处理相册监控事件"""
+        try:
+            if hasattr(flask_app, 'photo_event_service'):
+                flask_app.photo_event_service.add_events(events)
+            from websocket_manager import get_websocket_manager
+            ws_manager = get_websocket_manager()
+            for event in events:
+                ws_manager.broadcast_photo_event(event)
+        except Exception as e:
+            logger.error(f"处理相册事件失败: {e}")
+    
+    init_photo_routes(app, config_manager, app.photo_monitor)
+    
+    if photo_config.get('enabled', False):
+        app.photo_monitor.start()
+        logger.info("✓ 相册监控服务已启动")
+    else:
+        logger.info("○ 相册监控服务未启用")
+    
     # 如果启用则启动监控
     if media_config.get('enabled', False):
         app.media_monitor.start()

@@ -119,10 +119,12 @@ function loadPanelData(target) {
             break;
         case 'media':
             if (typeof initMediaSettings === 'function') {
-                // 加载媒体监控设置HTML
-                loadMediaSettingsHTML().then(function() {
-                    initMediaSettings();
-                });
+                loadMediaSettingsHTML().then(function() { initMediaSettings(); });
+            }
+            break;
+        case 'photo':
+            if (typeof initPhotoSettings === 'function') {
+                loadPhotoSettingsHTML().then(function() { initPhotoSettings(); });
             }
             break;
     }
@@ -131,33 +133,43 @@ function loadPanelData(target) {
 function loadMediaSettingsHTML() {
     var container = document.getElementById('mediaSettingsContainer');
     if (!container) return Promise.resolve();
-    
-    // 如果已经加载过，直接返回
-    if (container.dataset.loaded) {
-        return Promise.resolve();
-    }
+    if (container.dataset.loaded) return Promise.resolve();
     
     return fetch('/static/templates/media_settings.html')
         .then(function(response) { return response.text(); })
         .then(function(html) {
             container.innerHTML = html;
             container.dataset.loaded = 'true';
-            
-            // 执行内联脚本
             var scripts = container.querySelectorAll('script');
             scripts.forEach(function(script) {
                 var newScript = document.createElement('script');
-                if (script.src) {
-                    newScript.src = script.src;
-                } else {
-                    newScript.textContent = script.textContent;
-                }
+                if (script.src) newScript.src = script.src;
+                else newScript.textContent = script.textContent;
                 script.parentNode.replaceChild(newScript, script);
             });
         })
-        .catch(function(err) {
-            console.error('Load media settings failed:', err);
-        });
+        .catch(function(err) { console.error('Load media settings failed:', err); });
+}
+
+function loadPhotoSettingsHTML() {
+    var container = document.getElementById('photoSettingsContainer');
+    if (!container) return Promise.resolve();
+    if (container.dataset.loaded) return Promise.resolve();
+    
+    return fetch('/static/templates/photo_settings.html')
+        .then(function(response) { return response.text(); })
+        .then(function(html) {
+            container.innerHTML = html;
+            container.dataset.loaded = 'true';
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(script) {
+                var newScript = document.createElement('script');
+                if (script.src) newScript.src = script.src;
+                else newScript.textContent = script.textContent;
+                script.parentNode.replaceChild(newScript, script);
+            });
+        })
+        .catch(function(err) { console.error('Load photo settings failed:', err); });
 }
 
 /**

@@ -151,10 +151,27 @@ class WebSocketManager:
         except Exception as e:
             logger.error(f"广播影视事件失败: {e}")
 
+    def broadcast_photo_event(self, event: dict):
+        """广播相册监控事件"""
+        try:
+            if not self.socketio:
+                logger.warning("SocketIO未初始化，无法广播相册事件")
+                return
+            
+            self.socketio.emit('photo_event', event, namespace='/')
+            logger.info(f"相册事件已推送: {event.get('type')}")
+        except Exception as e:
+            logger.error(f"广播相册事件失败: {e}")
+
     def broadcast_media_events(self, events: list):
         """广播多个影视监控事件"""
         for event in events:
             self.broadcast_media_event(event)
+
+    def broadcast_photo_events(self, events: list):
+        """广播多个相册监控事件"""
+        for event in events:
+            self.broadcast_photo_event(event)
 
 
 # 全局WebSocket管理器实例

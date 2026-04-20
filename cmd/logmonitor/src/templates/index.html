@@ -301,6 +301,10 @@
                         <a class="nav-item" data-target="media" data-label="影视监控" onclick="switchNavPanel(this, 'media')">
                             <div class="nav-icon"><i class="fas fa-film"></i></div>
                             <span class="nav-text">影视监控</span>
+
+                        <a class="nav-item" data-target="photo" data-label="相册监控" onclick="switchNavPanel(this, 'photo')">
+                            <div class="nav-icon"><i class="fas fa-images"></i></div>
+                            <span class="nav-text">相册监控</span>
                         </a>
                     </div>
 
@@ -1506,6 +1510,30 @@
                         </div>
                         <div class="card-body">
                             <div id="mediaSettingsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 相册监控面板 -->
+                <div class="config-panel" id="panel-photo">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-images me-2"></i>相册监控</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="photoSettingsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 相册监控面板 -->
+                <div class="config-panel" id="panel-photo">
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                            <h5 class="mb-0 icon-text"><i class="fas fa-images me-2"></i>相册监控</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="photoSettingsContainer"></div>
                         </div>
                     </div>
                 </div>

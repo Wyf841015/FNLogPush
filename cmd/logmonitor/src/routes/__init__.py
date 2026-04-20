@@ -15,6 +15,8 @@ from .auth_routes import register_auth_routes
 from .monitor_routes import register_monitor_routes, register_sponsor_routes
 from .backup_routes import register_backup_routes
 from .api_routes import register_api_routes
+from .media_routes import init_media_routes
+from .photo_routes import init_photo_routes
 
 
 def check_session(f):
