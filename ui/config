@@ -1,6 +1,6 @@
 {
     ".url": {
-        "LogMonitor.Application": {
+        "fnlogpush.Application": {
             "title": "日志哨兵",
             "icon": "images/icon-{0}.png",
             "type": "url",
