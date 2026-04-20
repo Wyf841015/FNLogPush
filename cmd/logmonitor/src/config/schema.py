@@ -121,6 +121,19 @@ class SchemaValidator:
                     "silence_seconds": {"type": "integer", "minimum": 0}
                 },
                 "required": ["enabled", "window_seconds", "threshold", "silence_seconds"]
+            },
+            "media_monitor": {
+                "type": "object",
+                "properties": {
+                    "enabled": {"type": "boolean"},
+                    "db_path": {"type": "string"},
+                    "activity_db_path": {"type": "string"},
+                    "poll_interval": {"type": "integer", "minimum": 1},
+                    "monitor_events": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                }
             }
         },
         "required": ["database_path", "check_interval", "web_port"]
