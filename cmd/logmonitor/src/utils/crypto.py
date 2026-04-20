@@ -119,18 +119,26 @@ class CryptoManager:
         config_key = _get_config_key_direct()
         if config_key:
             try:
-                return base64.urlsafe_b64decode(config_key)
+                # 密钥已经是正确格式的base64字符串
+                key_bytes = config_key.encode('utf-8')
+                # 如果是urlsafe_b64decode能处理的格式
+                return base64.urlsafe_b64decode(key_bytes)
             except Exception as e:
                 logger.warning(f"解析密钥失败: {e}")
         
         # 3. 从 _load_config_key 读取（备用）
         config_key = self._load_config_key()
         if config_key:
-            return base64.urlsafe_b64decode(config_key)
+            try:
+                # 密钥保存时是字符串格式，直接返回（Fernet可以接受字符串）
+                return config_key.encode('utf-8')
+            except Exception as e:
+                logger.warning(f"解析密钥失败: {e}")
         
         # 4. 生成新密钥
         if HAS_CRYPTO:
             new_key = Fernet.generate_key()
+            # Fernet.generate_key() 返回的是 bytes，已经是正确格式
             self._save_config_key(new_key)
             logger.info("已生成并保存新的加密密钥")
             return new_key
@@ -175,8 +183,14 @@ class CryptoManager:
             if key_dir:
                 key_file = key_dir / '.encrypt_key'
                 key_dir.mkdir(parents=True, exist_ok=True)
+                # Fernet.generate_key() 返回的是 bytes，已经是正确格式
+                # 直接保存即可
+                if isinstance(key, bytes):
+                    key_str = key.decode('utf-8')
+                else:
+                    key_str = str(key)
                 with open(key_file, 'w') as f:
-                    f.write(base64.urlsafe_b64encode(key).decode())
+                    f.write(key_str)
                 logger.info(f"加密密钥已保存到: {key_file}")
             else:
                 logger.error("无法找到可写的密钥存储目录")

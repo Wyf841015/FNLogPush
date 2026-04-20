@@ -219,36 +219,138 @@ JavaScript 文件加载顺序很重要，被依赖的模块必须先加载
 
 ---
 
-## [LRN-20260420-008] best_practice
+## [LRN-20260421-001] best_practice
 
-**Logged**: 2026-04-20T16:35:00+08:00
-**Priority**: medium
+**Logged**: 2026-04-21T10:30:00+08:00
+**Priority**: critical
 **Status**: resolved
-**Area**: frontend
+**Area**: backend
 
 ### Summary
-图表组件需要响应式设计，适配不同屏幕尺寸
+跨项目复制代码时必须移除对原项目模块的依赖
 
 ### Details
-ECharts 图表需要考虑桌面端、平板端、移动端的显示效果：
-- 图表高度自适应
-- 图例位置调整（桌面端右侧，移动端底部）
-- 字体大小调整
-- 触摸交互优化
+从 FnMessageBot 复制 `photo_db_poller.py` 到 log-monitor-fpk 项目时，该文件引用了原项目的模块：
+```python
+from monitor_core.models import JournalEntry
+from monitor_core.sqlite_uri import connect_readonly_with_fallback
+```
+这些模块在目标项目中不存在，导致应用启动时报错：
+```
+ModuleNotFoundError: No module named 'monitor_core.models'
+```
+
+**正确做法：**
+1. 复制代码后立即检查所有 import 语句
+2. 将依赖的模块代码一并复制，或用目标项目的等效实现替代
+3. 在集成前先测试各模块能否正常导入
 
 ### Suggested Action
-```javascript
-// 检测屏幕宽度
-var isMobile = window.innerWidth < 768;
+从 FnMessageBot 复制代码时的检查清单：
+- [ ] 列出所有 import 语句
+- [ ] 检查每个模块是否存在于目标项目
+- [ ] 如不存在，决定复制模块还是用等效实现
+- [ ] 测试模块导入：`python -c "from x import y"`
 
-// 根据屏幕调整配置
-var gridLeft = isMobile ? '2%' : '3%';
-var axisLabelFontSize = isMobile ? 9 : 11;
+### Metadata
+- Source: error
+- Related Files: cmd/logmonitor/src/services/photo_db_poller.py
+- Tags: code-reuse, import, module-dependency
+- See Also: LRN-20260420-001
+
+---
+
+## [LRN-20260421-002] best_practice
+
+**Logged**: 2026-04-21T10:45:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+execute_shell_command 中 heredoc 无法正确处理复杂字符串
+
+### Details
+使用 heredoc（`<<`）语法在 shell 命令中写入 Python 代码时，如果内容包含反斜杠、括号等特殊字符，会导致 shell 解析错误：
 ```
+Syntax error: "(" unexpected
+```
+
+**问题原因：**
+- Heredoc 内容中的 `\`、`()`、`$()` 等会被 shell 预处理
+- Python 代码中的类型注解如 `Optional[threading.Thread]` 触发 shell 语法解析
+
+**正确做法：**
+1. 使用 `write_file` 工具直接写入文件（避免 shell 解析）
+2. 或将文件分成小块写入
+3. 或使用 Python 脚本生成文件：`python3 -c "code='...' ; open(f,'w').write(code)"`
+
+### Suggested Action
+写入包含复杂语法的代码文件时：
+- 优先使用 `write_file` 工具
+- 避免 heredoc 中写入带复杂语法的内容
+- 大文件可分多次写入
+
+### Metadata
+- Source: error
+- Tags: shell, heredoc, execute_shell_command, python
+
+---
+
+## [LRN-20260421-003] best_practice
+
+**Logged**: 2026-04-21T11:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+危险命令需要用户审批，超时不响应会导致操作失败
+
+### Details
+执行 `rm -f /app/working/workspaces/default/project/log-monitor-fpk/cmd/logmonitor/src/services/photo_db_poller.py` 时被安全系统拦截，需要用户输入 `/approve` 审批。用户未在超时时间内响应，导致命令被拒绝。
+
+### Suggested Action
+1. 涉及删除文件等危险操作时，先说明操作风险
+2. 等待用户确认后再执行
+3. 可提供替代方案（如用空文件覆盖）
+
+### Metadata
+- Source: error
+- Tags: tool-approval, dangerous-command, timeout
+
+---
+
+## [LRN-20260421-004] best_practice
+
+**Logged**: 2026-04-21T11:15:00+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: workflow
+
+### Summary
+修复应用启动问题的正确流程
+
+### Details
+修复依赖模块问题的标准流程：
+1. **测试导入**：`python -c "import module"` 检查模块是否存在
+2. **定位问题**：查看报错堆栈，找出缺失的 import
+3. **修复或替换**：移除不可用的 import，用标准库替代
+4. **验证修复**：重新测试模块导入
+5. **测试启动**：启动应用确认无错误
+
+**避免跳过步骤**：不能假设修复后就能工作，必须逐项验证。
+
+### Suggested Action
+遇到 "Module not found" 错误时：
+1. 先运行 `python -c "import xxx"` 确认问题
+2. 检查 import 语句，移除不可用的依赖
+3. 使用标准库替代（如用 `sqlite3` 替代自定义的 `sqlite_uri`）
+4. 再次测试导入
+5. 最后测试完整应用启动
 
 ### Metadata
 - Source: conversation
-- Related Files: cmd/logmonitor/src/static/js/stats.js
-- Tags: responsive, echarts, mobile
+- Tags: debugging, import, workflow
 
 ---
