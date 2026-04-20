@@ -153,6 +153,64 @@ def create_app():
     from routes import register_all_routes
     register_all_routes(app)
 
+    # 注册影视监控路由
+    from services.media_monitor_service import MediaMonitorService
+    from services.media_event_service import MediaEventService
+    from routes.media_routes import init_media_routes
+    
+    # 创建影视监控服务实例
+    app.media_event_service = MediaEventService(data_dir=str(Path(APP_HOME) / 'data'))
+    
+    # 从配置获取影视监控配置
+    media_config = {}
+    try:
+        config_path = Path(APP_HOME) / 'config' / 'config.json'
+        if config_path.exists():
+            import json
+            with open(config_path, 'r', encoding='utf-8') as f:
+                full_config = json.load(f)
+                media_config = full_config.get('media_monitor', {})
+    except Exception as e:
+        logger.warning(f"加载影视监控配置失败: {e}")
+    
+    # 创建并初始化影视监控服务
+    app.media_monitor = MediaMonitorService(
+        db_path=media_config.get('db_path', '/usr/local/apps/@appdata/trim.media/database/trimmedia.db'),
+        activity_db_path=media_config.get('activity_db_path', '/usr/local/apps/@appdata/trim.media/database/trimactivity.db'),
+        cursor_dir=str(Path(APP_HOME) / 'data' / 'cursor'),
+        poll_interval=media_config.get('poll_interval', 10),
+        monitor_events=media_config.get('monitor_events', ['MEDIA_RESOURCE_ADDED', 'MEDIA_SCRAPE_SUCCESS']),
+        on_event=lambda events: handle_media_events(events, app)
+    )
+    
+    def handle_media_events(events, flask_app):
+        """处理影视监控事件"""
+        try:
+            # 存储事件
+            if hasattr(flask_app, 'media_event_service'):
+                flask_app.media_event_service.add_events(events)
+            
+            # 通过WebSocket推送
+            from websocket_manager import get_websocket_manager
+            ws_manager = get_websocket_manager()
+            for event in events:
+                ws_manager.broadcast_media_event(event)
+                
+        except Exception as e:
+            logger.error(f"处理影视事件失败: {e}")
+    
+    # 注册影视监控API路由
+    from config.manager import ConfigManager
+    config_manager = ConfigManager(str(Path(APP_HOME) / 'config' / 'config.json'))
+    init_media_routes(app, config_manager, app.media_monitor)
+    
+    # 如果启用则启动监控
+    if media_config.get('enabled', False):
+        app.media_monitor.start()
+        logger.info("✓ 影视监控服务已启动")
+    else:
+        logger.info("○ 影视监控服务未启用")
+
     # 注册WebSocket事件
     from websocket_manager import get_websocket_manager
     ws_manager = get_websocket_manager()

@@ -1,0 +1,332 @@
+<!-- 影视监控设置页面 -->
+<div class="settings-section" id="mediaSettingsSection">
+    <div class="d-flex align-items-center mb-4">
+        <div class="settings-icon-wrapper me-3">
+            <i class="fas fa-film"></i>
+        </div>
+        <div>
+            <h4 class="mb-1">影视库监控</h4>
+            <small class="text-muted">监控影视库资源入库、刮削完成等事件</small>
+        </div>
+        <div class="ms-auto">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="mediaMonitorEnabled" onchange="toggleMediaMonitor()">
+                <label class="form-check-label" for="mediaMonitorEnabled">启用</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 连接状态 -->
+    <div class="status-cards mb-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="status-card">
+                    <div class="d-flex align-items-center">
+                        <div class="status-indicator" id="mediaDbIndicator"></div>
+                        <div>
+                            <div class="status-label">影视库数据库</div>
+                            <div class="status-value" id="mediaDbPath">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="status-card">
+                    <div class="d-flex align-items-center">
+                        <div class="status-indicator" id="mediaActivityDbIndicator"></div>
+                        <div>
+                            <div class="status-label">活动日志数据库</div>
+                            <div class="status-value" id="mediaActivityDbPath">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 监控配置 -->
+    <div class="card mb-4">
+        <div class="card-header"><h6 class="mb-0"><i class="fas fa-cog me-2"></i>监控配置</h6></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">数据库路径</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-database"></i></span>
+                        <input type="text" class="form-control" id="mediaDbPathInput" 
+                               value="/usr/local/apps/@appdata/trim.media/database/trimmedia.db">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">活动数据库路径</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-database"></i></span>
+                        <input type="text" class="form-control" id="mediaActivityDbPathInput"
+                               value="/usr/local/apps/@appdata/trim.media/database/trimactivity.db">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">轮询间隔（秒）</label>
+                    <input type="number" class="form-control" id="mediaPollInterval" value="10" min="1" max="300">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 监控事件选择 -->
+    <div class="card mb-4">
+        <div class="card-header"><h6 class="mb-0"><i class="fas fa-bell me-2"></i>监控事件</h6></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="mediaEventResourceAdded" value="MEDIA_RESOURCE_ADDED">
+                        <label class="form-check-label" for="mediaEventResourceAdded">
+                            <i class="fas fa-plus-circle text-success me-2"></i>资源入库
+                            <small class="text-muted d-block">有新影视资源添加到库中时通知</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="mediaEventScrapeSuccess" value="MEDIA_SCRAPE_SUCCESS">
+                        <label class="form-check-label" for="mediaEventScrapeSuccess">
+                            <i class="fas fa-check-circle text-primary me-2"></i>刮削完成
+                            <small class="text-muted d-block">影视信息刮削完成时通知</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="mediaEventLogin" value="MEDIA_LOGIN_SUCCESS">
+                        <label class="form-check-label" for="mediaEventLogin">
+                            <i class="fas fa-sign-in-alt text-info me-2"></i>用户登录
+                            <small class="text-muted d-block">用户登录影视中心时通知</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="mediaEventLogout" value="MEDIA_LOGOUT">
+                        <label class="form-check-label" for="mediaEventLogout">
+                            <i class="fas fa-sign-out-alt text-warning me-2"></i>用户登出
+                            <small class="text-muted d-block">用户登出影视中心时通知</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近事件 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-history me-2"></i>最近事件</h6>
+            <button class="btn btn-sm btn-outline-secondary" onclick="refreshMediaEvents()">
+                <i class="fas fa-sync-alt"></i> 刷新
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>时间</th><th>类型</th><th>标题</th><th>详情</th></tr></thead>
+                    <tbody id="mediaEventsTable">
+                        <tr><td colspan="4" class="text-center text-muted py-4">暂无事件记录</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="mt-4 d-flex gap-2">
+        <button class="btn btn-primary" onclick="saveMediaSettings()">
+            <i class="fas fa-save me-2"></i>保存设置
+        </button>
+        <button class="btn btn-outline-secondary" onclick="resetMediaSettings()">
+            <i class="fas fa-undo me-2"></i>恢复默认
+        </button>
+    </div>
+</div>
+
+<style>
+.settings-section { padding: 0; }
+.settings-icon-wrapper {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 20px;
+}
+.status-cards { margin: 20px 0; }
+.status-card {
+    background: var(--card-bg); border-radius: 12px;
+    padding: 16px; border: 1px solid var(--border-color);
+}
+.status-indicator {
+    width: 12px; height: 12px; border-radius: 50%; margin-right: 12px;
+    background: #6c757d;
+}
+.status-indicator.online { background: #28a745; box-shadow: 0 0 8px rgba(40, 167, 69, 0.5); }
+.status-indicator.offline { background: #dc3545; }
+.status-label { font-size: 12px; color: var(--text-muted); }
+.status-value { font-size: 13px; font-weight: 500; word-break: break-all; }
+</style>
+
+<script>
+// ========== 影视监控设置 ==========
+var mediaConfig = {
+    enabled: false,
+    db_path: '/usr/local/apps/@appdata/trim.media/database/trimmedia.db',
+    activity_db_path: '/usr/local/apps/@appdata/trim.media/database/trimactivity.db',
+    poll_interval: 10,
+    monitor_events: []
+};
+
+async function initMediaSettings() {
+    await loadMediaConfig();
+    await loadMediaStatus();
+    await refreshMediaEvents();
+    setInterval(refreshMediaStatus, 30000);
+}
+
+async function loadMediaConfig() {
+    try {
+        const response = await fetch('/api/media/config');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.data) {
+                mediaConfig = { ...mediaConfig, ...data.data };
+                updateMediaUI();
+            }
+        }
+    } catch (err) { console.error('Load config failed:', err); }
+}
+
+function updateMediaUI() {
+    document.getElementById('mediaMonitorEnabled').checked = mediaConfig.enabled;
+    document.getElementById('mediaDbPathInput').value = mediaConfig.db_path || '';
+    document.getElementById('mediaActivityDbPathInput').value = mediaConfig.activity_db_path || '';
+    document.getElementById('mediaPollInterval').value = mediaConfig.poll_interval || 10;
+    const events = mediaConfig.monitor_events || [];
+    document.getElementById('mediaEventResourceAdded').checked = events.includes('MEDIA_RESOURCE_ADDED');
+    document.getElementById('mediaEventScrapeSuccess').checked = events.includes('MEDIA_SCRAPE_SUCCESS');
+    document.getElementById('mediaEventLogin').checked = events.includes('MEDIA_LOGIN_SUCCESS');
+    document.getElementById('mediaEventLogout').checked = events.includes('MEDIA_LOGOUT');
+}
+
+async function loadMediaStatus() {
+    try {
+        const response = await fetch('/api/media/status');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.data) updateMediaStatusUI(data.data);
+        }
+    } catch (err) { console.error('Load status failed:', err); }
+}
+
+function updateMediaStatusUI(status) {
+    var dbPathEl = document.getElementById('mediaDbPath');
+    var actDbPathEl = document.getElementById('mediaActivityDbPath');
+    if (dbPathEl) dbPathEl.textContent = status.db_path || '-';
+    if (actDbPathEl) actDbPathEl.textContent = status.activity_db_path || '-';
+    var dbInd = document.getElementById('mediaDbIndicator');
+    var actInd = document.getElementById('mediaActivityDbIndicator');
+    if (dbInd) dbInd.className = 'status-indicator ' + (status.db_available ? 'online' : 'offline');
+    if (actInd) actInd.className = 'status-indicator ' + (status.activity_db_available ? 'online' : 'offline');
+}
+
+async function refreshMediaStatus() { await loadMediaStatus(); }
+
+async function toggleMediaMonitor() {
+    var enabled = document.getElementById('mediaMonitorEnabled').checked;
+    try {
+        var response = await fetch('/api/media/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: enabled })
+        });
+        if (response.ok) {
+            mediaConfig.enabled = enabled;
+            showToast(enabled ? 'Media monitoring enabled' : 'Media monitoring disabled', 'success');
+            await refreshMediaStatus();
+        }
+    } catch (err) { console.error('Toggle failed:', err); showToast('Operation failed', 'error'); }
+}
+
+async function saveMediaSettings() {
+    var events = [];
+    if (document.getElementById('mediaEventResourceAdded').checked) events.push('MEDIA_RESOURCE_ADDED');
+    if (document.getElementById('mediaEventScrapeSuccess').checked) events.push('MEDIA_SCRAPE_SUCCESS');
+    if (document.getElementById('mediaEventLogin').checked) events.push('MEDIA_LOGIN_SUCCESS');
+    if (document.getElementById('mediaEventLogout').checked) events.push('MEDIA_LOGOUT');
+    var newConfig = {
+        enabled: mediaConfig.enabled,
+        db_path: document.getElementById('mediaDbPathInput').value,
+        activity_db_path: document.getElementById('mediaActivityDbPathInput').value,
+        poll_interval: parseInt(document.getElementById('mediaPollInterval').value) || 10,
+        monitor_events: events
+    };
+    try {
+        var response = await fetch('/api/media/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newConfig)
+        });
+        if (response.ok) {
+            mediaConfig = newConfig;
+            showToast('Settings saved', 'success');
+            await refreshMediaStatus();
+        } else { showToast('Save failed', 'error'); }
+    } catch (err) { console.error('Save failed:', err); showToast('Save failed', 'error'); }
+}
+
+function resetMediaSettings() {
+    document.getElementById('mediaDbPathInput').value = '/usr/local/apps/@appdata/trim.media/database/trimmedia.db';
+    document.getElementById('mediaActivityDbPathInput').value = '/usr/local/apps/@appdata/trim.media/database/trimactivity.db';
+    document.getElementById('mediaPollInterval').value = 10;
+    document.getElementById('mediaEventResourceAdded').checked = true;
+    document.getElementById('mediaEventScrapeSuccess').checked = true;
+    document.getElementById('mediaEventLogin').checked = false;
+    document.getElementById('mediaEventLogout').checked = false;
+    showToast('Reset to defaults', 'info');
+}
+
+async function refreshMediaEvents() {
+    try {
+        var response = await fetch('/api/media/events');
+        if (response.ok) {
+            var data = await response.json();
+            updateMediaEventsTable(data.data || []);
+        }
+    } catch (err) { console.error('Load events failed:', err); }
+}
+
+function getMediaEventTypeInfo(type) {
+    var types = {
+        'MEDIA_RESOURCE_ADDED': { label: 'Resource Added', color: 'success' },
+        'MEDIA_SCRAPE_SUCCESS': { label: 'Scrape Done', color: 'primary' },
+        'MEDIA_LOGIN_SUCCESS': { label: 'Login', color: 'info' },
+        'MEDIA_LOGOUT': { label: 'Logout', color: 'warning' }
+    };
+    return types[type] || { label: type, color: 'secondary' };
+}
+
+function updateMediaEventsTable(events) {
+    var tbody = document.getElementById('mediaEventsTable');
+    if (!tbody) return;
+    if (events.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No events</td></tr>';
+        return;
+    }
+    var html = '';
+    for (var i = 0; i < events.length; i++) {
+        var event = events[i];
+        var typeInfo = getMediaEventTypeInfo(event.type);
+        html += '<tr><td><small>' + (event.datetime || event.time || '-') + '</small></td>';
+        html += '<td><span class="badge bg-' + typeInfo.color + '">' + typeInfo.label + '</span></td>';
+        html += '<td>' + (event.title || '-') + '</td>';
+        html += '<td><small class="text-muted">' + (event.item_type || '') + (event.year ? ' ' + event.year : '') + '</small></td></tr>';
+    }
+    tbody.innerHTML = html;
+}

@@ -138,6 +138,25 @@ class WebSocketManager:
             logger.error(f"广播健康状态失败: {e}")
 
 
+    def broadcast_media_event(self, event: dict):
+        """广播影视监控事件"""
+        try:
+            if not self.socketio:
+                logger.warning("SocketIO未初始化，无法广播媒体事件")
+                return
+            
+            # 发送媒体事件
+            self.socketio.emit('media_event', event, namespace='/')
+            logger.info(f"影视事件已推送: {event.get('type')} - {event.get('title', 'N/A')}")
+        except Exception as e:
+            logger.error(f"广播影视事件失败: {e}")
+
+    def broadcast_media_events(self, events: list):
+        """广播多个影视监控事件"""
+        for event in events:
+            self.broadcast_media_event(event)
+
+
 # 全局WebSocket管理器实例
 _ws_manager = None
 
